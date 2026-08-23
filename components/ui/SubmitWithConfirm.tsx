@@ -12,6 +12,7 @@ interface SubmitWithConfirmProps {
   confirmText?: string;
   cancelText?: string;
   isDestructive?: boolean;
+  wrapperClassName?: string;
 }
 
 export function SubmitWithConfirm({
@@ -23,13 +24,14 @@ export function SubmitWithConfirm({
   confirmText = "Hapus",
   cancelText = "Batal",
   isDestructive = true,
+  wrapperClassName = "",
 }: SubmitWithConfirmProps) {
   const [isOpen, setIsOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   return (
     <>
-      <div onClick={() => setIsOpen(true)} className="inline-block cursor-pointer">
+      <div onClick={() => setIsOpen(true)} className={`inline-block cursor-pointer ${wrapperClassName}`}>
         {buttonElement}
       </div>
 

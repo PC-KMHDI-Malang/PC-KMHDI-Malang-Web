@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import ScrollToTop from "@/components/layout/ScrollToTop";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: {
@@ -25,13 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
-      <body className="bg-white text-zinc-900 antialiased">
-        <ScrollToTop />
+    <html lang="id" suppressHydrationWarning>
+      <body className="bg-white dark:bg-slate-950 text-zinc-900 dark:text-zinc-50 antialiased transition-colors">
+        <Providers>
+          <ScrollToTop />
 
-        <main className="min-h-screen">
-          {children}
-        </main>
+          <main className="min-h-screen">
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );

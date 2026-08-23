@@ -2,66 +2,53 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { logoutAction } from "@/app/actions/auth";
 import {
-  LayoutDashboard,
-  BookOpen,
-  KeyRound,
-  LogOut
+  LogOut,
+  ArrowLeft
 } from "lucide-react";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { UserSidebarNav } from "./UserSidebarNav";
 
 export default async function UserSidebar() {
   const session = await auth();
 
   return (
-    <aside className="w-64 bg-white text-slate-600 border-r border-slate-200 h-screen fixed inset-y-0 left-0 flex flex-col shadow-xl z-20">
-      <div className="p-6 border-b border-slate-100 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center p-1.5 shadow-sm border border-slate-100">
+    <aside className="w-64 bg-white dark:bg-[#0a0a0a] text-slate-600 dark:text-slate-400 border-r border-slate-200 dark:border-white/5 h-screen fixed inset-y-0 left-0 flex flex-col shadow-xl z-20 transition-colors">
+      <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center p-1.5 shadow-sm border border-slate-100 dark:border-white/5">
           <img src="/image/Logo.png" alt="Logo KMHDI" className="w-full h-full object-contain" />
         </div>
         <div className="flex flex-col">
-          <h2 className="text-lg font-bold text-slate-800 tracking-wide leading-tight">
-            User Panel
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white tracking-wide leading-tight">
+            Dasbor User
           </h2>
-          <p className="text-[10px] text-slate-500 mt-0.5 font-bold tracking-[0.2em] uppercase">KMHDI Malang</p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-bold tracking-[0.2em] uppercase">KMHDI Malang</p>
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:shadow-[inset_4px_0_0_0_rgba(220,38,38,1)] rounded-xl transition-all duration-300 group font-medium"
+      <UserSidebarNav />
+
+      <div className="p-4 border-t border-slate-100 dark:border-white/5 mt-auto flex flex-col gap-1.5">
+        <ThemeToggle />
+        
+        <Link 
+          href="/" 
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 dark:bg-[#111111] hover:bg-slate-100 dark:hover:bg-black text-slate-700 dark:text-white rounded-2xl transition-colors border border-slate-100 dark:border-white/5"
         >
-          <LayoutDashboard className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          <span className="font-medium">Beranda</span>
+          <ArrowLeft size={16} />
+          <span className="font-bold text-sm tracking-wide">Kembali ke Website</span>
         </Link>
 
-        <Link
-          href="/dashboard/ebooks"
-          className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:shadow-[inset_4px_0_0_0_rgba(220,38,38,1)] rounded-xl transition-all duration-300 group font-medium"
-        >
-          <BookOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          <span className="font-medium">Baca Ebook</span>
-        </Link>
-
-        <Link
-          href="/dashboard/profile"
-          className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:shadow-[inset_4px_0_0_0_rgba(220,38,38,1)] rounded-xl transition-all duration-300 group font-medium"
-        >
-          <KeyRound className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          <span className="font-medium">Ganti Password</span>
-        </Link>
-      </nav>
-
-      <div className="p-4 border-t border-slate-100">
         <SubmitWithConfirm
+          wrapperClassName="w-full"
           action={logoutAction}
           modalTitle="Keluar dari Aplikasi?"
           modalDesc="Sesi Anda akan diakhiri dan Anda harus login kembali untuk masuk ke dashboard."
           confirmText="Ya, Logout"
           buttonElement={
-            <div className="flex items-center gap-3 px-4 py-3 w-full text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300 font-medium">
-              <LogOut className="w-5 h-5" />
-              <span className="font-medium">Logout</span>
+            <div className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 dark:bg-[#111111] hover:bg-red-600 dark:hover:bg-rose-600 text-slate-700 hover:text-white dark:text-white rounded-2xl transition-colors border border-slate-100 dark:border-white/5">
+              <LogOut size={16} />
+              <span className="font-bold text-sm tracking-wide">Logout</span>
             </div>
           }
         />
