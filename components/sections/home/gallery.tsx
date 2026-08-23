@@ -1,12 +1,24 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { supabaseAdmin } from "@/lib/supabase";
 
-import { galleryData } from "@/data/gallery";
+import { galleryData as fallbackData } from "@/data/gallery";
 
-export default function Gallery() {
-  const firstRow = galleryData.images.slice(0, 4);
-  const secondRow = galleryData.images.slice(4);
+export default async function Gallery() {
+  const { data: galleries } = await supabaseAdmin
+    .from("Gallery")
+    .select("coverImage")
+    .order("createdAt", { ascending: false })
+    .limit(10);
+
+  const images = galleries && galleries.length > 0 ? galleries.map(g => g.coverImage) : fallbackData.images;
+  
+  // Jika gambar kurang dari 4, fallback ke data statis agar animasi marquee tidak kosong melompong
+  const displayImages = images.length >= 4 ? images : fallbackData.images;
+
+  const firstRow = displayImages.slice(0, Math.ceil(displayImages.length / 2));
+  const secondRow = displayImages.slice(Math.ceil(displayImages.length / 2));
 
   return (
     <section className="overflow-hidden bg-slate-50 py-20 md:py-24 lg:py-32">
@@ -15,15 +27,15 @@ export default function Gallery() {
 
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-flex rounded-full bg-red-100 px-4 py-2 text-sm font-semibold text-red-700">
-            {galleryData.badge}
+            {fallbackData.badge}
           </span>
 
           <h2 className="mt-6 text-3xl font-bold text-slate-900 sm:text-4xl lg:text-5xl">
-            {galleryData.title}
+            {fallbackData.title}
           </h2>
 
           <p className="mt-6 text-base leading-8 text-slate-600 md:text-lg">
-            {galleryData.description}
+            {fallbackData.description}
           </p>
         </div>
       </div>
@@ -72,10 +84,10 @@ export default function Gallery() {
 
       <div className="mt-16 flex justify-center">
         <Link
-          href={galleryData.button.href}
+          href={fallbackData.button.href}
           className="inline-flex items-center gap-2 rounded-2xl bg-red-700 px-7 py-4 font-semibold text-white transition hover:bg-red-800"
         >
-          {galleryData.button.label}
+          {fallbackData.button.label}
 
           <ArrowRight size={18} />
         </Link>

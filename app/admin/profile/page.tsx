@@ -21,7 +21,7 @@ export default async function ProfilePage() {
         <div className="lg:col-span-1">
           <div className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col items-center text-center">
             <div className="w-24 h-24 bg-slate-900 text-white rounded-full flex items-center justify-center text-3xl font-bold mb-4 shadow-xl shadow-slate-900/20">
-              {session.user.name?.[0]?.toUpperCase() || 'U'}
+              {session.user.name?.[0]?.toUpperCase() || 'A'}
             </div>
             <h2 className="text-xl font-bold text-slate-800">{session.user.name}</h2>
             <p className="text-slate-500 font-medium mb-4">{session.user.email}</p>

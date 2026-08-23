@@ -1,20 +1,16 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { logoutAction } from "@/app/actions/auth";
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  Image as ImageIcon, 
-  Users, 
-  KeyRound, 
-  LogOut,
-  FileText
+import {
+  LayoutDashboard,
+  BookOpen,
+  KeyRound,
+  LogOut
 } from "lucide-react";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 
-export default async function Sidebar() {
+export default async function UserSidebar() {
   const session = await auth();
-  const role = session?.user?.role || "USER";
 
   return (
     <aside className="w-64 bg-white text-slate-600 border-r border-slate-200 h-screen fixed inset-y-0 left-0 flex flex-col shadow-xl z-20">
@@ -24,57 +20,31 @@ export default async function Sidebar() {
         </div>
         <div className="flex flex-col">
           <h2 className="text-lg font-bold text-slate-800 tracking-wide leading-tight">
-            Admin Panel
+            User Panel
           </h2>
           <p className="text-[10px] text-slate-500 mt-0.5 font-bold tracking-[0.2em] uppercase">KMHDI Malang</p>
         </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-1">
-        <Link 
-          href="/admin" 
+        <Link
+          href="/dashboard"
           className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:shadow-[inset_4px_0_0_0_rgba(220,38,38,1)] rounded-xl transition-all duration-300 group font-medium"
         >
           <LayoutDashboard className="w-5 h-5 group-hover:scale-110 transition-transform" />
           <span className="font-medium">Beranda</span>
         </Link>
 
-        <Link 
-          href="/admin/ebooks" 
+        <Link
+          href="/dashboard/ebooks"
           className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:shadow-[inset_4px_0_0_0_rgba(220,38,38,1)] rounded-xl transition-all duration-300 group font-medium"
         >
           <BookOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          <span className="font-medium">Manajemen Ebook</span>
+          <span className="font-medium">Baca Ebook</span>
         </Link>
 
-        <Link 
-          href="/admin/gallery" 
-          className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:shadow-[inset_4px_0_0_0_rgba(220,38,38,1)] rounded-xl transition-all duration-300 group font-medium"
-        >
-          <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          <span className="font-medium">Manajemen Galeri</span>
-        </Link>
-
-        <Link 
-          href="/admin/news" 
-          className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:shadow-[inset_4px_0_0_0_rgba(220,38,38,1)] rounded-xl transition-all duration-300 group font-medium"
-        >
-          <FileText className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          <span className="font-medium">Manajemen Artikel</span>
-        </Link>
-
-        {role === "ADMIN" && (
-          <Link 
-            href="/admin/users" 
-            className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:shadow-[inset_4px_0_0_0_rgba(220,38,38,1)] rounded-xl transition-all duration-300 group font-medium"
-          >
-            <Users className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span className="font-medium">Manajemen User</span>
-          </Link>
-        )}
-
-        <Link 
-          href="/admin/profile" 
+        <Link
+          href="/dashboard/profile"
           className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-red-600 hover:bg-red-50 hover:shadow-[inset_4px_0_0_0_rgba(220,38,38,1)] rounded-xl transition-all duration-300 group font-medium"
         >
           <KeyRound className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -86,7 +56,7 @@ export default async function Sidebar() {
         <SubmitWithConfirm
           action={logoutAction}
           modalTitle="Keluar dari Aplikasi?"
-          modalDesc="Sesi Anda akan diakhiri dan Anda harus login kembali untuk masuk ke panel admin."
+          modalDesc="Sesi Anda akan diakhiri dan Anda harus login kembali untuk masuk ke dashboard."
           confirmText="Ya, Logout"
           buttonElement={
             <div className="flex items-center gap-3 px-4 py-3 w-full text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300 font-medium">

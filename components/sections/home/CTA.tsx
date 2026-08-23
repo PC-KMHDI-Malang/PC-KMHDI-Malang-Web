@@ -8,7 +8,7 @@ export default function CTA() {
     <section className="relative overflow-hidden bg-gradient-to-br from-red-900 via-red-800 to-red-950 py-20 md:py-24 lg:py-32">
       {/* Background Glow */}
 
-      <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-yellow-400/20 blur-[120px]" />
+      <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-red-600/20 blur-[120px]" />
 
       <div className="absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-white/10 blur-[120px]" />
 

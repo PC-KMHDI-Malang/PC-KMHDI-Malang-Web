@@ -12,7 +12,7 @@ export async function loginAction(formData: FormData) {
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      throw new Error("Email atau password salah.");
+      return { error: "Email atau password salah." };
     }
 
     throw error;

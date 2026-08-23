@@ -21,15 +21,15 @@ export default function DataTable<T extends { id: string | number }>({
   emptyMessage = "Tidak ada data.",
 }: DataTableProps<T>) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-3xl bg-white/70 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 p-2">
       <div className="overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="border-b border-gray-200 bg-gray-50">
+        <table className="min-w-full border-collapse">
+          <thead>
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.header}
-                  className={`px-6 py-4 text-left text-sm font-semibold text-gray-600 ${column.className ?? ""}`}
+                  className={`px-6 py-5 text-left text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 ${column.className ?? ""}`}
                 >
                   {column.header}
                 </th>
@@ -42,7 +42,7 @@ export default function DataTable<T extends { id: string | number }>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-16 text-center text-gray-500"
+                  className="py-16 text-center text-black"
                 >
                   {emptyMessage}
                 </td>
@@ -51,12 +51,12 @@ export default function DataTable<T extends { id: string | number }>({
               data.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-b border-gray-100 transition hover:bg-gray-50"
+                  className="group transition-all duration-300 hover:bg-white border-b border-slate-50 last:border-0"
                 >
-                  {columns.map((column) => (
+                  {columns.map((column, index) => (
                     <td
                       key={column.header}
-                      className="px-6 py-4 text-sm text-gray-700"
+                      className={`px-6 py-5 text-sm font-medium text-slate-700 transition-colors group-hover:text-black ${index === 0 ? 'rounded-l-2xl' : ''} ${index === columns.length - 1 ? 'rounded-r-2xl' : ''}`}
                     >
                       {column.render
                         ? column.render(row)

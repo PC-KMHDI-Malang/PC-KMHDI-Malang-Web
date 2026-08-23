@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import ScrollToTop from "@/components/layout/ScrollToTop";
 
 export const metadata: Metadata = {
@@ -31,13 +29,9 @@ export default function RootLayout({
       <body className="bg-white text-zinc-900 antialiased">
         <ScrollToTop />
 
-        <Navbar />
-
         <main className="min-h-screen">
           {children}
         </main>
-
-        <Footer />
       </body>
     </html>
   );

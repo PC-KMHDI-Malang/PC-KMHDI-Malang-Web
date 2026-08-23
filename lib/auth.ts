@@ -68,6 +68,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
 
   callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const role = (auth?.user as any)?.role;
+      const isAdmin = role === 'ADMIN';
+      const isOnAdmin = nextUrl.pathname.startsWith('/admin');
+      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+      
+      if (isOnAdmin) {
+        if (isLoggedIn && isAdmin) return true;
+        if (isLoggedIn && !isAdmin) return Response.redirect(new URL('/dashboard', nextUrl));
+        return false; // Redirect unauthenticated users to login page
+      }
+
+      if (isOnDashboard) {
+        if (isLoggedIn && isAdmin) return Response.redirect(new URL('/admin', nextUrl));
+        if (isLoggedIn) return true;
+        return false; // Redirect unauthenticated users to login page
+      }
+
+      if (isLoggedIn && nextUrl.pathname === '/login') {
+        if (isAdmin) return Response.redirect(new URL('/admin', nextUrl));
+        return Response.redirect(new URL('/dashboard', nextUrl));
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       const jwtToken = token as typeof token & {
         id?: string;

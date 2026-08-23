@@ -95,7 +95,7 @@ export default function Navbar() {
                 <Link
                   key={menu.title}
                   href={menu.href}
-                  className="text-sm font-medium text-white/80 transition hover:text-yellow-300"
+                  className="text-sm font-medium text-white/80 transition hover:text-white"
                 >
                   {menu.title}
                 </Link>
