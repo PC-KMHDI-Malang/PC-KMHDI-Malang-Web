@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const menus = [
@@ -12,24 +12,19 @@ const menus = [
   },
   {
     title: "Profil",
-    href: "/profil",
+    href: "/#tentang",
   },
   {
     title: "Publikasi",
-    href: "/publikasi",
+    href: "/#berita",
   },
   {
-    title: "Agenda",
-    href: "/agenda",
+    title: "Buku",
+    href: "/buku",
   },
-
   {
     title: "Galeri",
-    href: "/galeri",
-  },
-  {
-    title: "Kontak",
-    href: "/kontak",
+    href: "/#galeri",
   },
 ];
 
@@ -60,8 +55,8 @@ export default function Navbar() {
               duration-300
 
               ${scrolled
-                ? "border-white/10 bg-black/25 shadow-2xl backdrop-blur-2xl"
-                : "border-white/5 bg-black/10 backdrop-blur-2xl"
+                ? "border-white/10 bg-slate-900/70 shadow-2xl backdrop-blur-2xl"
+                : "border-white/10 bg-slate-900/40 shadow-lg backdrop-blur-2xl"
               }
             `}
           >
@@ -105,10 +100,6 @@ export default function Navbar() {
             {/* Right */}
 
             <div className="hidden items-center gap-3 pr-6 lg:flex">
-              <button className="rounded-full bg-white/10 p-3 text-white transition hover:bg-white/20">
-                <Search size={18} />
-              </button>
-
               <Link href="/login" className="rounded-full bg-gradient-to-r from-red-600 to-red-500 px-6 py-3 font-semibold text-white shadow-xl transition hover:scale-105">
                 Login
               </Link>
@@ -140,9 +131,13 @@ export default function Navbar() {
                   </Link>
                 ))}
 
-                <button className="mt-3 rounded-xl bg-red-600 py-3 text-white">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-3 block rounded-xl bg-red-600 py-3 text-center font-semibold text-white transition hover:bg-red-700"
+                >
                   Login
-                </button>
+                </Link>
               </div>
             </div>
           )}

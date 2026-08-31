@@ -8,7 +8,7 @@ export const galleryData = {
 
   button: {
     label: "Lihat Semua Galeri",
-    href: "/galeri",
+    href: "/#galeri",
   },
 
   images: [

@@ -7,7 +7,7 @@ export default function Programs() {
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex rounded-full bg-red-100 px-4 py-2 text-sm font-semibold text-red-700">
+          <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-red-100 backdrop-blur-xl">
             {programsData.badge}
           </span>
 
@@ -15,7 +15,7 @@ export default function Programs() {
             {programsData.title}
           </h2>
 
-          <p className="mt-6 text-base leading-8 text-white md:text-lg">
+          <p className="mt-6 text-base leading-8 text-red-50 md:text-lg">
             {programsData.description}
           </p>
         </div>

@@ -13,6 +13,6 @@ export const ctaData = {
 
   secondaryButton: {
     label: "Hubungi Kami",
-    href: "/kontak",
+    href: "https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20bertanya%20tentang%20KMHDI%20Malang.",
   },
 };

@@ -9,15 +9,8 @@ export const metadata: Metadata = {
     default: "PC KMHDI Malang",
     template: "%s | PC KMHDI Malang",
   },
-  description:
-    "Website Resmi Pengurus Cabang Kesatuan Mahasiswa Hindu Dharma Indonesia (PC KMHDI) Malang.",
-  keywords: [
-    "KMHDI",
-    "PC KMHDI",
-    "KMHDI Malang",
-    "Mahasiswa Hindu",
-    "Organisasi",
-  ],
+  description: "Website Resmi Pengurus Cabang Kesatuan Mahasiswa Hindu Dharma Indonesia (PC KMHDI) Malang.",
+  keywords: ["KMHDI", "PC KMHDI", "KMHDI Malang", "Mahasiswa Hindu", "Organisasi"],
 };
 
 export default function RootLayout({
@@ -27,13 +20,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className="bg-white dark:bg-slate-950 text-zinc-900 dark:text-zinc-50 antialiased transition-colors">
+      <body className="bg-white dark:bg-slate-950 text-zinc-900 dark:text-zinc-50 antialiased transition-colors" suppressHydrationWarning>
         <Providers>
           <ScrollToTop />
-
-          <main className="min-h-screen">
-            {children}
-          </main>
+          {children}
         </Providers>
       </body>
     </html>

@@ -34,7 +34,7 @@ export default function Footer() {
             <div className="flex items-center gap-4">
 
               <Image
-                src="/images/logo/logo.png"
+                src="/image/Logo.png"
                 alt="KMHDI"
                 width={60}
                 height={60}
@@ -94,17 +94,35 @@ export default function Footer() {
 
             <ul className="space-y-4 text-zinc-400">
 
-              <li><Link href="/">Beranda</Link></li>
+              <li>
+                <Link href="/" className="transition hover:text-white">
+                  Beranda
+                </Link>
+              </li>
 
-              <li><Link href="/profil">Profil</Link></li>
+              <li>
+                <Link href="/#tentang" className="transition hover:text-white">
+                  Profil
+                </Link>
+              </li>
 
-              <li><Link href="/publikasi">Publikasi</Link></li>
+              <li>
+                <Link href="/#berita" className="transition hover:text-white">
+                  Publikasi
+                </Link>
+              </li>
 
-              <li><Link href="/agenda">Agenda</Link></li>
+              <li>
+                <Link href="/#galeri" className="transition hover:text-white">
+                  Galeri
+                </Link>
+              </li>
 
-              <li><Link href="/komisariat">Komisariat</Link></li>
-
-              <li><Link href="/galeri">Galeri</Link></li>
+              <li>
+                <Link href="/buku" className="transition hover:text-white">
+                  E-Book
+                </Link>
+              </li>
 
             </ul>
 
@@ -121,31 +139,31 @@ export default function Footer() {
             <ul className="space-y-4 text-zinc-400">
 
               <li>
-                <Link href="#">
+                <Link href="/login" className="transition hover:text-white">
                   Keanggotaan
                 </Link>
               </li>
 
               <li>
-                <Link href="#">
+                <Link href="/#berita" className="transition hover:text-white">
                   Artikel
                 </Link>
               </li>
 
               <li>
-                <Link href="#">
+                <Link href="/#berita" className="transition hover:text-white">
                   Berita
                 </Link>
               </li>
 
               <li>
-                <Link href="#">
+                <Link href="/buku" className="transition hover:text-white">
                   Perpustakaan
                 </Link>
               </li>
 
               <li>
-                <Link href="#">
+                <Link href="/buku" className="transition hover:text-white">
                   Download
                 </Link>
               </li>

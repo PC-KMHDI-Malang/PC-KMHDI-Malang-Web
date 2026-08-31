@@ -38,6 +38,8 @@ export default function CTA() {
 
             <Link
               href={ctaData.secondaryButton.href}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-8 py-4 font-semibold text-white backdrop-blur-xl transition duration-300 hover:bg-white/20 sm:w-auto"
             >
               <PhoneCall className="h-5 w-5" />

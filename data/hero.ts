@@ -18,7 +18,7 @@ export const heroData = {
     },
     {
       label: "Tentang Kami",
-      href: "/profil",
+      href: "/#tentang",
       primary: false,
     },
   ],

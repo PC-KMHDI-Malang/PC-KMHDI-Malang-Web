@@ -8,7 +8,7 @@ export const newsData = {
 
   button: {
     label: "Lihat Semua Berita",
-    href: "/berita",
+    href: "/#berita",
   },
 
   news: [

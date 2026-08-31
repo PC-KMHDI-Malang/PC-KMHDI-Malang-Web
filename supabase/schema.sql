@@ -38,6 +38,7 @@ CREATE TABLE "News" (
   "status" "NewsStatus" NOT NULL DEFAULT 'DRAFT',
   "publishedAt" TIMESTAMP WITH TIME ZONE,
   "authorId" UUID NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+  "authorName" TEXT,
   "categoryId" UUID NOT NULL REFERENCES "Category"("id") ON DELETE CASCADE,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
@@ -72,8 +73,12 @@ CREATE TABLE "Gallery" (
 CREATE TABLE "Ebook" (
   "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   "title" TEXT NOT NULL,
+  "description" TEXT,
+  "genre" TEXT NOT NULL DEFAULT 'Lainnya',
   "coverImage" TEXT NOT NULL,
   "driveLink" TEXT NOT NULL,
+  "publishYear" INTEGER,
+  "publisher" TEXT NOT NULL DEFAULT 'PP KMHDI',
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );

@@ -10,7 +10,7 @@ import AnimatedWord from "@/components/ui/AnimatedWord";
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-red-800 via-red-900 to-red-950">
+    <section className="relative -mt-32 overflow-hidden bg-gradient-to-b from-red-800 via-red-900 to-red-950 pt-20">
       {/* Background Glow */}
 
       <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
@@ -20,24 +20,17 @@ export default function Hero() {
       {/* Grid */}
 
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-
         <div className="grid min-h-screen items-center gap-7 py-12 lg:grid-cols-2">
-
           {/* LEFT */}
 
           <div>
-
-            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-red-100 backdrop-blur-xl">
-              {heroData.badge}
-            </span>
+            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-red-100 backdrop-blur-xl">{heroData.badge}</span>
 
             <h1 className="mt-4 text-2xl font-extrabold leading-tight text-white sm:text-3xl lg:text-5xl">
-              {heroData.title.first} <AnimatedWord words={heroData.title.animated}/>
+              {heroData.title.first} <AnimatedWord words={heroData.title.animated} />
             </h1>
 
-            <p className="mt-8 max-w-1xl text-base leading-6 text-red-50 md:text-lg">
-              {heroData.description}
-            </p>
+            <p className="mt-8 max-w-xl text-base leading-7 text-red-50 md:text-lg">{heroData.description}</p>
 
             {/* Button */}
 
@@ -63,23 +56,12 @@ export default function Hero() {
 
             <div className="mt-16 grid grid-cols-2 gap-5 md:grid-cols-4">
               {heroData.statistics.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-3xl border border-white/10 bg-white/10 p-5 text-center backdrop-blur-xl"
-                >
+                <div key={item.label} className="rounded-3xl border border-white/10 bg-white/10 p-5 text-center backdrop-blur-xl">
                   <h3 className="text-3xl font-bold text-white">
-                    <CountUp
-                    end={Number(item.value)}
-                    duration={1}
-                    suffix="+"
-                    enableScrollSpy
-                    scrollSpyOnce
-                    />
+                    <CountUp end={Number(item.value)} duration={1} suffix="+" enableScrollSpy scrollSpyOnce />
                   </h3>
 
-                  <p className="mt-2 text-sm text-red-100">
-                    {item.label}
-                  </p>
+                  <p className="mt-2 text-sm text-red-100">{item.label}</p>
                 </div>
               ))}
             </div>
@@ -88,38 +70,19 @@ export default function Hero() {
           {/* RIGHT */}
 
           <div className="relative">
-
-            <div className="overflow-hidden rounded-[40px] border border-white/6 bg-white/10 p-4 backdrop-blur-2xl">
-
-              <Image
-                src={heroData.image}
-                alt={heroData.title.first}
-                width={800}
-                height={800}
-                priority
-                className="h-auto w-full rounded-[20px] object-cover"
-              />
-
+            <div className="overflow-hidden rounded-[40px] border border-white/10 bg-white/10 p-4 backdrop-blur-2xl">
+              <Image src={heroData.image} alt={heroData.title.first} width={800} height={800} priority className="h-auto w-full rounded-[20px] object-cover" />
             </div>
 
             {/* Floating Card */}
 
             <div className="absolute -bottom-8 left-1/2 w-[260px] -translate-x-1/2 rounded-3xl border border-white/10 bg-white/15 p-6 backdrop-blur-3xl">
+              <h4 className="text-center text-3xl font-bold text-white">35+</h4>
 
-              <h4 className="text-center text-3xl font-bold text-white">
-                35+
-              </h4>
-
-              <p className="mt-2 text-center text-sm text-red-100">
-                Tahun Pengabdian
-              </p>
-
+              <p className="mt-2 text-center text-sm text-red-100">Tahun Pengabdian</p>
             </div>
-
           </div>
-
         </div>
-
       </div>
     </section>
   );
