@@ -3,12 +3,11 @@ export const newsData = {
 
   title: "Berita & Informasi Terbaru",
 
-  description:
-    "Ikuti berbagai informasi, kegiatan, dan perkembangan terbaru dari PC KMHDI Malang serta komisariat di seluruh Malang Raya.",
+  description: "Ikuti berbagai informasi, kegiatan, dan perkembangan terbaru dari PC KMHDI Malang serta komisariat di seluruh Malang Raya.",
 
   button: {
     label: "Lihat Semua Berita",
-    href: "/#berita",
+    href: "/berita",
   },
 
   news: [

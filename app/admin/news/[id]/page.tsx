@@ -6,6 +6,8 @@ import Link from "next/link";
 import { STORAGE_BUCKETS, uploadToBucket, deleteFromBucketByUrl, getBucketUsage } from "@/lib/storage";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 
+import { CategorySelect } from "@/components/admin/CategorySelect";
+
 export default async function EditNewsPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
@@ -13,7 +15,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
   const resolvedParams = await params;
   const id = resolvedParams.id;
 
-  const { data: news, error } = await supabaseAdmin.from("News").select("*").eq("id", id).single();
+  const { data: news, error } = await supabaseAdmin.from("News").select("*, Category(name)").eq("id", id).single();
 
   if (error || !news) {
     return <div className="p-8 text-center text-red-500">Artikel tidak ditemukan</div>;
@@ -28,17 +30,50 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
     const content = formData.get("content") as string;
     const coverImageUrl = formData.get("coverImageUrl") as string | null;
     const authorName = (formData.get("authorName") as string)?.trim() || null;
+    const categoryName = (formData.get("categoryName") as string)?.trim();
 
     const authSession = await auth();
     if (!authSession?.user?.id) throw new Error("Unauthorized");
 
+    let finalCategoryId;
+
+    if (categoryName) {
+      const catSlug = categoryName
+        .toLowerCase()
+        .replace(/ /g, "-")
+        .replace(/[^\w-]+/g, "");
+      let { data: existingCat, error: findError } = await supabaseAdmin.from("Category").select("id").eq("slug", catSlug).maybeSingle();
+
+      if (findError) console.error("Error finding category:", findError);
+
+      if (existingCat) {
+        finalCategoryId = existingCat.id;
+      } else {
+        const { data: newCat, error: insertCatError } = await supabaseAdmin
+          .from("Category")
+          .insert([{ name: categoryName, slug: catSlug }])
+          .select()
+          .single();
+        if (insertCatError) console.error("Error inserting category:", insertCatError);
+        if (newCat) finalCategoryId = newCat.id;
+      }
+    }
+
     const updateData: Record<string, unknown> = { title, excerpt, content, authorName };
+
+    if (finalCategoryId) {
+      updateData.categoryId = finalCategoryId;
+    }
 
     if (coverImageUrl && coverImageUrl !== news.coverImage) {
       updateData.coverImage = coverImageUrl;
     }
 
-    await supabaseAdmin.from("News").update(updateData).eq("id", id);
+    const { error: updateError } = await supabaseAdmin.from("News").update(updateData).eq("id", id);
+    if (updateError) {
+      console.error("Failed to update news:", updateError);
+      throw new Error(`Failed to update: ${updateError.message}`);
+    }
 
     revalidatePath("/admin/news");
     revalidatePath("/");
@@ -100,15 +135,18 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Gambar Cover</label>
             <ImagePicker bucket={STORAGE_BUCKETS.news} defaultImageUrl={news.coverImage || ""} usedBytes={usage.usedBytes} />
           </div>
-          <div>
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Nama Penulis</label>
-            <input
-              type="text"
-              name="authorName"
-              defaultValue={news.authorName ?? ""}
-              className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 rounded-xl p-3 outline-none transition-all"
-              placeholder="Kosongkan untuk memakai nama akun penulis asli"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CategorySelect defaultCategoryName={news.Category?.name || "Umum"} />
+            <div>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Nama Penulis</label>
+              <input
+                type="text"
+                name="authorName"
+                defaultValue={news.authorName ?? ""}
+                className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 rounded-xl p-3 outline-none transition-all"
+                placeholder="Kosongkan untuk memakai nama akun penulis asli"
+              />
+            </div>
           </div>
           <div className="pt-2 flex gap-4">
             <button

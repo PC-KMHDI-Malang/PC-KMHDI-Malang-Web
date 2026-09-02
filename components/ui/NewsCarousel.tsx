@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from 'react';
-import useEmblaCarousel from 'embla-carousel-react';
+import React, { useCallback, useEffect, useState } from "react";
+import useEmblaCarousel from "embla-carousel-react";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { SafeImage } from "./SafeImage";
@@ -16,7 +16,7 @@ interface NewsItem {
 }
 
 export function NewsCarousel({ items }: { items: NewsItem[] }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: 'start', skipSnaps: false });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start", skipSnaps: false });
   const [prevBtnEnabled, setPrevBtnEnabled] = useState(false);
   const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
 
@@ -32,9 +32,17 @@ export function NewsCarousel({ items }: { items: NewsItem[] }) {
   useEffect(() => {
     if (!emblaApi) return;
     setTimeout(() => onSelect(), 0);
-    emblaApi.on('select', onSelect);
-    emblaApi.on('reInit', onSelect);
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
   }, [emblaApi, onSelect]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const interval = setInterval(() => {
+      emblaApi.scrollNext();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [emblaApi]);
 
   return (
     <div className="relative">
@@ -44,15 +52,8 @@ export function NewsCarousel({ items }: { items: NewsItem[] }) {
             <div key={item.id} className="min-w-0 flex-none w-full sm:w-1/2 lg:w-1/3 pl-4 md:pl-6 lg:pl-8">
               <article className="group h-full flex flex-col overflow-hidden rounded-3xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#111111] shadow-lg dark:shadow-none transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl dark:hover:shadow-black/40">
                 <div className="relative h-64 overflow-hidden shrink-0">
-                  <SafeImage
-                    src={item.image}
-                    alt={item.title}
-                    fill
-                    className="object-cover transition duration-500 group-hover:scale-110"
-                  />
-                  <span className="absolute left-5 top-5 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
-                    {item.category}
-                  </span>
+                  <SafeImage src={item.image} alt={item.title} fill className="object-cover transition duration-500 group-hover:scale-110" />
+                  <span className="absolute left-5 top-5 rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">{item.category}</span>
                 </div>
 
                 <div className="p-6 flex flex-col grow">
@@ -61,15 +62,10 @@ export function NewsCarousel({ items }: { items: NewsItem[] }) {
                     <span>{item.date}</span>
                   </div>
 
-                  <h3 className="text-xl font-bold leading-snug text-slate-900 dark:text-white transition group-hover:text-red-700 dark:group-hover:text-rose-400 mb-4 line-clamp-3">
-                    {item.title}
-                  </h3>
+                  <h3 className="text-xl font-bold leading-snug text-slate-900 dark:text-white transition group-hover:text-red-700 dark:group-hover:text-rose-400 mb-4 line-clamp-3">{item.title}</h3>
 
                   <div className="mt-auto pt-4">
-                    <Link
-                      href={item.href}
-                      className="inline-flex items-center gap-2 font-semibold text-red-700 dark:text-rose-400 transition hover:gap-3"
-                    >
+                    <Link href={item.href} className="inline-flex items-center gap-2 font-semibold text-red-700 dark:text-rose-400 transition hover:gap-3">
                       Baca Selengkapnya
                       <ArrowRight size={18} />
                     </Link>
@@ -87,9 +83,9 @@ export function NewsCarousel({ items }: { items: NewsItem[] }) {
           onClick={scrollPrev}
           disabled={!prevBtnEnabled}
           className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all duration-300 ${
-            prevBtnEnabled 
-              ? 'border-red-600 text-red-600 dark:border-rose-500 dark:text-rose-500 hover:bg-red-600 dark:hover:bg-rose-500 hover:text-white'
-              : 'border-slate-200 dark:border-white/10 text-slate-300 dark:text-slate-600 cursor-not-allowed'
+            prevBtnEnabled
+              ? "border-red-600 text-red-600 dark:border-rose-500 dark:text-rose-500 hover:bg-red-600 dark:hover:bg-rose-500 hover:text-white"
+              : "border-slate-200 dark:border-white/10 text-slate-300 dark:text-slate-600 cursor-not-allowed"
           }`}
           aria-label="Previous slide"
         >
@@ -99,9 +95,9 @@ export function NewsCarousel({ items }: { items: NewsItem[] }) {
           onClick={scrollNext}
           disabled={!nextBtnEnabled}
           className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all duration-300 ${
-            nextBtnEnabled 
-              ? 'border-red-600 text-red-600 dark:border-rose-500 dark:text-rose-500 hover:bg-red-600 dark:hover:bg-rose-500 hover:text-white'
-              : 'border-slate-200 dark:border-white/10 text-slate-300 dark:text-slate-600 cursor-not-allowed'
+            nextBtnEnabled
+              ? "border-red-600 text-red-600 dark:border-rose-500 dark:text-rose-500 hover:bg-red-600 dark:hover:bg-rose-500 hover:text-white"
+              : "border-slate-200 dark:border-white/10 text-slate-300 dark:text-slate-600 cursor-not-allowed"
           }`}
           aria-label="Next slide"
         >

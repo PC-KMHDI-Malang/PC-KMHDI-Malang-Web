@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, PenTool } from "lucide-react";
 import { ImagePicker } from "@/components/ui/ImagePicker";
+import { CategorySelect } from "@/components/admin/CategorySelect";
 
 interface AddNewsModalProps {
   action: (formData: FormData) => void;
@@ -107,14 +108,17 @@ export function AddNewsModal({ action, usedBytes }: AddNewsModalProps) {
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Gambar Cover</label>
                   <ImagePicker bucket="news-covers" usedBytes={usedBytes} />
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Nama Penulis</label>
-                  <input
-                    type="text"
-                    name="authorName"
-                    className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
-                    placeholder="Kosongkan untuk memakai nama akun Anda"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <CategorySelect focusColor="red" />
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Nama Penulis</label>
+                    <input
+                      type="text"
+                      name="authorName"
+                      className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
+                      placeholder="Kosongkan untuk memakai nama akun Anda"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex gap-3 justify-end pt-4">

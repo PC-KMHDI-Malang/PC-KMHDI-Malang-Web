@@ -10,7 +10,7 @@ import AnimatedWord from "@/components/ui/AnimatedWord";
 
 export default function Hero() {
   return (
-    <section className="relative -mt-32 overflow-hidden bg-gradient-to-b from-red-800 via-red-900 to-red-950 pt-20">
+    <section className="relative -mt-32 overflow-hidden bg-gradient-to-b from-red-800 via-red-900 to-red-950 pt-36 pb-20 lg:pt-48">
       {/* Background Glow */}
 
       <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />

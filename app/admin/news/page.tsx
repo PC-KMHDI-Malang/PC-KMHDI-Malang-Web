@@ -12,6 +12,7 @@ export default async function NewsAdminPage() {
   const session = await auth();
 
   const { data: news, error } = await supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)").order("createdAt", { ascending: false });
+  const { data: categories } = await supabaseAdmin.from("Category").select("id, name").order("name");
 
   const usage = await getBucketUsage(STORAGE_BUCKETS.news);
 
@@ -22,6 +23,7 @@ export default async function NewsAdminPage() {
     const content = formData.get("content") as string;
     const coverImageUrl = formData.get("coverImageUrl") as string | null;
     const authorName = (formData.get("authorName") as string)?.trim() || null;
+    const categoryName = (formData.get("categoryName") as string)?.trim() || "Umum";
 
     if (!coverImageUrl) return; // Required cover image
     const coverImage = coverImageUrl;
@@ -34,20 +36,33 @@ export default async function NewsAdminPage() {
       "-" +
       Date.now();
 
-    let { data: cat } = await supabaseAdmin.from("Category").select("id").eq("slug", "umum").single();
-    if (!cat) {
-      const { data: newCat } = await supabaseAdmin
+    const catSlug = categoryName
+      .toLowerCase()
+      .replace(/ /g, "-")
+      .replace(/[^\w-]+/g, "");
+
+    // Check if category exists
+    let { data: existingCat, error: findError } = await supabaseAdmin.from("Category").select("id").eq("slug", catSlug).maybeSingle();
+    let finalCategoryId;
+
+    if (findError) console.error("Error finding category:", findError);
+
+    if (existingCat) {
+      finalCategoryId = existingCat.id;
+    } else {
+      const { data: newCat, error: insertCatError } = await supabaseAdmin
         .from("Category")
-        .insert([{ name: "Umum", slug: "umum" }])
+        .insert([{ name: categoryName, slug: catSlug }])
         .select()
         .single();
-      cat = newCat;
+      if (insertCatError) console.error("Error inserting category:", insertCatError);
+      if (newCat) finalCategoryId = newCat.id;
     }
 
     const authSession = await auth();
     if (!authSession?.user?.id) throw new Error("Unauthorized");
 
-    await supabaseAdmin.from("News").insert([
+    const { error: insertNewsError } = await supabaseAdmin.from("News").insert([
       {
         title,
         slug,
@@ -57,9 +72,14 @@ export default async function NewsAdminPage() {
         status: "PUBLISHED",
         authorId: authSession.user.id,
         authorName: authorName || authSession.user.name || "Admin",
-        categoryId: cat!.id,
+        categoryId: finalCategoryId,
       },
     ]);
+
+    if (insertNewsError) {
+      console.error("Failed to add news:", insertNewsError);
+      throw new Error(`Failed to add news: ${insertNewsError.message}`);
+    }
 
     revalidatePath("/admin/news");
     revalidatePath("/");

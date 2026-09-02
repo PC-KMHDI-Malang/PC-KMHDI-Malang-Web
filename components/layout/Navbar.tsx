@@ -16,7 +16,7 @@ const menus = [
   },
   {
     title: "Publikasi",
-    href: "/#berita",
+    href: "/berita",
   },
   {
     title: "Buku",
@@ -54,32 +54,17 @@ export default function Navbar() {
               transition-all
               duration-300
 
-              ${scrolled
-                ? "border-white/10 bg-slate-900/70 shadow-2xl backdrop-blur-2xl"
-                : "border-white/10 bg-slate-900/40 shadow-lg backdrop-blur-2xl"
-              }
+              ${scrolled ? "border-white/10 bg-slate-900/70 shadow-2xl backdrop-blur-2xl" : "border-white/10 bg-slate-900/40 shadow-lg backdrop-blur-2xl"}
             `}
           >
             {/* Logo */}
-            <Link
-              href="/"
-              className="flex items-center gap-4 px-6 py-4"
-            >
-              <Image
-                src="/image/Logo.png"
-                alt="KMHDI"
-                width={65}
-                height={65}
-              />
+            <Link href="/" className="flex items-center gap-4 px-6 py-4">
+              <Image src="/image/Logo.png" alt="KMHDI" width={65} height={65} />
 
               <div>
-                <h1 className="text-lg font-bold text-white">
-                  PC KMHDI
-                </h1>
+                <h1 className="text-lg font-bold text-white">PC KMHDI</h1>
 
-                <p className="text-sm text-white/70">
-                  Malang
-                </p>
+                <p className="text-sm text-white/70">Malang</p>
               </div>
             </Link>
 
@@ -87,11 +72,7 @@ export default function Navbar() {
 
             <div className="hidden items-center gap-8 lg:flex">
               {menus.map((menu) => (
-                <Link
-                  key={menu.title}
-                  href={menu.href}
-                  className="text-sm font-medium text-white/80 transition hover:text-white"
-                >
+                <Link key={menu.title} href={menu.href} className="text-sm font-medium text-white/80 transition hover:text-white">
                   {menu.title}
                 </Link>
               ))}
@@ -107,10 +88,7 @@ export default function Navbar() {
 
             {/* Mobile */}
 
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="mr-5 rounded-xl bg-white/10 p-3 text-white lg:hidden"
-            >
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="mr-5 rounded-xl bg-white/10 p-3 text-white lg:hidden">
               {mobileOpen ? <X /> : <Menu />}
             </button>
           </nav>
@@ -121,21 +99,12 @@ export default function Navbar() {
             <div className="mt-4 rounded-3xl border border-white/20 bg-white/10 p-5 backdrop-blur-3xl lg:hidden">
               <div className="flex flex-col gap-5">
                 {menus.map((menu) => (
-                  <Link
-                    key={menu.title}
-                    href={menu.href}
-                    className="text-white"
-                    onClick={() => setMobileOpen(false)}
-                  >
+                  <Link key={menu.title} href={menu.href} className="text-white" onClick={() => setMobileOpen(false)}>
                     {menu.title}
                   </Link>
                 ))}
 
-                <Link
-                  href="/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="mt-3 block rounded-xl bg-red-600 py-3 text-center font-semibold text-white transition hover:bg-red-700"
-                >
+                <Link href="/login" onClick={() => setMobileOpen(false)} className="mt-3 block rounded-xl bg-red-600 py-3 text-center font-semibold text-white transition hover:bg-red-700">
                   Login
                 </Link>
               </div>
