@@ -158,6 +158,8 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
               coverImage={ebook.coverImage}
               categoryOrGenre={ebook.genre}
               authorOrPublisher={ebook.publisher || "PP KMHDI"}
+              date={new Date(ebook.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+              description={ebook.description}
             />
           </div>
         </div>

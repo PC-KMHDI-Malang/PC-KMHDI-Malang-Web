@@ -9,6 +9,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   session: {
     strategy: "jwt",
+    maxAge: 2 * 60 * 60, // 2 Jam (Otomatis logout setelah 2 jam)
+    updateAge: 15 * 60, // Perbarui token jika ada aktivitas setiap 15 menit
+  },
+  jwt: {
+    maxAge: 2 * 60 * 60, // 2 Jam
   },
 
   providers: [
@@ -38,20 +43,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password = String(credentials.password);
 
         // Gunakan supabaseAdmin (Service Role) karena RLS mencegah Anon Key membaca tabel User
-        const { data: user, error } = await supabaseAdmin
-          .from("User")
-          .select("*")
-          .eq("email", email)
-          .single();
+        const { data: user, error } = await supabaseAdmin.from("User").select("*").eq("email", email).single();
 
         if (error || !user) {
           return null;
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          password,
-          user.password
-        );
+        const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
           return null;
@@ -71,25 +69,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const role = (auth?.user as any)?.role;
-      const isAdmin = role === 'ADMIN';
-      const isOnAdmin = nextUrl.pathname.startsWith('/admin');
-      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
-      
+      const isAdmin = role === "ADMIN";
+      const isOnAdmin = nextUrl.pathname.startsWith("/admin");
+      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
+
       if (isOnAdmin) {
         if (isLoggedIn && isAdmin) return true;
-        if (isLoggedIn && !isAdmin) return Response.redirect(new URL('/dashboard', nextUrl));
+        if (isLoggedIn && !isAdmin) return Response.redirect(new URL("/dashboard", nextUrl));
         return false; // Redirect unauthenticated users to login page
       }
 
       if (isOnDashboard) {
-        if (isLoggedIn && isAdmin) return Response.redirect(new URL('/admin', nextUrl));
+        if (isLoggedIn && isAdmin) return Response.redirect(new URL("/admin", nextUrl));
         if (isLoggedIn) return true;
         return false; // Redirect unauthenticated users to login page
       }
 
-      if (isLoggedIn && nextUrl.pathname === '/login') {
-        if (isAdmin) return Response.redirect(new URL('/admin', nextUrl));
-        return Response.redirect(new URL('/dashboard', nextUrl));
+      if (isLoggedIn && nextUrl.pathname === "/login") {
+        if (isAdmin) return Response.redirect(new URL("/admin", nextUrl));
+        return Response.redirect(new URL("/dashboard", nextUrl));
       }
       return true;
     },

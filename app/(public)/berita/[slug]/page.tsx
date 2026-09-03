@@ -130,7 +130,17 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               <Share2 size={14} />
               Bagikan:
             </p>
-            <EbookShareBar title={news.title} type="news" id={news.id} initialLikes={news.likes || 0} coverImage={news.coverImage} categoryOrGenre={categoryName} authorOrPublisher={authorName} />
+            <EbookShareBar
+              title={news.title}
+              type="news"
+              id={news.id}
+              initialLikes={news.likes || 0}
+              coverImage={news.coverImage}
+              categoryOrGenre={categoryName}
+              authorOrPublisher={authorName}
+              date={publishedDate}
+              description={news.excerpt || news.content?.slice(0, 180)}
+            />
           </div>
         </div>
 

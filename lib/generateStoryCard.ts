@@ -3,11 +3,15 @@ export async function generateStoryCardBlob({
   coverImage,
   categoryOrGenre = "KMHDI",
   authorOrPublisher = "PC KMHDI Malang",
+  date,
+  description,
 }: {
   title: string;
   coverImage?: string;
   categoryOrGenre?: string;
   authorOrPublisher?: string;
+  date?: string;
+  description?: string;
 }): Promise<Blob | null> {
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
@@ -15,7 +19,7 @@ export async function generateStoryCardBlob({
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  // 1. Background Gradient (Dark Red to Deep Burgundy to Onyx)
+  // 1. Background Gradient (Deep Crimson to Deep Burgundy to Charcoal)
   const bgGradient = ctx.createLinearGradient(0, 0, 1080, 1920);
   bgGradient.addColorStop(0, "#7f1d1d");
   bgGradient.addColorStop(0.35, "#4c0519");
@@ -25,19 +29,19 @@ export async function generateStoryCardBlob({
   ctx.fillRect(0, 0, 1080, 1920);
 
   // Ambient glow circles
-  const glow1 = ctx.createRadialGradient(200, 300, 10, 200, 300, 450);
-  glow1.addColorStop(0, "rgba(225, 29, 72, 0.35)");
+  const glow1 = ctx.createRadialGradient(220, 260, 10, 220, 260, 480);
+  glow1.addColorStop(0, "rgba(225, 29, 72, 0.38)");
   glow1.addColorStop(1, "rgba(225, 29, 72, 0)");
   ctx.fillStyle = glow1;
   ctx.fillRect(0, 0, 1080, 1920);
 
-  const glow2 = ctx.createRadialGradient(880, 1500, 10, 880, 1500, 500);
-  glow2.addColorStop(0, "rgba(185, 28, 28, 0.25)");
+  const glow2 = ctx.createRadialGradient(860, 1600, 10, 860, 1600, 520);
+  glow2.addColorStop(0, "rgba(185, 28, 28, 0.28)");
   glow2.addColorStop(1, "rgba(185, 28, 28, 0)");
   ctx.fillStyle = glow2;
   ctx.fillRect(0, 0, 1080, 1920);
 
-  // 2. Header: Logo & Branding
+  // 2. Header: Logo & KMHDI Branding
   try {
     const logo = new Image();
     logo.crossOrigin = "anonymous";
@@ -47,34 +51,115 @@ export async function generateStoryCardBlob({
       logo.onerror = resolve;
     });
     if (logo.complete && logo.naturalWidth > 0) {
-      ctx.drawImage(logo, 100, 120, 90, 90);
+      ctx.drawImage(logo, 95, 95, 90, 90);
     }
   } catch {
     // ignore
   }
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 40px sans-serif";
-  ctx.fillText("PC KMHDI MALANG", 215, 160);
+  ctx.font = "bold 38px sans-serif";
+  ctx.fillText("PC KMHDI MALANG", 205, 138);
 
-  ctx.fillStyle = "rgba(254, 205, 211, 0.8)";
-  ctx.font = "500 26px sans-serif";
-  ctx.fillText("PUBLIKASI RESMI", 215, 198);
+  ctx.fillStyle = "rgba(254, 205, 211, 0.85)";
+  ctx.font = "600 23px sans-serif";
+  ctx.fillText("PORTAL PUBLIKASI RESMI", 205, 172);
 
-  // 3. Spotify-Style Center Card
-  const cardX = 100;
-  const cardY = 270;
-  const cardW = 880;
-  const cardH = 1250;
-  const radius = 48;
+  // 3. Measure Content Dimensions to calculate EXACT compact card height (No Dead Space!)
+  const imgPad = 32;
+  const imgW = 760;
+  const imgH = 520; // Proporsional dan ringkas
 
-  // Card Shadow
-  ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
-  ctx.shadowBlur = 60;
-  ctx.shadowOffsetY = 25;
+  // Measure Title lines (Max 2 lines)
+  ctx.font = "bold 38px sans-serif";
+  const titleLineHeight = 48;
+  const titleLines: string[] = [];
+  const words = title.split(" ");
+  let currentLine = "";
 
-  // Card Background
-  ctx.fillStyle = "#111116";
+  for (let n = 0; n < words.length; n++) {
+    const testLine = currentLine + words[n] + " ";
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > imgW && n > 0) {
+      titleLines.push(currentLine.trim());
+      currentLine = words[n] + " ";
+      if (titleLines.length >= 2) {
+        break;
+      }
+    } else {
+      currentLine = testLine;
+    }
+  }
+  if (currentLine.trim() && titleLines.length < 2) {
+    titleLines.push(currentLine.trim());
+  }
+  if (titleLines.length > 2) {
+    titleLines.length = 2;
+  }
+  if (titleLines.length === 2 && words.length > 6) {
+    titleLines[1] = titleLines[1].replace(/\.*$/, "") + "...";
+  }
+
+  // Measure Description lines (Max 3 lines + ellipsis)
+  ctx.font = "400 23px sans-serif";
+  const descLineHeight = 33;
+  const descLines: string[] = [];
+
+  if (description) {
+    const cleanDesc = description
+      .replace(/<[^>]*>?/gm, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (cleanDesc) {
+      const descWords = cleanDesc.split(" ");
+      let dLine = "";
+      for (let i = 0; i < descWords.length; i++) {
+        const testLine = dLine + descWords[i] + " ";
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > imgW && i > 0) {
+          descLines.push(dLine.trim());
+          dLine = descWords[i] + " ";
+          if (descLines.length >= 3) {
+            dLine = "";
+            break;
+          }
+        } else {
+          dLine = testLine;
+        }
+      }
+      if (dLine.trim() && descLines.length < 3) {
+        descLines.push(dLine.trim());
+      }
+      if (descLines.length >= 3) {
+        descLines[descLines.length - 1] = descLines[descLines.length - 1].replace(/\.*$/, "") + "...";
+      }
+    }
+  }
+
+  // 4. Calculate Compact Card Size
+  const badgeHeight = 38;
+  const badgeMarginTop = 26;
+  const titleMarginTop = 20;
+  const titleBlockHeight = titleLines.length * titleLineHeight;
+  const descMarginTop = descLines.length > 0 ? 12 : 0;
+  const descBlockHeight = descLines.length * descLineHeight;
+  const footerMarginTop = 22;
+  const footerBlockHeight = 44;
+  const cardBottomPadding = 26;
+
+  const cardH = imgPad + imgH + badgeMarginTop + badgeHeight + titleMarginTop + titleBlockHeight + descMarginTop + descBlockHeight + footerMarginTop + footerBlockHeight + cardBottomPadding;
+
+  const cardW = imgW + imgPad * 2; // 824
+  const cardX = (1080 - cardW) / 2; // 128 (Centered)
+  const cardY = 250 + Math.max(0, (1480 - cardH) / 2); // Center vertically in lower space!
+  const radius = 40;
+
+  // 5. Draw Card Background & Shadow
+  ctx.shadowColor = "rgba(0, 0, 0, 0.65)";
+  ctx.shadowBlur = 55;
+  ctx.shadowOffsetY = 24;
+
+  ctx.fillStyle = "#121217";
   ctx.beginPath();
   ctx.roundRect(cardX, cardY, cardW, cardH, radius);
   ctx.fill();
@@ -86,18 +171,15 @@ export async function generateStoryCardBlob({
 
   // Card Border
   ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.roundRect(cardX, cardY, cardW, cardH, radius);
   ctx.stroke();
 
-  // 4. Image inside card
-  const imgPad = 45;
+  // 6. Draw Image Inside Card
   const imgX = cardX + imgPad;
   const imgY = cardY + imgPad;
-  const imgW = cardW - imgPad * 2;
-  const imgH = 680;
-  const imgRadius = 32;
+  const imgRadius = 24;
 
   let imageLoaded = false;
   if (coverImage) {
@@ -119,7 +201,6 @@ export async function generateStoryCardBlob({
         ctx.roundRect(imgX, imgY, imgW, imgH, imgRadius);
         ctx.clip();
 
-        // Cover object-fit logic
         const imgAspect = mainImg.naturalWidth / mainImg.naturalHeight;
         const targetAspect = imgW / imgH;
         let drawW, drawH, offsetX, offsetY;
@@ -151,81 +232,77 @@ export async function generateStoryCardBlob({
     ctx.fill();
 
     ctx.fillStyle = "#71717a";
-    ctx.font = "bold 36px sans-serif";
+    ctx.font = "bold 32px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("KMHDI MALANG", cardX + cardW / 2, imgY + imgH / 2);
     ctx.textAlign = "start";
   }
 
-  // 5. Category Pill Badge
-  const badgeY = imgY + imgH + 50;
+  // 7. Category Badge & Date Row
+  const metaY = imgY + imgH + badgeMarginTop;
+
+  // Category Badge (Left)
   ctx.fillStyle = "#dc2626";
   ctx.beginPath();
-  ctx.roundRect(imgX, badgeY, 180, 50, 25);
+  ctx.roundRect(imgX, metaY, 140, badgeHeight, badgeHeight / 2);
   ctx.fill();
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 22px sans-serif";
+  ctx.font = "bold 17px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(categoryOrGenre.toUpperCase(), imgX + 90, badgeY + 33);
+  ctx.fillText(categoryOrGenre.toUpperCase(), imgX + 70, metaY + 25);
   ctx.textAlign = "start";
 
-  // 6. Title (Text wrapping)
+  // Date (Right)
+  if (date) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "500 21px sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(date, imgX + imgW, metaY + 26);
+    ctx.textAlign = "start";
+  }
+
+  // 8. Render Title
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 48px sans-serif";
-  const titleX = imgX;
-  let titleY = badgeY + 115;
-  const maxTitleWidth = imgW;
-  const lineHeight = 62;
+  ctx.font = "bold 38px sans-serif";
+  let curY = metaY + badgeHeight + titleMarginTop + 30;
 
-  const words = title.split(" ");
-  let currentLine = "";
-  let linesDrawn = 0;
+  for (let i = 0; i < titleLines.length; i++) {
+    ctx.fillText(titleLines[i], imgX, curY);
+    curY += titleLineHeight;
+  }
 
-  for (let n = 0; n < words.length; n++) {
-    const testLine = currentLine + words[n] + " ";
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxTitleWidth && n > 0) {
-      ctx.fillText(currentLine, titleX, titleY);
-      currentLine = words[n] + " ";
-      titleY += lineHeight;
-      linesDrawn++;
-      if (linesDrawn >= 3) {
-        currentLine = currentLine.trim() + "...";
-        break;
-      }
-    } else {
-      currentLine = testLine;
+  // 9. Render Description (Max 3 lines, compact)
+  if (descLines.length > 0) {
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = "400 23px sans-serif";
+    curY += descMarginTop - 15;
+
+    for (let i = 0; i < descLines.length; i++) {
+      ctx.fillText(descLines[i], imgX, curY);
+      curY += descLineHeight;
     }
   }
-  ctx.fillText(currentLine, titleX, titleY);
 
-  // 7. Author / Subtitle
-  ctx.fillStyle = "#a1a1aa";
-  ctx.font = "500 28px sans-serif";
-  ctx.fillText(`Oleh: ${authorOrPublisher}`, titleX, cardY + cardH - 55);
-
-  // 8. Footer Link Sticker Prompt
-  const footerY = 1630;
-  ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+  // 10. Divider & Author (Always snugly attached at bottom of card!)
+  const dividerY = cardY + cardH - cardBottomPadding - footerBlockHeight;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.roundRect(100, footerY, 880, 160, 40);
-  ctx.fill();
-
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(100, footerY, 880, 160, 40);
+  ctx.moveTo(imgX, dividerY);
+  ctx.lineTo(imgX + imgW, dividerY);
   ctx.stroke();
 
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 34px sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("🔗 Buka link di Stiker Tautan Instagram", 540, footerY + 68);
+  // Author on left
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "500 21px sans-serif";
+  ctx.fillText(`Oleh: ${authorOrPublisher}`, imgX, dividerY + 36);
 
-  ctx.fillStyle = "#fda4af";
-  ctx.font = "500 26px sans-serif";
-  ctx.fillText("Baca versi lengkap di website resmi PC KMHDI Malang", 540, footerY + 115);
+  // KMHDI Badge on right
+  ctx.fillStyle = "#f43f5e";
+  ctx.font = "bold 21px sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText("PC KMHDI MALANG", imgX + imgW, dividerY + 36);
   ctx.textAlign = "start";
 
   // Return PNG Blob
