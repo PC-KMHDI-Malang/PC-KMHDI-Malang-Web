@@ -6,14 +6,10 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { galleryData as fallbackData } from "@/data/gallery";
 
 export default async function Gallery() {
-  const { data: galleries } = await supabaseAdmin
-    .from("Gallery")
-    .select("coverImage")
-    .order("createdAt", { ascending: false })
-    .limit(10);
+  const { data: galleries } = await supabaseAdmin.from("Gallery").select("coverImage").order("createdAt", { ascending: false }).limit(10);
 
-  const images = galleries && galleries.length > 0 ? galleries.map(g => g.coverImage) : fallbackData.images;
-  
+  const images = galleries && galleries.length > 0 ? galleries.map((g) => g.coverImage) : fallbackData.images;
+
   // Jika gambar kurang dari 4, fallback ke data statis agar animasi marquee tidak kosong melompong
   const displayImages = images.length >= 4 ? images : fallbackData.images;
 
@@ -26,17 +22,11 @@ export default async function Gallery() {
         {/* Header */}
 
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex rounded-full bg-red-100 dark:bg-red-950/40 px-4 py-2 text-sm font-semibold text-red-700 dark:text-red-400">
-            {fallbackData.badge}
-          </span>
+          <span className="inline-flex rounded-full bg-red-100 dark:bg-red-950/40 px-4 py-2 text-sm font-semibold text-red-700 dark:text-red-400">{fallbackData.badge}</span>
 
-          <h2 className="mt-6 text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">
-            {fallbackData.title}
-          </h2>
+          <h2 className="mt-6 text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl lg:text-5xl">{fallbackData.title}</h2>
 
-          <p className="mt-6 text-base leading-8 text-slate-600 dark:text-slate-400 md:text-lg">
-            {fallbackData.description}
-          </p>
+          <p className="mt-6 text-base leading-8 text-slate-600 dark:text-slate-400 md:text-lg">{fallbackData.description}</p>
         </div>
       </div>
 
@@ -45,16 +35,8 @@ export default async function Gallery() {
       <div className="relative mt-16">
         <div className="flex w-max animate-marquee gap-6">
           {[...firstRow, ...firstRow].map((image, index) => (
-            <div
-              key={index}
-              className="relative h-72 w-[320px] overflow-hidden rounded-3xl shadow-xl ring-1 ring-black/5 dark:ring-white/10"
-            >
-              <Image
-                src={image}
-                alt={`Gallery ${index + 1}`}
-                fill
-                className="object-cover transition duration-500 hover:scale-110"
-              />
+            <div key={index} className="relative h-72 w-[320px] overflow-hidden rounded-3xl shadow-xl ring-1 ring-black/5 dark:ring-white/10">
+              <Image src={image} alt={`Gallery ${index + 1}`} fill sizes="(max-width: 768px) 260px, 320px" className="object-cover transition duration-500 hover:scale-110" />
             </div>
           ))}
         </div>
@@ -65,16 +47,8 @@ export default async function Gallery() {
       <div className="relative mt-6">
         <div className="flex w-max animate-marquee-reverse gap-6">
           {[...secondRow, ...secondRow].map((image, index) => (
-            <div
-              key={index}
-              className="relative h-72 w-[320px] overflow-hidden rounded-3xl shadow-xl ring-1 ring-black/5 dark:ring-white/10"
-            >
-              <Image
-                src={image}
-                alt={`Gallery ${index + 5}`}
-                fill
-                className="object-cover transition duration-500 hover:scale-110"
-              />
+            <div key={index} className="relative h-72 w-[320px] overflow-hidden rounded-3xl shadow-xl ring-1 ring-black/5 dark:ring-white/10">
+              <Image src={image} alt={`Gallery ${index + 5}`} fill sizes="(max-width: 768px) 260px, 320px" className="object-cover transition duration-500 hover:scale-110" />
             </div>
           ))}
         </div>
@@ -83,10 +57,7 @@ export default async function Gallery() {
       {/* Button */}
 
       <div className="mt-16 flex justify-center">
-        <Link
-          href={fallbackData.button.href}
-          className="inline-flex items-center gap-2 rounded-2xl bg-red-700 px-7 py-4 font-semibold text-white transition hover:bg-red-800"
-        >
+        <Link href={fallbackData.button.href} className="inline-flex items-center gap-2 rounded-2xl bg-red-700 px-7 py-4 font-semibold text-white transition hover:bg-red-800">
           {fallbackData.button.label}
 
           <ArrowRight size={18} />

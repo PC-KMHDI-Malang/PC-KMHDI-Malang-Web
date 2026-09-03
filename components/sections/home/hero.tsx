@@ -10,12 +10,12 @@ import AnimatedWord from "@/components/ui/AnimatedWord";
 
 export default function Hero() {
   return (
-    <section className="relative -mt-32 overflow-hidden bg-gradient-to-b from-red-800 via-red-900 to-red-950 pt-36 pb-20 lg:pt-48">
+    <section className="relative -mt-32 overflow-hidden bg-gradient-to-b from-red-800 via-red-900 to-red-950 pt-36 pb-20 lg:pt-24">
       {/* Background Glow */}
 
-      <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
+      <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-3xl pointer-events-none" />
 
-      <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-red-400/10 blur-[180px]" />
+      <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-red-400/10 blur-3xl pointer-events-none" />
 
       {/* Grid */}
 

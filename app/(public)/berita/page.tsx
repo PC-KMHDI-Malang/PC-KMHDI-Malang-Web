@@ -78,8 +78,8 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
       {/* Hero Header */}
       <div className={`bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 relative overflow-hidden ${showSlider ? "pb-28" : "pb-12"}`}>
         {/* Background Glow */}
-        <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-red-400/10 blur-[180px]" />
+        <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-red-400/10 blur-3xl pointer-events-none" />
 
         <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12">

@@ -15,5 +15,9 @@ export function SafeImage(props: ImageProps) {
     );
   }
 
-  return <Image {...props} unoptimized onError={() => setFailed(true)} />;
+  const isDataOrBlob = typeof props.src === "string" && (props.src.startsWith("data:") || props.src.startsWith("blob:"));
+
+  const shouldBeUnoptimized = props.unoptimized ?? isDataOrBlob;
+
+  return <Image {...props} unoptimized={shouldBeUnoptimized} onError={() => setFailed(true)} />;
 }

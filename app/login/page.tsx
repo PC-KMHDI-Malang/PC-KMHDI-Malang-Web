@@ -49,13 +49,11 @@ function LoginForm() {
       <div className="w-full max-w-md rounded-[2rem] bg-white p-10 shadow-2xl border border-slate-100 z-10 relative">
         <div className="flex items-center gap-5 mb-8">
           <div className="w-20 h-20 shrink-0 bg-slate-50 border border-slate-100 shadow-sm rounded-2xl flex items-center justify-center p-2">
-            <img src="/image/Logo.png" alt="Logo" className="w-full h-full object-contain" />
+            <img src="/image/Logo.webp" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Login</h1>
-            <p className="text-slate-500 mt-1 text-sm font-medium">
-              Web Apps ini dikhususkan untuk kader PC KMHDI Malang. Masuk untuk eksplore lebih lanjut.
-            </p>
+            <p className="text-slate-500 mt-1 text-sm font-medium">Web Apps ini dikhususkan untuk kader PC KMHDI Malang. Masuk untuk eksplore lebih lanjut.</p>
           </div>
         </div>
 

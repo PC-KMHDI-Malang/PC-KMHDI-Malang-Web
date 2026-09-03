@@ -19,7 +19,7 @@ const menus = [
     href: "/berita",
   },
   {
-    title: "Buku",
+    title: "e-Book",
     href: "/buku",
   },
   {
@@ -59,7 +59,7 @@ export default function Navbar() {
           >
             {/* Logo */}
             <Link href="/" className="flex items-center gap-4 px-6 py-4">
-              <Image src="/image/Logo.png" alt="KMHDI" width={65} height={65} />
+              <Image src="/image/Logo.webp" alt="KMHDI" width={65} height={65} />
 
               <div>
                 <h1 className="text-lg font-bold text-white">PC KMHDI</h1>

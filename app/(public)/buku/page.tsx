@@ -46,11 +46,11 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
     <div className="-mt-32 bg-slate-50 dark:bg-slate-950 transition-colors">
       {/* Header */}
       <div className="bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 pb-16 relative overflow-hidden">
-        <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-red-400/10 blur-[180px]" />
+        <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-red-400/10 blur-3xl pointer-events-none" />
         <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2">Kumpulan Buku KMHDI</h1>
-          <p className="text-red-100/80 text-lg">Daftar buku yang ditampilkan secara publik.</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2">Koleksi e-Book KMHDI</h1>
+          <p className="text-red-100/80 text-lg">Daftar e-Book yang ditampilkan secara publik.</p>
         </div>
       </div>
 
@@ -66,7 +66,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
             <form className="flex items-center gap-3 bg-white dark:bg-[#111111] border border-slate-100 dark:border-white/5 rounded-2xl p-3 mb-8">
               <div className="flex items-center gap-2 flex-1 px-3">
                 <Search size={18} className="text-slate-400" />
-                <input type="text" name="q" defaultValue={query} placeholder="Pencarian buku ..." className="w-full bg-transparent outline-none text-sm dark:text-white placeholder:text-slate-400" />
+                <input type="text" name="q" defaultValue={query} placeholder="Pencarian e-Book ..." className="w-full bg-transparent outline-none text-sm dark:text-white placeholder:text-slate-400" />
               </div>
               <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">
                 Cari
@@ -94,7 +94,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
             ) : (
               <div className="py-24 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 bg-white dark:bg-[#111111] border border-slate-100 dark:border-white/5 rounded-3xl text-center px-5">
                 <BookOpen size={40} className="mb-4 opacity-30" />
-                <p className="text-lg mb-4">{query ? `Tidak ada buku yang cocok dengan kata kunci "${query}".` : "Belum ada buku untuk filter ini."}</p>
+                <p className="text-lg mb-4">{query ? `Tidak ada e-Book yang cocok dengan kata kunci "${query}".` : "Belum ada e-Book untuk filter ini."}</p>
                 {query && (
                   <Link
                     href={`/buku${genreFilter.length > 0 ? "?" + genreFilter.map((g) => `genre=${encodeURIComponent(g)}`).join("&") : ""}`}

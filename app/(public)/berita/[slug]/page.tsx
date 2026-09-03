@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -5,6 +6,36 @@ import { ArrowLeft, CalendarDays, User as UserIcon, Tag, Share2, Eye } from "luc
 import { supabaseAdmin } from "@/lib/supabase";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
 import { SafeImage } from "@/components/ui/SafeImage";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const { data: news } = await supabaseAdmin.from("News").select("title, excerpt, coverImage, authorName, Category(name)").eq("slug", slug).eq("status", "PUBLISHED").single();
+
+  if (!news) {
+    return { title: "Berita Tidak Ditemukan | PC KMHDI Malang" };
+  }
+
+  const desc = news.excerpt || "Ikuti berita dan informasi terbaru dari PC KMHDI Malang.";
+
+  return {
+    title: `${news.title} | PC KMHDI Malang`,
+    description: desc,
+    openGraph: {
+      title: news.title,
+      description: desc,
+      url: `/berita/${slug}`,
+      siteName: "PC KMHDI Malang",
+      images: news.coverImage ? [{ url: news.coverImage, width: 1200, height: 630, alt: news.title }] : [],
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: news.title,
+      description: desc,
+      images: news.coverImage ? [news.coverImage] : [],
+    },
+  };
+}
 
 export default async function NewsDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -99,7 +130,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               <Share2 size={14} />
               Bagikan:
             </p>
-            <EbookShareBar title={news.title} />
+            <EbookShareBar title={news.title} type="news" id={news.id} initialLikes={news.likes || 0} coverImage={news.coverImage} categoryOrGenre={categoryName} authorOrPublisher={authorName} />
           </div>
         </div>
 

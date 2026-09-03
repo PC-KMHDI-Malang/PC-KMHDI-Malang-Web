@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Eye, Tag, Share2 } from "lucide-react";
@@ -5,6 +6,40 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
 import { LoginPromptModal } from "@/components/ui/LoginPromptModal";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const { data: ebook } = await supabaseAdmin
+    .from("Ebook")
+    .select("title, description, coverImage, genre, publisher")
+    .eq("id", id)
+    .single();
+
+  if (!ebook) {
+    return { title: "e-Book Tidak Ditemukan | PC KMHDI Malang" };
+  }
+
+  const desc = ebook.description || `e-Book kategori ${ebook.genre} diterbitkan oleh ${ebook.publisher || "PP KMHDI"}.`;
+
+  return {
+    title: `${ebook.title} | e-Book PC KMHDI Malang`,
+    description: desc,
+    openGraph: {
+      title: ebook.title,
+      description: desc,
+      url: `/buku/${id}`,
+      siteName: "PC KMHDI Malang",
+      images: ebook.coverImage ? [{ url: ebook.coverImage, width: 800, height: 1100, alt: ebook.title }] : [],
+      type: "book",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ebook.title,
+      description: desc,
+      images: ebook.coverImage ? [ebook.coverImage] : [],
+    },
+  };
+}
 
 export default async function EbookDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -40,7 +75,7 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
             className="inline-flex items-center gap-2 text-sm font-semibold text-red-100/80 hover:text-white transition-colors"
           >
             <ArrowLeft size={16} />
-            Kembali ke Koleksi
+            Kembali ke Koleksi e-Book
           </Link>
         </div>
       </div>
@@ -115,15 +150,23 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
               <Share2 size={14} />
               Bagikan:
             </p>
-            <EbookShareBar title={ebook.title} />
+            <EbookShareBar
+              title={ebook.title}
+              type="ebook"
+              id={ebook.id}
+              initialLikes={ebook.likes || 0}
+              coverImage={ebook.coverImage}
+              categoryOrGenre={ebook.genre}
+              authorOrPublisher={ebook.publisher || "PP KMHDI"}
+            />
           </div>
         </div>
 
         {related && related.length > 0 && (
           <div className="mt-16">
             <div className="text-center mb-10">
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Buku Terkait</h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-2">Buku lainnya yang terkait...</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">e-Book Terkait</h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-2">e-Book lainnya yang terkait...</p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -1,14 +1,14 @@
 export const heroData = {
   badge: "Website Resmi PC KMHDI Malang",
 
-   title: {
-    first: "Mencetak Generasi Hindu yang", animated: [ "Religius","Humanis","Nasionalis","Progresif",],
+  title: {
+    first: "Mencetak Generasi Hindu yang",
+    animated: ["Religius", "Humanis", "Nasionalis", "Progresif"],
   },
 
-  description:
-    "Pengurus Cabang Kesatuan Mahasiswa Hindu Dharma Indonesia Kota Malang hadir sebagai wadah kaderisasi, pengembangan kepemimpinan, serta pengabdian masyarakat bagi mahasiswa Hindu di Malang Raya.",
+  description: "Pengurus Cabang Kesatuan Mahasiswa Hindu Dharma Indonesia Kota Malang hadir sebagai wadah kaderisasi, pengembangan kepemimpinan, serta pengabdian masyarakat bagi mahasiswa Hindu di Malang Raya.",
 
-  image: "/image/Logo2.png",
+  image: "/image/Logo2.webp",
 
   buttons: [
     {

@@ -42,10 +42,7 @@ export function LoginPromptModal({ loginHref, triggerLabel, triggerIcon, trigger
       {isRendered &&
         createPortal(
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div
-              className={`absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`}
-              onClick={() => setIsOpen(false)}
-            />
+            <div className={`absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`} onClick={() => setIsOpen(false)} />
 
             <div
               className={`relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-7 transform transition-all duration-300 border border-slate-100 dark:border-white/5 ${
@@ -67,9 +64,7 @@ export function LoginPromptModal({ loginHref, triggerLabel, triggerIcon, trigger
               </div>
 
               <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Login Diperlukan</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
-                Anda harus login sebagai kader PC KMHDI Malang untuk membaca atau mengunduh buku ini.
-              </p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">Anda harus login sebagai kader PC KMHDI Malang untuk membaca atau mengunduh e-Book ini.</p>
 
               <div className="flex gap-3 justify-end">
                 <button
@@ -79,10 +74,7 @@ export function LoginPromptModal({ loginHref, triggerLabel, triggerIcon, trigger
                 >
                   Nanti Saja
                 </button>
-                <Link
-                  href={loginHref}
-                  className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm"
-                >
+                <Link href={loginHref} className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm">
                   Login
                 </Link>
               </div>
