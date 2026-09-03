@@ -115,7 +115,9 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
           <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 mt-6">
               <div className="flex flex-wrap items-center gap-4">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{query ? `Hasil pencarian "${query}"` : categoryFilter ? (fallbackUsed ? "Berita Terbaru Lainnya" : `Berita ${categoryFilter} Lainnya`) : "Berita Lainnya"}</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  {query ? `Hasil pencarian "${query}"` : categoryFilter ? (fallbackUsed ? "Berita Terbaru Lainnya" : `Berita ${categoryFilter} Lainnya`) : "Berita Lainnya"}
+                </h3>
                 {query && (
                   <Link
                     href={`/berita${categoryFilter ? `?category=${categoryFilter}` : ""}`}
