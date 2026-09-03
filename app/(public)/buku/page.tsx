@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { Search, BookOpen } from "lucide-react";
@@ -6,6 +7,21 @@ import { EbookCard } from "@/components/ebooks/EbookCard";
 import { EbookFilters } from "@/components/ebooks/EbookFilters";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Perpustakaan Digital e-Book",
+  description:
+    "Perpustakaan digital PC KMHDI Malang: materi kaderisasi, AD/ART, buku panduan organisasi, literatur Hindu, dan template surat yang bisa dibaca langsung.",
+  // Search and genre filters (?q, ?sort, ?genre) reorder the same catalogue, so they all
+  // canonicalise to the clean list URL.
+  alternates: { canonical: "/buku" },
+  openGraph: {
+    type: "website",
+    title: "Perpustakaan Digital e-Book | PC KMHDI Malang",
+    description: "Materi kaderisasi, AD/ART, panduan organisasi, dan literatur Hindu yang bisa dibaca langsung.",
+    url: "/buku",
+  },
+};
 
 interface BukuPageProps {
   searchParams: Promise<{ q?: string; sort?: string; genre?: string | string[] }>;

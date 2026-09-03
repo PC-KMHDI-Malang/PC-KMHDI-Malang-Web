@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -5,9 +6,12 @@ import { ArrowLeft, KeyRound, UserCheck, Shield } from "lucide-react";
 import { ProfileSettingsForm } from "@/components/profile/ProfileSettingsForm";
 import { UpdatePasswordForm } from "@/components/admin/UpdatePasswordForm";
 
-export const metadata = {
-  title: "Atur Profil & Sandi | PC KMHDI Malang",
+export const metadata: Metadata = {
+  // The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
+  title: "Atur Profil & Sandi",
   description: "Kelola informasi akun dan kata sandi akun kader PC KMHDI Malang.",
+  // A per-user settings screen has nothing to offer search results.
+  robots: { index: false, follow: false },
 };
 
 export default async function ProfilePage() {

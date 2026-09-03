@@ -1,38 +1,43 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, User as UserIcon, Tag, Share2, Eye } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
 import { SafeImage } from "@/components/ui/SafeImage";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { absoluteUrl } from "@/lib/site";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const { data: news } = await supabaseAdmin.from("News").select("title, excerpt, coverImage, authorName, Category(name)").eq("slug", slug).eq("status", "PUBLISHED").single();
 
   if (!news) {
-    return { title: "Berita Tidak Ditemukan | PC KMHDI Malang" };
+    return { title: "Berita Tidak Ditemukan" };
   }
 
   const desc = news.excerpt || "Ikuti berita dan informasi terbaru dari PC KMHDI Malang.";
 
   return {
-    title: `${news.title} | PC KMHDI Malang`,
+    // The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
+    title: news.title,
     description: desc,
+    alternates: { canonical: `/berita/${slug}` },
     openGraph: {
       title: news.title,
       description: desc,
       url: `/berita/${slug}`,
       siteName: "PC KMHDI Malang",
-      images: news.coverImage ? [{ url: news.coverImage, width: 1200, height: 630, alt: news.title }] : [],
+      // The key is omitted entirely when there's no cover, so the site-wide default OG
+      // image applies; an empty array would instead leave the share card with no image.
+      ...(news.coverImage ? { images: [{ url: news.coverImage, width: 1200, height: 630, alt: news.title }] } : {}),
       type: "article",
     },
     twitter: {
       card: "summary_large_image",
       title: news.title,
       description: desc,
-      images: news.coverImage ? [news.coverImage] : [],
+      ...(news.coverImage ? { images: [news.coverImage] } : {}),
     },
   };
 }
@@ -62,8 +67,37 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
   const categoryName = news.Category?.name || "UMUM";
   const authorName = news.authorName || news.author?.name || "Admin KMHDI";
 
+  // Makes the article eligible for Google's rich results: headline, publish date, and author
+  // can then appear alongside the search listing.
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: news.title,
+    description: news.excerpt || undefined,
+    image: news.coverImage ? [news.coverImage] : [absoluteUrl("/opengraph-image")],
+    datePublished: new Date(news.publishedAt || news.createdAt).toISOString(),
+    dateModified: new Date(news.updatedAt || news.publishedAt || news.createdAt).toISOString(),
+    author: { "@type": "Person", name: authorName },
+    publisher: { "@id": absoluteUrl("/#organization") },
+    articleSection: categoryName,
+    inLanguage: "id-ID",
+    mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(`/berita/${slug}`) },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Beranda", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "Berita", item: absoluteUrl("/berita") },
+      { "@type": "ListItem", position: 3, name: news.title, item: absoluteUrl(`/berita/${slug}`) },
+    ],
+  };
+
   return (
     <article className="-mt-32 bg-white dark:bg-[#121212] transition-colors min-h-screen">
+      <JsonLd data={articleSchema} />
+      <JsonLd data={breadcrumbSchema} />
       {/* Red header behind navbar */}
       <div className="bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 pb-10 relative overflow-hidden">
         <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
@@ -101,7 +135,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
         {/* Cover Image */}
         {news.coverImage && (
           <div className="relative mt-10 h-64 sm:h-80 lg:h-[28rem] w-full overflow-hidden rounded-3xl shadow-xl border border-slate-200/60 dark:border-white/10">
-            <Image src={news.coverImage} alt={news.title} fill className="object-cover" priority />
+            {/* SafeImage, not a raw next/image: cover URLs can point at hosts outside
+                remotePatterns, which makes the optimizer throw and 500s the whole article. */}
+            <SafeImage src={news.coverImage} alt={news.title} fill className="object-cover" priority />
           </div>
         )}
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { Search, Newspaper, CalendarDays, User as UserIcon } from "lucide-react";
@@ -8,6 +9,21 @@ import { NewsSortSelect } from "@/components/news/NewsSortSelect";
 import { FeaturedNewsSlider } from "@/components/news/FeaturedNewsSlider";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Berita & Informasi",
+  description:
+    "Berita terbaru, siaran pers, opini kader, dan liputan kegiatan PC KMHDI Malang — Kesatuan Mahasiswa Hindu Dharma Indonesia Kota Malang.",
+  // Filter and search params (?q, ?sort, ?category) produce the same content in a different
+  // order, so they all canonicalise to the clean list URL.
+  alternates: { canonical: "/berita" },
+  openGraph: {
+    type: "website",
+    title: "Berita & Informasi | PC KMHDI Malang",
+    description: "Berita terbaru, siaran pers, opini kader, dan liputan kegiatan PC KMHDI Malang.",
+    url: "/berita",
+  },
+};
 
 interface BeritaPageProps {
   searchParams: Promise<{ q?: string; sort?: string; category?: string }>;

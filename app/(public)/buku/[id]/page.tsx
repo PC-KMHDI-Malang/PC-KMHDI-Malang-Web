@@ -58,27 +58,31 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     .single();
 
   if (!ebook) {
-    return { title: "e-Book Tidak Ditemukan | PC KMHDI Malang" };
+    return { title: "e-Book Tidak Ditemukan" };
   }
 
   const desc = ebook.description || `e-Book kategori ${ebook.genre} diterbitkan oleh ${ebook.publisher || "PP KMHDI"}.`;
 
   return {
-    title: `${ebook.title} | e-Book PC KMHDI Malang`,
+    // The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
+    title: `${ebook.title} — e-Book`,
     description: desc,
+    alternates: { canonical: `/buku/${id}` },
     openGraph: {
       title: ebook.title,
       description: desc,
       url: `/buku/${id}`,
       siteName: "PC KMHDI Malang",
-      images: ebook.coverImage ? [{ url: ebook.coverImage, width: 800, height: 1100, alt: ebook.title }] : [],
+      // The key is omitted entirely when there's no cover, so the site-wide default OG
+      // image applies; an empty array would instead leave the share card with no image.
+      ...(ebook.coverImage ? { images: [{ url: ebook.coverImage, width: 800, height: 1100, alt: ebook.title }] } : {}),
       type: "book",
     },
     twitter: {
       card: "summary_large_image",
       title: ebook.title,
       description: desc,
-      images: ebook.coverImage ? [ebook.coverImage] : [],
+      ...(ebook.coverImage ? { images: [ebook.coverImage] } : {}),
     },
   };
 }

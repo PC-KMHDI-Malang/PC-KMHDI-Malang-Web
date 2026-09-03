@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -7,9 +8,17 @@ import { Sparkles, Heart, Flag, TrendingUp, Target, Compass, ArrowRight, ShieldC
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Profil & Struktur Kepengurusan | PC KMHDI Malang",
+// The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
+export const metadata: Metadata = {
+  title: "Profil & Struktur Kepengurusan",
   description: "Mengenal visi, misi, 4 pilar jati diri, dan susunan kepengurusan resmi PC KMHDI Malang masa bakti 2024-2026.",
+  alternates: { canonical: "/profil" },
+  openGraph: {
+    type: "website",
+    title: "Profil & Struktur Kepengurusan | PC KMHDI Malang",
+    description: "Mengenal visi, misi, 4 pilar jati diri, dan susunan kepengurusan resmi PC KMHDI Malang.",
+    url: "/profil",
+  },
 };
 
 const pillarIcons = [Sparkles, Heart, Flag, TrendingUp];

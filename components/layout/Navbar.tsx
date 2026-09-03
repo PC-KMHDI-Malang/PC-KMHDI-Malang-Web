@@ -119,7 +119,9 @@ export default function Navbar({ user }: NavbarProps) {
               <Image src="/image/Logo.webp" alt="PC KMHDI Malang Logo" width={48} height={48} unoptimized priority className="w-11 h-11 sm:w-12 sm:h-12 object-contain flex-shrink-0" />
 
               <div>
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight">PC KMHDI</h1>
+                {/* Deliberately not an <h1>: the navbar renders on every page, and each page
+                    already has its own <h1>. Two H1s per page muddies the heading hierarchy. */}
+                <span className="block text-base sm:text-lg font-black tracking-tight text-white leading-tight">PC KMHDI</span>
                 <p className="text-xs font-medium text-white/75 tracking-wide">Kota Malang</p>
               </div>
             </Link>

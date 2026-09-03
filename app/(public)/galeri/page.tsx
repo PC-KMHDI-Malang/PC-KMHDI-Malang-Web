@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase";
 import { galleryData } from "@/data/gallery";
 import { GalleryGrid, GalleryItem } from "@/components/gallery/GalleryGrid";
@@ -5,9 +6,17 @@ import { Camera, Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Galeri Dokumentasi | PC KMHDI Malang",
+// The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
+export const metadata: Metadata = {
+  title: "Galeri Dokumentasi",
   description: "Dokumentasi kegiatan, pengabdian, kaderisasi, dan momentum kebersamaan PC KMHDI Malang.",
+  alternates: { canonical: "/galeri" },
+  openGraph: {
+    type: "website",
+    title: "Galeri Dokumentasi | PC KMHDI Malang",
+    description: "Dokumentasi kegiatan, pengabdian, kaderisasi, dan momentum kebersamaan PC KMHDI Malang.",
+    url: "/galeri",
+  },
 };
 
 export default async function GaleriPage() {

@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import Sidebar from "@/components/admin/Sidebar";
+
+// Belt-and-braces alongside the robots.txt disallow: internal tooling must never be indexed,
+// even if a link to it leaks somewhere public.
+export const metadata: Metadata = {
+  title: "Admin",
+  robots: { index: false, follow: false },
+};
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
