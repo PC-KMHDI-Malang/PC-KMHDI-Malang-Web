@@ -5,6 +5,7 @@ export const STORAGE_BUCKETS = {
   news: "news-covers",
   ebook: "ebook-covers",
   gallery: "gallery-photos",
+  ebookFiles: "ebook-files",
 } as const;
 
 // Kuota tampilan per bucket. Supabase tidak menyediakan kuota per-bucket secara native,

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
-import { Menu, X, User, LayoutDashboard, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight } from "lucide-react";
+import { Menu, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { LoginModal } from "@/components/auth/LoginModal";
 
 const menus = [
   {
@@ -14,7 +16,7 @@ const menus = [
   },
   {
     title: "Profil",
-    href: "/#tentang",
+    href: "/profil",
     icon: Info,
   },
   {
@@ -29,7 +31,7 @@ const menus = [
   },
   {
     title: "Galeri",
-    href: "/#galeri",
+    href: "/galeri",
     icon: ImageIcon,
   },
 ];
@@ -47,11 +49,12 @@ export default function Navbar({ user }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = !!user;
   const isAdmin = user?.role === "ADMIN";
-  const dashboardLink = isAdmin ? "/admin" : "/dashboard";
+  const accountLink = isAdmin ? "/admin" : "/profile";
   const firstName = user?.name ? user.name.split(" ")[0] : "Akun";
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
@@ -128,14 +131,17 @@ export default function Navbar({ user }: NavbarProps) {
               ))}
             </div>
 
-            {/* 3. Desktop Auth Status (Sudah Login vs Belum Login) */}
-            <div className="hidden items-center gap-3.5 lg:flex">
+            {/* 3. Desktop Actions (Theme Toggle & Auth) */}
+            <div className="hidden items-center gap-3 lg:flex">
+              {/* Sakelar Mode Gelap / Terang */}
+              <ThemeToggle iconOnly />
+
               {isLoggedIn ? (
                 <div className="relative" ref={dropdownRef}>
                   <button
                     type="button"
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                    className="flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/15 hover:border-white/30"
+                    className="flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/15 hover:border-white/30 cursor-pointer"
                   >
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-red-600 to-rose-500 font-bold text-xs text-white shadow">{userInitial}</div>
                     <span>Halo, {firstName}</span>
@@ -158,21 +164,23 @@ export default function Navbar({ user }: NavbarProps) {
 
                       {/* Dropdown Links */}
                       <div className="py-1.5 flex flex-col gap-0.5">
-                        <Link href={dashboardLink} onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
-                          {isAdmin ? <Shield size={14} className="text-red-400" /> : <LayoutDashboard size={14} className="text-blue-400" />}
-                          <span>{isAdmin ? "Panel Admin" : "Dashboard Saya"}</span>
-                        </Link>
+                        {isAdmin && (
+                          <Link href="/admin" onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
+                            <Shield size={14} className="text-red-400" />
+                            <span>Panel Admin</span>
+                          </Link>
+                        )}
 
-                        <Link href="/dashboard/profile" onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
-                          <User size={14} className="text-slate-400" />
-                          <span>Profil Saya</span>
+                        <Link href="/profile" onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
+                          <User size={14} className="text-rose-400" />
+                          <span>Profil &amp; Sandi</span>
                         </Link>
                       </div>
 
                       {/* Logout Action */}
                       <div className="pt-1 border-t border-white/10">
                         <form action={logoutAction}>
-                          <button type="submit" className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition text-left">
+                          <button type="submit" className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition text-left cursor-pointer">
                             <LogOut size={14} />
                             <span>Keluar</span>
                           </button>
@@ -182,24 +190,29 @@ export default function Navbar({ user }: NavbarProps) {
                   )}
                 </div>
               ) : (
-                <Link
-                  href="/login"
-                  className="rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-500 px-6 py-2.5 text-sm sm:text-base font-bold text-white shadow-xl shadow-red-900/30 transition hover:scale-105 hover:shadow-red-900/50 active:scale-95"
+                <button
+                  type="button"
+                  onClick={() => setLoginModalOpen(true)}
+                  className="rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-red-500 px-6 py-2.5 text-sm sm:text-base font-bold text-white shadow-xl shadow-red-900/30 transition hover:scale-105 hover:shadow-red-900/50 active:scale-95 cursor-pointer"
                 >
                   Login
-                </Link>
+                </button>
               )}
             </div>
 
-            {/* 4. Mobile Hamburger Button */}
-            <button
-              type="button"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white transition hover:bg-white/20 active:scale-95 lg:hidden border border-white/15"
-            >
-              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
+            {/* 4. Mobile Controls (Theme Toggle & Hamburger) */}
+            <div className="flex items-center gap-2 lg:hidden">
+              <ThemeToggle iconOnly />
+
+              <button
+                type="button"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white transition hover:bg-white/20 active:scale-95 border border-white/15 cursor-pointer"
+              >
+                {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+              </button>
+            </div>
           </nav>
 
           {/* 5. Mobile Menu Drawer (Dioptimasi untuk Layar HP) */}
@@ -226,11 +239,14 @@ export default function Navbar({ user }: NavbarProps) {
                         </div>
                       </div>
 
-                      <Link href={dashboardLink} onClick={() => setMobileOpen(false)} className="rounded-xl bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition">
-                        Buka
+                      <Link href={accountLink} onClick={() => setMobileOpen(false)} className="rounded-xl bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition">
+                        {isAdmin ? "Admin" : "Profil"}
                       </Link>
                     </div>
                   ) : null}
+
+                  {/* Sakelar Tema di Mobile */}
+                  <ThemeToggle className="mb-3" />
 
                   {/* Daftar Navigasi Mobile */}
                   <div className="flex flex-col gap-1.5 py-1">
@@ -260,16 +276,23 @@ export default function Navbar({ user }: NavbarProps) {
                 <div className="mt-5 pt-4 border-t border-white/10 flex flex-col gap-2">
                   {isLoggedIn ? (
                     <>
-                      <Link href={dashboardLink} onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
-                        {isAdmin ? <Shield size={16} className="text-red-400" /> : <LayoutDashboard size={16} className="text-blue-400" />}
-                        <span>{isAdmin ? "Masuk Panel Admin" : "Masuk Dashboard"}</span>
-                      </Link>
+                      {isAdmin ? (
+                        <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
+                          <Shield size={16} className="text-red-400" />
+                          <span>Masuk Panel Admin</span>
+                        </Link>
+                      ) : (
+                        <Link href="/profile" onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
+                          <User size={16} className="text-rose-400" />
+                          <span>Atur Profil &amp; Sandi</span>
+                        </Link>
+                      )}
 
                       <form action={logoutAction}>
                         <button
                           type="submit"
                           onClick={() => setMobileOpen(false)}
-                          className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 py-3 text-center text-sm font-semibold text-rose-400 transition hover:bg-rose-500/20"
+                          className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 py-3 text-center text-sm font-semibold text-rose-400 transition hover:bg-rose-500/20 cursor-pointer"
                         >
                           <LogOut size={16} />
                           <span>Keluar dari Akun</span>
@@ -277,13 +300,16 @@ export default function Navbar({ user }: NavbarProps) {
                       </form>
                     </>
                   ) : (
-                    <Link
-                      href="/login"
-                      onClick={() => setMobileOpen(false)}
-                      className="block rounded-xl bg-gradient-to-r from-red-600 to-red-500 py-3 text-center text-sm font-bold text-white shadow-lg shadow-red-900/30 transition hover:brightness-110 active:scale-[0.98]"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileOpen(false);
+                        setLoginModalOpen(true);
+                      }}
+                      className="w-full block rounded-xl bg-gradient-to-r from-red-600 to-red-500 py-3 text-center text-sm font-bold text-white shadow-lg shadow-red-900/30 transition hover:brightness-110 active:scale-[0.98] cursor-pointer"
                     >
                       Login ke Akun
-                    </Link>
+                    </button>
                   )}
                 </div>
               </div>
@@ -291,6 +317,9 @@ export default function Navbar({ user }: NavbarProps) {
           )}
         </div>
       </header>
+
+      {/* Modal Login Pop-up */}
+      <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
 
       {/* Spacer */}
       <div className="h-28 sm:h-32" />

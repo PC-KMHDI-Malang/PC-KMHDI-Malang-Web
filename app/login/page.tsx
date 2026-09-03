@@ -119,7 +119,7 @@ function LoginForm() {
           <p className="text-sm font-medium text-slate-500">
             Belum punya akun?{" "}
             <Link
-              href="https://wa.me/6281234567890?text=Halo%20Admin%2C%20saya%20ingin%20meminta%20akses%20akun%20untuk%20website%20PC%20KMHDI%20Malang."
+              href="https://wa.me/6287774230949?text=Halo%20Admin%2C%20saya%20ingin%20meminta%20akses%20akun%20untuk%20website%20PC%20KMHDI%20Malang."
               target="_blank"
               rel="noopener noreferrer"
               className="font-bold text-slate-800 hover:text-red-600 underline underline-offset-4 decoration-2 decoration-slate-300 hover:decoration-red-600 transition-all"

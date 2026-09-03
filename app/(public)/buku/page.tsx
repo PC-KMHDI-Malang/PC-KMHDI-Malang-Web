@@ -43,7 +43,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
   const { data: ebooks } = await dbQuery;
 
   return (
-    <div className="-mt-32 bg-white">
+    <div className="-mt-32 bg-white dark:bg-[#0a0a0c] transition-colors min-h-screen">
       {/* Header */}
       <div className="bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 pb-16 relative overflow-hidden">
         <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-3xl pointer-events-none" />
@@ -56,17 +56,17 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
 
       <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-          <aside className="lg:sticky lg:top-6 lg:self-start">
+          <aside className="lg:sticky lg:top-32 lg:self-start transition-all">
             <Suspense fallback={null}>
               <EbookFilters genres={genres} basePath="/buku" />
             </Suspense>
           </aside>
 
           <div>
-            <form className="flex items-center gap-3 bg-white border border-neutral-200 rounded-2xl p-3 mb-8 shadow-sm">
+            <form className="flex items-center gap-3 bg-white dark:bg-[#121215] border border-neutral-200 dark:border-white/10 rounded-2xl p-3 mb-8 shadow-sm">
               <div className="flex items-center gap-2 flex-1 px-3">
                 <Search size={18} className="text-neutral-400" />
-                <input type="text" name="q" defaultValue={query} placeholder="Pencarian e-Book ..." className="w-full bg-transparent outline-none text-sm text-zinc-900 placeholder:text-neutral-400" />
+                <input type="text" name="q" defaultValue={query} placeholder="Pencarian e-Book ..." className="w-full bg-transparent outline-none text-sm text-zinc-900 dark:text-white placeholder:text-neutral-400" />
               </div>
               <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">
                 Cari
@@ -88,7 +88,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
             {ebooks && ebooks.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
                 {ebooks.map((ebook) => (
-                  <EbookCard key={ebook.id} id={ebook.id} title={ebook.title} genre={ebook.genre} coverImage={ebook.coverImage} createdAt={ebook.createdAt} href={`/buku/${ebook.id}`} />
+                  <EbookCard key={ebook.id} id={ebook.id} title={ebook.title} genre={ebook.genre} coverImage={ebook.coverImage} pdfUrl={ebook.pdfUrl} createdAt={ebook.createdAt} href={`/buku/${ebook.id}`} />
                 ))}
               </div>
             ) : (

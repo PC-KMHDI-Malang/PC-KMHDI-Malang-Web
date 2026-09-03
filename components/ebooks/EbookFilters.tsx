@@ -34,13 +34,13 @@ export function EbookFilters({ genres, basePath }: EbookFiltersProps) {
   };
 
   return (
-    <div className="rounded-3xl bg-white border border-neutral-200 p-6 shadow-sm">
+    <div className="rounded-3xl bg-white dark:bg-[#121215] border border-neutral-200 dark:border-white/10 p-6 shadow-sm transition-colors">
       <div className="mb-6">
-        <label className="block text-sm font-bold text-zinc-800 mb-2">Sortir :</label>
+        <label className="block text-sm font-bold text-zinc-800 dark:text-white mb-2">Sortir :</label>
         <select
           value={sortFilter}
           onChange={(e) => handleSortChange(e.target.value)}
-          className="w-full bg-neutral-50 border border-neutral-200 text-zinc-900 rounded-xl px-3 py-2.5 text-sm outline-none cursor-pointer"
+          className="w-full bg-neutral-50 dark:bg-[#18181c] border border-neutral-200 dark:border-white/10 text-zinc-900 dark:text-white rounded-xl px-3 py-2.5 text-sm outline-none cursor-pointer focus:border-red-500 transition-colors"
         >
           <option value="newest">Terbaru</option>
           <option value="oldest">Terlama</option>
@@ -50,17 +50,17 @@ export function EbookFilters({ genres, basePath }: EbookFiltersProps) {
       </div>
 
       <div>
-        <p className="text-sm font-bold text-zinc-800 mb-3">Kategori :</p>
+        <p className="text-sm font-bold text-zinc-800 dark:text-white mb-3">Kategori :</p>
         <div className="space-y-2.5">
           {genres.map((genre) => (
-            <label key={genre} className="flex items-center gap-2.5 text-sm text-neutral-600 cursor-pointer">
+            <label key={genre} className="flex items-center gap-2.5 text-sm text-neutral-600 dark:text-neutral-400 hover:text-zinc-900 dark:hover:text-white cursor-pointer transition-colors">
               <input
                 type="checkbox"
                 checked={activeGenres.includes(genre)}
                 onChange={(e) => handleGenreToggle(genre, e.target.checked)}
-                className="w-4 h-4 rounded border-neutral-300 text-red-600 focus:ring-red-500/30 cursor-pointer"
+                className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-700 accent-red-600 text-red-600 focus:ring-red-500/30 cursor-pointer"
               />
-              <span className="uppercase font-medium">{genre}</span>
+              <span className="uppercase font-medium text-xs sm:text-sm">{genre}</span>
             </label>
           ))}
           {genres.length === 0 && <p className="text-xs text-neutral-400">Belum ada kategori.</p>}
@@ -71,7 +71,7 @@ export function EbookFilters({ genres, basePath }: EbookFiltersProps) {
         <button
           type="button"
           onClick={() => router.push(basePath)}
-          className="mt-6 w-full text-center text-xs font-bold text-red-600 hover:underline"
+          className="mt-6 w-full text-center text-xs font-bold text-red-600 dark:text-red-400 hover:underline cursor-pointer"
         >
           Reset Filter
         </button>

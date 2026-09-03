@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Eye, Tag, Share2 } from "lucide-react";
+import { ArrowLeft, Eye, Tag, Share2, Download } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
@@ -104,23 +104,49 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              {isLoggedIn ? (
-                <a
-                  href={ebook.driveLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 bg-red-600 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-red-700 transition-colors shadow-sm text-sm"
-                >
-                  <Eye size={16} />
-                  Baca Online
-                </a>
+              {ebook.pdfUrl ? (
+                isLoggedIn ? (
+                  <>
+                    <a
+                      href={ebook.pdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 bg-red-600 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-red-700 transition-colors shadow-sm text-sm"
+                    >
+                      <Eye size={16} />
+                      Baca Online
+                    </a>
+                    <a
+                      href={ebook.pdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      download
+                      className="inline-flex items-center gap-2 bg-slate-800 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-slate-900 transition-colors shadow-sm text-sm"
+                    >
+                      <Download size={16} />
+                      Download PDF
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <LoginPromptModal
+                      loginHref={loginHref}
+                      triggerLabel="Baca Online"
+                      triggerIcon={<Eye size={16} />}
+                      triggerClassName="inline-flex items-center gap-2 bg-red-600 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-red-700 transition-colors shadow-sm text-sm"
+                    />
+                    <LoginPromptModal
+                      loginHref={loginHref}
+                      triggerLabel="Download PDF"
+                      triggerIcon={<Download size={16} />}
+                      triggerClassName="inline-flex items-center gap-2 bg-slate-800 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-slate-900 transition-colors shadow-sm text-sm"
+                    />
+                  </>
+                )
               ) : (
-                <LoginPromptModal
-                  loginHref={loginHref}
-                  triggerLabel="Baca Online"
-                  triggerIcon={<Eye size={16} />}
-                  triggerClassName="inline-flex items-center gap-2 bg-red-600 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-red-700 transition-colors shadow-sm text-sm"
-                />
+                <div className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold py-2.5 px-5 rounded-xl text-sm border border-slate-200 dark:border-slate-700">
+                  File PDF belum tersedia
+                </div>
               )}
             </div>
 

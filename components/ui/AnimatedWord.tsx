@@ -31,7 +31,7 @@ export default function AnimatedWord({ words, interval = 2500 }: AnimatedWordPro
             duration: 0.1,
             ease: "easeInOut",
           }}
-          className="absolute left-0 top-0 bg-gradient-to-r from-red-300 via-white to-red-200 bg-clip-text font-extrabold text-transparent"
+          className="absolute left-0 top-0 font-extrabold text-red-400"
         >
           {words[index]}
         </motion.span>

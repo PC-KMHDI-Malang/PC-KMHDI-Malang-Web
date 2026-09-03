@@ -32,22 +32,23 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
   const { data: ebooks, error } = await query;
 
   const usage = await getBucketUsage(STORAGE_BUCKETS.ebook);
+  const filesUsage = await getBucketUsage(STORAGE_BUCKETS.ebookFiles);
 
   async function addEbook(formData: FormData) {
     "use server";
     const title = formData.get("title") as string;
     const coverImageUrl = formData.get("coverImageUrl") as string;
-    const driveLink = formData.get("driveLink") as string;
+    const pdfUrl = (formData.get("pdfUrl") as string) || null;
     const description = (formData.get("description") as string) || null;
     const genre = (formData.get("genre") as string) || "Lainnya";
     const publishYear = parseInt(formData.get("publishYear") as string, 10) || null;
     const publisher = (formData.get("publisher") as string) || "PP KMHDI";
 
-    if (!title || !coverImageUrl || !driveLink) return;
+    if (!title || !coverImageUrl || !pdfUrl) return;
 
     const coverImage = coverImageUrl;
 
-    const { error } = await supabaseAdmin.from("Ebook").insert([{ title, coverImage, driveLink, description, genre, publishYear, publisher }]);
+    const { error } = await supabaseAdmin.from("Ebook").insert([{ title, coverImage, pdfUrl, description, genre, publishYear, publisher }]);
     if (error) {
       console.error("SUPABASE INSERT ERROR:", error);
       throw new Error(error.message);
@@ -62,15 +63,15 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     const id = formData.get("id") as string;
     const title = formData.get("title") as string;
     const coverImageUrl = formData.get("coverImageUrl") as string;
-    const driveLink = formData.get("driveLink") as string;
+    const pdfUrl = (formData.get("pdfUrl") as string) || null;
     const description = (formData.get("description") as string) || null;
     const genre = (formData.get("genre") as string) || "Lainnya";
     const publishYear = parseInt(formData.get("publishYear") as string, 10) || null;
     const publisher = (formData.get("publisher") as string) || "PP KMHDI";
 
-    if (!id || !title || !coverImageUrl || !driveLink) return;
+    if (!id || !title || !coverImageUrl || !pdfUrl) return;
 
-    const { error } = await supabaseAdmin.from("Ebook").update({ title, coverImage: coverImageUrl, driveLink, description, genre, publishYear, publisher }).eq("id", id);
+    const { error } = await supabaseAdmin.from("Ebook").update({ title, coverImage: coverImageUrl, pdfUrl, description, genre, publishYear, publisher }).eq("id", id);
     if (error) {
       console.error("SUPABASE UPDATE ERROR:", error);
       throw new Error(error.message);
@@ -99,7 +100,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 transition-colors">Manajemen E-Book</h1>
           <p className="text-slate-500 dark:text-slate-400 text-lg transition-colors">Kelola dan tambahkan koleksi buku saku digital KMHDI Malang.</p>
         </div>
-        <AddEbookModal action={addEbook} usedBytes={usage.usedBytes} />
+        <AddEbookModal action={addEbook} usedBytes={usage.usedBytes} filesUsedBytes={filesUsage.usedBytes} />
       </div>
 
       <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 transition-colors">
@@ -169,17 +170,26 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
                 {ebook.description && <p className="text-slate-500 dark:text-slate-400 text-base leading-relaxed line-clamp-3 mb-4">{ebook.description}</p>}
 
                 <div className="mt-auto pt-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
-                  <a
-                    href={ebook.driveLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center justify-center bg-red-600 dark:bg-rose-600 text-white font-bold py-2.5 px-6 rounded-xl hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm text-sm"
-                  >
-                    Buka Google Drive
-                  </a>
+                  <div className="flex flex-wrap gap-2">
+                    {ebook.pdfUrl ? (
+                      <a
+                        href={ebook.pdfUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center bg-slate-800 dark:bg-slate-700 text-white font-bold py-2 px-4 rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors shadow-sm text-sm gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Buka PDF
+                      </a>
+                    ) : (
+                      <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-slate-500 font-bold py-2 px-4 rounded-xl text-sm gap-2 cursor-not-allowed">Tidak ada file PDF</span>
+                    )}
+                  </div>
 
                   <div className="flex gap-2">
-                    <EditEbookModal ebook={ebook} action={editEbook} usedBytes={usage.usedBytes} />
+                    <EditEbookModal ebook={ebook} action={editEbook} usedBytes={usage.usedBytes} filesUsedBytes={filesUsage.usedBytes} />
                     <SubmitWithConfirm
                       id={ebook.id}
                       action={deleteEbook}

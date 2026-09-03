@@ -51,17 +51,17 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/#tentang" className="transition hover:text-white">
+                <Link href="/profil" className="transition hover:text-white">
                   Profil
                 </Link>
               </li>
               <li>
-                <Link href="/#berita" className="transition hover:text-white">
+                <Link href="/berita" className="transition hover:text-white">
                   Publikasi
                 </Link>
               </li>
               <li>
-                <Link href="/#galeri" className="transition hover:text-white">
+                <Link href="/galeri" className="transition hover:text-white">
                   Galeri
                 </Link>
               </li>
@@ -78,17 +78,17 @@ export default function Footer() {
             <h3 className="mb-6 text-lg font-semibold">Layanan</h3>
             <ul className="space-y-4 text-zinc-400">
               <li>
-                <Link href="/login" className="transition hover:text-white">
+                <Link href="/profil" className="transition hover:text-white">
                   Keanggotaan
                 </Link>
               </li>
               <li>
-                <Link href="/#berita" className="transition hover:text-white">
+                <Link href="/berita" className="transition hover:text-white">
                   Artikel
                 </Link>
               </li>
               <li>
-                <Link href="/#berita" className="transition hover:text-white">
+                <Link href="/berita" className="transition hover:text-white">
                   Berita
                 </Link>
               </li>
@@ -123,7 +123,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-3">
                 <Phone size={18} className="text-red-500" />
-                <p>+62 812-3456-7890</p>
+                <p>+62 877-7423-0949</p>
               </div>
             </div>
           </div>

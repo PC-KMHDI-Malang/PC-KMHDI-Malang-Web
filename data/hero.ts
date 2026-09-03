@@ -8,17 +8,17 @@ export const heroData = {
 
   description: "Pengurus Cabang Kesatuan Mahasiswa Hindu Dharma Indonesia Kota Malang hadir sebagai wadah kaderisasi, pengembangan kepemimpinan, serta pengabdian masyarakat bagi mahasiswa Hindu di Malang Raya.",
 
-  image: "/image/Logo2.webp",
+  image: "/image/Logo.webp",
 
   buttons: [
     {
       label: "Gabung KMHDI",
-      href: "/login",
+      href: "https://wa.me/6287774230949?text=Halo%20Admin%2C%20saya%20ingin%20bergabung%20dengan%20PC%20KMHDI%20Malang.",
       primary: true,
     },
     {
       label: "Tentang Kami",
-      href: "/#tentang",
+      href: "/profil",
       primary: false,
     },
   ],

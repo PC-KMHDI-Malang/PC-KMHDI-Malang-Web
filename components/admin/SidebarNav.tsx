@@ -2,14 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  BookOpen, 
-  Image as ImageIcon, 
-  Users, 
-  KeyRound, 
-  FileText
-} from "lucide-react";
+import { LayoutDashboard, BookOpen, Image as ImageIcon, Users, KeyRound, FileText, Network } from "lucide-react";
 
 interface SidebarNavProps {
   role: string;
@@ -20,6 +13,7 @@ export function SidebarNav({ role }: SidebarNavProps) {
 
   const links = [
     { href: "/admin", label: "Beranda", icon: LayoutDashboard },
+    { href: "/admin/pengurus", label: "Struktur Pengurus", icon: Network },
     { href: "/admin/ebooks", label: "Manajemen Ebook", icon: BookOpen },
     { href: "/admin/gallery", label: "Manajemen Galeri", icon: ImageIcon },
     { href: "/admin/news", label: "Manajemen Artikel", icon: FileText },
@@ -34,12 +28,12 @@ export function SidebarNav({ role }: SidebarNavProps) {
         const Icon = link.icon;
 
         return (
-          <Link 
+          <Link
             key={link.href}
-            href={link.href} 
+            href={link.href}
             className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 font-medium ${
-              isActive 
-                ? "bg-red-50 dark:bg-[#1a1414] text-red-600 dark:text-rose-400 border border-red-100 dark:border-rose-900/30" 
+              isActive
+                ? "bg-red-50 dark:bg-[#1a1414] text-red-600 dark:text-rose-400 border border-red-100 dark:border-rose-900/30"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent"
             }`}
           >

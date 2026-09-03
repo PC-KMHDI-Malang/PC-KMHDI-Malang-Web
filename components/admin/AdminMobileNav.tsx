@@ -7,6 +7,7 @@ import { Menu, X, ArrowLeft, LogOut } from "lucide-react";
 import { SidebarNav } from "./SidebarNav";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { logoutAction } from "@/app/actions/auth";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 interface AdminMobileNavProps {
   role: string;
@@ -30,7 +31,7 @@ export function AdminMobileNav({ role }: AdminMobileNavProps) {
   return (
     <div className="md:hidden">
       {/* 1. Sticky Mobile Header Bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/10 shadow-sm transition-colors">
+      <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white/95 dark:bg-[#0a0a0c]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/10 shadow-sm transition-colors">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center p-1 border border-slate-200 dark:border-white/10 flex-shrink-0">
             <Image src="/image/Logo.webp" alt="Logo KMHDI" width={28} height={28} unoptimized priority className="w-full h-full object-contain" />
@@ -41,14 +42,18 @@ export function AdminMobileNav({ role }: AdminMobileNavProps) {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? "Tutup menu" : "Buka menu"}
-          className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 active:scale-95 transition border border-slate-200 dark:border-white/10"
-        >
-          {isOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle iconOnly />
+
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "Tutup menu" : "Buka menu"}
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 active:scale-95 transition border border-slate-200 dark:border-white/10"
+          >
+            {isOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </header>
 
       {/* 2. Slide-over Mobile Drawer */}
@@ -58,7 +63,7 @@ export function AdminMobileNav({ role }: AdminMobileNavProps) {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setIsOpen(false)} />
 
           {/* Drawer content */}
-          <div className="relative w-72 max-w-[85vw] h-full bg-white dark:bg-[#0a0a0a] text-slate-600 dark:text-slate-400 shadow-2xl z-10 flex flex-col justify-between border-r border-slate-200 dark:border-white/10 animate-in slide-in-from-left duration-300">
+          <div className="relative w-72 max-w-[85vw] h-full bg-white dark:bg-[#0a0a0c] text-slate-600 dark:text-slate-400 shadow-2xl z-10 flex flex-col justify-between border-r border-slate-200 dark:border-white/10 animate-in slide-in-from-left duration-300">
             <div>
               {/* Drawer Header */}
               <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
@@ -82,17 +87,19 @@ export function AdminMobileNav({ role }: AdminMobileNavProps) {
               </div>
 
               {/* Navigation Links */}
-              <div className="py-2 overflow-y-auto max-h-[calc(100vh-250px)]" onClick={() => setIsOpen(false)}>
+              <div className="py-2 overflow-y-auto max-h-[calc(100vh-280px)]" onClick={() => setIsOpen(false)}>
                 <SidebarNav role={role} />
               </div>
             </div>
 
             {/* Drawer Footer Actions */}
             <div className="p-4 border-t border-slate-100 dark:border-white/5 flex flex-col gap-2 mt-auto">
+              <ThemeToggle />
+
               <Link
                 href="/"
                 onClick={() => setIsOpen(false)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-[#111111] hover:bg-slate-100 dark:hover:bg-black text-slate-700 dark:text-white rounded-xl transition-colors border border-slate-200 dark:border-white/5 font-semibold text-xs"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-[#141417] hover:bg-slate-100 dark:hover:bg-neutral-800 text-slate-700 dark:text-white rounded-xl transition-colors border border-slate-200 dark:border-white/10 font-semibold text-xs"
               >
                 <ArrowLeft size={15} />
                 <span>Kembali ke Website</span>
@@ -102,10 +109,10 @@ export function AdminMobileNav({ role }: AdminMobileNavProps) {
                 wrapperClassName="w-full"
                 action={logoutAction}
                 modalTitle="Keluar dari Aplikasi?"
-                modalDesc="Sesi Anda akan diakhiri dan Anda harus login kembali untuk masuk ke panel admin."
+                modalDesc="Sesi Anda akan diakhiri dan Anda akan diarahkan kembali ke beranda."
                 confirmText="Ya, Logout"
                 buttonElement={
-                  <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 dark:bg-rose-950/30 hover:bg-red-600 dark:hover:bg-rose-600 text-red-600 hover:text-white dark:text-rose-400 dark:hover:text-white rounded-xl transition-colors border border-red-100 dark:border-rose-900/30 font-semibold text-xs cursor-pointer">
+                  <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-600 dark:hover:bg-rose-600 text-rose-600 hover:text-white dark:text-rose-400 dark:hover:text-white rounded-xl transition-colors border border-rose-100 dark:border-rose-900/30 font-semibold text-xs cursor-pointer">
                     <LogOut size={15} />
                     <span>Logout</span>
                   </div>

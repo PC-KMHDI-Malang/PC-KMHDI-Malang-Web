@@ -17,7 +17,7 @@ export function NewsSortSelect() {
     <select
       onChange={(e) => handleChange(e.target.value)}
       defaultValue={sortFilter}
-      className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111111] px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-white outline-none cursor-pointer shadow-sm transition hover:border-red-300 dark:hover:border-red-900/50"
+      className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 outline-none cursor-pointer shadow-sm transition hover:border-red-300 focus:border-red-500"
     >
       <option value="newest">Terbaru</option>
       <option value="oldest">Terlama</option>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 import ScrollToTop from "@/components/layout/ScrollToTop";
@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   keywords: ["KMHDI", "PC KMHDI", "KMHDI Malang", "Mahasiswa Hindu", "Organisasi"],
 };
 
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className="bg-white text-zinc-900 antialiased" suppressHydrationWarning>
+      <body className="bg-white dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 antialiased selection:bg-red-600 selection:text-white transition-colors duration-300" suppressHydrationWarning>
         <Providers>
           <ScrollToTop />
           {children}

@@ -2,6 +2,6 @@
 
 import { signOut } from "@/lib/auth";
 
-export async function logoutAction(formData?: FormData) {
-  await signOut({ redirectTo: "/login" });
+export async function logoutAction() {
+  await signOut({ redirectTo: "/" });
 }

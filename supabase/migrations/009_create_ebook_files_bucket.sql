@@ -1,0 +1,1 @@
+insert into storage.buckets (id, name, public) values ('ebook-files', 'ebook-files', true) on conflict (id) do nothing;

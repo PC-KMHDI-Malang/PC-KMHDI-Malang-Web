@@ -6,8 +6,9 @@ import { ImageOff } from "lucide-react";
 
 export function SafeImage(props: ImageProps) {
   const [failed, setFailed] = useState(false);
+  const { alt = "", ...rest } = props;
 
-  if (failed) {
+  if (failed || !props.src) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-slate-100 dark:bg-slate-800/50 text-slate-300 dark:text-slate-600">
         <ImageOff size={28} />
@@ -15,9 +16,12 @@ export function SafeImage(props: ImageProps) {
     );
   }
 
-  const isDataOrBlob = typeof props.src === "string" && (props.src.startsWith("data:") || props.src.startsWith("blob:"));
-
-  const shouldBeUnoptimized = props.unoptimized ?? isDataOrBlob;
-
-  return <Image {...props} unoptimized={shouldBeUnoptimized} onError={() => setFailed(true)} />;
+  return (
+    <Image
+      alt={alt}
+      {...rest}
+      unoptimized={props.unoptimized ?? true}
+      onError={() => setFailed(true)}
+    />
+  );
 }

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Search, Newspaper, ArrowRight, CalendarDays, User as UserIcon } from "lucide-react";
+import { Search, Newspaper, CalendarDays, User as UserIcon } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
 import { SafeImage } from "@/components/ui/SafeImage";
 import { NewsCategoryTabs } from "@/components/news/NewsCategoryTabs";
@@ -74,7 +74,7 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="-mt-32 bg-slate-50 dark:bg-slate-950 transition-colors min-h-screen pb-12">
+    <div className="-mt-32 bg-white transition-colors min-h-screen pb-12">
       {/* Hero Header */}
       <div className={`bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 relative overflow-hidden ${showSlider ? "pb-28" : "pb-12"}`}>
         {/* Background Glow */}
@@ -93,7 +93,7 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
                 <Search size={16} className="text-red-200" />
                 <input type="text" name="q" defaultValue={query} placeholder="Cari berita ..." className="w-full bg-transparent outline-none text-sm text-white placeholder:text-red-200/50" />
               </div>
-              <button type="submit" className="bg-white text-red-900 px-5 py-2 rounded-xl text-sm font-bold transition hover:scale-105 shrink-0">
+              <button type="submit" className="bg-white text-red-900 px-5 py-2 rounded-xl text-sm font-bold transition hover:scale-105 shrink-0 shadow-sm">
                 Cari
               </button>
             </form>
@@ -113,15 +113,13 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
         {/* Articles Grid */}
         {displayGridNews.length > 0 ? (
           <>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 mt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 mt-6">
               <div className="flex flex-wrap items-center gap-4">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {query ? `Hasil pencarian "${query}"` : categoryFilter ? (fallbackUsed ? "Berita Terbaru Lainnya" : `Berita ${categoryFilter} Lainnya`) : "Berita Lainnya"}
-                </h3>
+                <h3 className="text-xl font-bold text-slate-900">{query ? `Hasil pencarian "${query}"` : categoryFilter ? (fallbackUsed ? "Berita Terbaru Lainnya" : `Berita ${categoryFilter} Lainnya`) : "Berita Lainnya"}</h3>
                 {query && (
                   <Link
                     href={`/berita${categoryFilter ? `?category=${categoryFilter}` : ""}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-100 dark:bg-rose-900/30 text-red-700 dark:text-rose-400 rounded-full hover:bg-red-200 dark:hover:bg-rose-900/50 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
                   >
                     Bersihkan Pencarian
                   </Link>
@@ -137,18 +135,18 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
                 <Link
                   key={item.id}
                   href={`/berita/${item.slug}`}
-                  className="group flex flex-col sm:flex-row rounded-2xl overflow-hidden bg-white dark:bg-[#111111] border border-slate-200/60 dark:border-white/5 shadow-md dark:shadow-none hover:shadow-xl dark:hover:shadow-black/30 hover:-translate-y-0.5 transition-all duration-300"
+                  className="group flex flex-col sm:flex-row rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-md hover:shadow-xl hover:border-red-200 hover:-translate-y-1 transition-all duration-300"
                 >
-                  <div className="relative w-full sm:w-48 h-44 sm:h-auto shrink-0 overflow-hidden">
+                  <div className="relative w-full sm:w-48 h-44 sm:h-auto shrink-0 overflow-hidden bg-neutral-100">
                     <SafeImage src={item.coverImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                     <span className="absolute top-3 left-3 sm:top-2 sm:left-2 inline-flex items-center px-2.5 py-1 bg-red-600 text-white rounded-full text-[10px] font-bold uppercase tracking-wide shadow">
                       {item.Category?.name || "UMUM"}
                     </span>
                   </div>
-                  <div className="p-5 flex flex-col justify-center flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-red-700 dark:group-hover:text-rose-400 transition-colors">{item.title}</h3>
-                    {item.content && <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{item.content}</p>}
-                    <div className="mt-3 flex items-center gap-4 text-xs text-slate-400 dark:text-slate-500">
+                  <div className="p-5 flex flex-col justify-center flex-1 min-w-0 bg-white">
+                    <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">{item.title}</h3>
+                    {item.content && <p className="mt-2 text-sm text-slate-600 line-clamp-2 leading-relaxed">{item.content}</p>}
+                    <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
                       <span className="inline-flex items-center gap-1">
                         <UserIcon size={12} />
                         {item.authorName || item.author?.name || "Admin KMHDI"}
@@ -164,11 +162,14 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
             </div>
           </>
         ) : (!showSlider && displayGridNews.length === 0) || (showSlider && featuredItems.length === 0 && displayGridNews.length === 0) ? (
-          <div className="py-24 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 bg-white dark:bg-[#111111] border border-slate-200/60 dark:border-white/5 rounded-3xl shadow-lg dark:shadow-none mb-16 px-5 text-center">
-            <Newspaper size={40} className="mb-4 opacity-30" />
-            <p className="text-lg mb-4">{query ? `Tidak ada berita yang cocok dengan kata kunci "${query}".` : "Belum ada berita untuk kategori ini."}</p>
+          <div className="py-24 flex flex-col items-center justify-center text-slate-500 bg-white border border-slate-200/80 rounded-3xl shadow-sm mb-16 px-5 text-center">
+            <Newspaper size={40} className="mb-4 text-slate-400 opacity-60" />
+            <p className="text-lg font-medium text-slate-700 mb-4">{query ? `Tidak ada berita yang cocok dengan kata kunci "${query}".` : "Belum ada berita untuk kategori ini."}</p>
             {query && (
-              <Link href={`/berita${categoryFilter ? `?category=${categoryFilter}` : ""}`} className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors">
+              <Link
+                href={`/berita${categoryFilter ? `?category=${categoryFilter}` : ""}`}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-sm"
+              >
                 Bersihkan Pencarian
               </Link>
             )}

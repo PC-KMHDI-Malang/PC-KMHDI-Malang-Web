@@ -1,0 +1,1 @@
+ALTER TABLE "Ebook" ALTER COLUMN "driveLink" DROP NOT NULL;
