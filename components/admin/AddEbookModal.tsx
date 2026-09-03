@@ -96,14 +96,12 @@ export function AddEbookModal({ action, usedBytes, filesUsedBytes = 0 }: AddEboo
                     required
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                   >
-                    <option value="Lainnya">Lainnya</option>
+                    <option value="Fiksi">Fiksi</option>
+                    <option value="Non Fiksi">Non Fiksi</option>
+                    <option value="Kaderisasi">Kaderisasi</option>
+                    <option value="Template Surat">Template Surat</option>
                     <option value="Organisasi">Organisasi</option>
-                    <option value="Agama">Agama</option>
-                    <option value="Pendidikan">Pendidikan</option>
-                    <option value="Teknologi">Teknologi</option>
-                    <option value="Sastra">Sastra</option>
-                    <option value="Pengembangan Diri">Pengembangan Diri</option>
-                    <option value="Finansial">Finansial</option>
+                    <option value="Lainnya">Lainnya</option>
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

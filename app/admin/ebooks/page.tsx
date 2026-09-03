@@ -121,13 +121,11 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
                 className="w-full sm:w-auto bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none cursor-pointer"
               >
                 <option value="Semua">Semua Jenis</option>
+                <option value="Fiksi">Fiksi</option>
+                <option value="Non Fiksi">Non Fiksi</option>
+                <option value="Kaderisasi">Kaderisasi</option>
+                <option value="Template Surat">Template Surat</option>
                 <option value="Organisasi">Organisasi</option>
-                <option value="Agama">Agama</option>
-                <option value="Pendidikan">Pendidikan</option>
-                <option value="Teknologi">Teknologi</option>
-                <option value="Sastra">Sastra</option>
-                <option value="Pengembangan Diri">Pengembangan Diri</option>
-                <option value="Finansial">Finansial</option>
                 <option value="Lainnya">Lainnya</option>
               </select>
 
