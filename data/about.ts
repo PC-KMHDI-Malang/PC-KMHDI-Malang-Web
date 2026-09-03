@@ -41,7 +41,7 @@ export const aboutData = {
       label: "Program",
     },
     {
-      value: "1987",
+      value: "1993",
       label: "Tahun Berdiri",
     },
   ],

@@ -4,7 +4,13 @@ import bcrypt from "bcryptjs";
 
 import { supabaseAdmin } from "@/lib/supabase";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const {
+  handlers,
+  signIn,
+  signOut,
+  auth,
+  unstable_update: update,
+} = NextAuth({
   secret: process.env.AUTH_SECRET,
 
   session: {
@@ -71,31 +77,36 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const role = (auth?.user as any)?.role;
       const isAdmin = role === "ADMIN";
       const isOnAdmin = nextUrl.pathname.startsWith("/admin");
-      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
+      const isOnProfile = nextUrl.pathname.startsWith("/profile");
 
       if (isOnAdmin) {
         if (isLoggedIn && isAdmin) return true;
-        if (isLoggedIn && !isAdmin) return Response.redirect(new URL("/dashboard", nextUrl));
+        if (isLoggedIn && !isAdmin) return Response.redirect(new URL("/profile", nextUrl));
         return false; // Redirect unauthenticated users to login page
       }
 
-      if (isOnDashboard) {
-        if (isLoggedIn && isAdmin) return Response.redirect(new URL("/admin", nextUrl));
+      if (isOnProfile) {
         if (isLoggedIn) return true;
         return false; // Redirect unauthenticated users to login page
       }
 
       if (isLoggedIn && nextUrl.pathname === "/login") {
         if (isAdmin) return Response.redirect(new URL("/admin", nextUrl));
-        return Response.redirect(new URL("/dashboard", nextUrl));
+        return Response.redirect(new URL("/profile", nextUrl));
       }
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       const jwtToken = token as typeof token & {
         id?: string;
         role?: string;
       };
+
+      if (trigger === "update" && session) {
+        if (session.user?.name) {
+          jwtToken.name = session.user.name;
+        }
+      }
 
       if (user) {
         const authenticatedUser = user as typeof user & {
@@ -123,6 +134,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         sessionUser.id = jwtToken.id ?? "";
         sessionUser.role = jwtToken.role ?? "";
+        if (jwtToken.name) {
+          sessionUser.name = jwtToken.name;
+        }
       }
 
       return session;

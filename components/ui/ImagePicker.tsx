@@ -16,6 +16,7 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", used
   const [selectedUrl, setSelectedUrl] = useState(defaultImageUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Fungsi utilitas formatBytes
   const formatBytes = (bytes: number) => {
@@ -32,6 +33,7 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", used
   useEffect(() => {
     if (isModalOpen) {
       document.body.style.overflow = "hidden";
+      setError(null);
     } else {
       document.body.style.overflow = "";
     }
@@ -41,16 +43,19 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", used
   }, [isModalOpen]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/jpg"].includes(file.type)) {
-      alert("Format gambar tidak didukung. Harap gunakan JPG atau PNG.");
+      setError("Format gambar tidak didukung. Harap gunakan JPG atau PNG.");
+      e.target.value = "";
       return;
     }
 
     if (file.size > 1024 * 1024) {
-      alert("Ukuran gambar maksimal 1 MB.");
+      setError("Ukuran gambar maksimal 1 MB.");
+      e.target.value = "";
       return;
     }
 
@@ -64,15 +69,16 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", used
 
       setSelectedUrl(newUrl);
       setIsModalOpen(false);
-    } catch (error: any) {
-      alert("Gagal mengupload gambar: " + error.message);
+    } catch (err: any) {
+      setError("Gagal mengupload gambar: " + err.message);
     } finally {
       setIsUploading(false);
+      e.target.value = "";
     }
   };
 
   const modalContent = isModalOpen ? (
-    <div className="fixed top-0 bottom-0 right-0 left-64 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed top-0 bottom-0 right-0 left-0 md:left-64 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col">
         <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center bg-white dark:bg-slate-900 sticky top-0 z-10">
           <h3 className="text-xl font-bold text-slate-800 dark:text-white">Upload Gambar Baru</h3>
@@ -82,6 +88,15 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", used
         </div>
 
         <div className="p-8 bg-slate-50 dark:bg-slate-800/50">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-xl border border-red-100 dark:border-red-900/30 flex items-center justify-between">
+              <span>{error}</span>
+              <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 dark:hover:text-red-300 font-bold ml-2">
+                &times;
+              </button>
+            </div>
+          )}
+
           <label className="flex items-center justify-center w-full h-48 border-2 border-dashed border-blue-400 dark:border-blue-500/50 rounded-xl cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors">
             <div className="flex flex-col items-center justify-center">
               {isUploading ? (

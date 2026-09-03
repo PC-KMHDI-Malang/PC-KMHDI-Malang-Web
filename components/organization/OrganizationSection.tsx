@@ -273,39 +273,41 @@ export function OrganizationSection({ members }: { members: Member[] }) {
 
             {/* --- LEVEL 2: PERCABANGAN HORIZONTAL KE SEKRETARIS & BENDAHARA --- */}
             <div className="w-full max-w-2xl relative flex flex-col items-center">
+              
+              {/* Poros tengah komando terus ke bawah sampai menyentuh garis bidang */}
+              <div className="absolute left-1/2 -translate-x-1/2 top-0 -bottom-6 w-1 bg-red-600 z-0" />
+
               {/* Batang horizontal penghubung Ketua ke Sekre & Benda */}
-              <div className="w-full h-1 bg-red-600 relative">
+              <div className="w-1/2 h-1 bg-red-600 relative z-10">
                 {/* Turun ke Sekretaris (Kiri) */}
-                <div className="absolute left-1/4 -translate-x-1/2 top-0 w-1 h-6 bg-red-600" />
-                {/* Poros tengah komando terus ke bawah */}
-                <div className="absolute left-1/2 -translate-x-1/2 top-0 w-1 h-48 bg-red-600 z-0" />
+                <div className="absolute left-0 -translate-x-1/2 top-0 w-1 h-6 bg-red-600" />
                 {/* Turun ke Bendahara (Kanan) */}
-                <div className="absolute right-1/4 translate-x-1/2 top-0 w-1 h-6 bg-red-600" />
+                <div className="absolute right-0 translate-x-1/2 top-0 w-1 h-6 bg-red-600" />
               </div>
 
               {/* Baris Sekretaris & Bendahara + Wakilnya */}
               <div className="w-full grid grid-cols-2 gap-8 sm:gap-24 pt-6 relative z-10">
                 {/* Sisi Kiri: SEKRETARIS CABANG -> WAKIL SEKRETARIS CABANG */}
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center relative">
                   {sekretaris && <ChartNode member={sekretaris} badgeColor="crimson" />}
                   
                   {/* Garis turun ke Wakil Sekretaris */}
-                  <div className="w-0.5 h-6 bg-red-600" />
+                  <div className="w-1 h-6 bg-red-600 relative z-0" />
                   {wasekcab && <ChartNode member={wasekcab} badgeColor="slate" />}
                 </div>
 
                 {/* Sisi Kanan: BENDAHARA CABANG -> WAKIL BENDAHARA CABANG */}
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center relative">
                   {bendahara && <ChartNode member={bendahara} badgeColor="crimson" />}
                   
                   {/* Garis turun ke Wakil Bendahara */}
-                  <div className="w-0.5 h-6 bg-red-600" />
+                  <div className="w-1 h-6 bg-red-600 relative z-0" />
                   {wabencab && <ChartNode member={wabencab} badgeColor="slate" />}
                 </div>
               </div>
 
               {/* Garis Koordinasi Putus-Putus Pimpinan Cabang */}
-              <div className="w-full max-w-md border-t-2 border-dashed border-red-400/50 dark:border-rose-500/40 mt-4 flex justify-center">
+              <div className="w-full max-w-md border-t-2 border-dashed border-red-400/50 dark:border-rose-500/40 mt-8 mb-0 flex justify-center relative z-10">
                 <span className="text-[9px] font-bold text-red-600 dark:text-red-400 uppercase tracking-widest bg-white dark:bg-[#0a0a0c] px-3 -mt-2">
                   Koordinasi BPH
                 </span>
@@ -314,14 +316,30 @@ export function OrganizationSection({ members }: { members: Member[] }) {
 
             {/* --- LEVEL 3: BATANG DISTRIBUSI KOMANDO KE 6 DEPARTEMEN --- */}
             <div className="w-full flex flex-col items-center mt-6 relative">
-              {/* Batang horizontal yang menghubungkan ke 6 kolom (5 Biro + 1 Lembaga Kewirausahaan) */}
-              <div className="w-full h-1 bg-red-600 rounded-full" />
-
-              {/* 6 Titik drop vertikal tepat di atas masing-masing kolom */}
-              <div className="w-full grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 px-4 sm:px-8">
+              <div className="w-full grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4 relative z-10">
                 {[0, 1, 2, 3, 4, 5].map((idx) => (
-                  <div key={idx} className="flex justify-center">
-                    <div className="w-0.5 h-8 bg-red-600" />
+                  <div key={idx} className="relative flex justify-center h-8">
+                    {/* Horizontal Connector per row */}
+                    {/* Mobile (2 cols) */}
+                    <div className={`md:hidden absolute top-0 h-1 bg-red-600 
+                      ${idx % 2 === 0 ? "left-1/2 right-[-0.875rem] sm:right-[-1rem]" : "left-[-0.875rem] sm:left-[-1rem] right-1/2"}`} 
+                    />
+                    {/* Tablet (3 cols) */}
+                    <div className={`hidden md:block xl:hidden absolute top-0 h-1 bg-red-600 
+                      ${idx % 3 === 0 ? "left-1/2 right-[-1rem]" : idx % 3 === 2 ? "left-[-1rem] right-1/2" : "left-[-1rem] right-[-1rem]"}`} 
+                    />
+                    {/* Desktop (6 cols) */}
+                    <div className={`hidden xl:block absolute top-0 h-1 bg-red-600 
+                      ${idx === 0 ? "left-1/2 right-[-1rem]" : idx === 5 ? "left-[-1rem] right-1/2" : "left-[-1rem] right-[-1rem]"}`} 
+                    />
+                    
+                    {/* Vertical drop */}
+                    <div className="absolute top-0 w-1 h-8 bg-red-600" />
+                    
+                    {/* Titik Sambungan Poros Tengah dari Ketua (hanya di baris pertama, persis di tengah struktur) */}
+                    {idx === 2 && (
+                      <div className="hidden md:block xl:hidden absolute top-0 right-[-0.5rem] w-1 h-1 bg-red-600" />
+                    )}
                   </div>
                 ))}
               </div>

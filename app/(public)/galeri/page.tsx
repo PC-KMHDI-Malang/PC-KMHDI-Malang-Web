@@ -66,7 +66,6 @@ export default async function GaleriPage() {
             </div>
 
             <div className="shrink-0 flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 px-4 py-2.5 rounded-2xl text-white text-xs font-bold shadow-lg">
-              <Sparkles size={16} className="text-amber-300" />
               <span>{allItems.length} Foto Tersedia</span>
             </div>
           </div>

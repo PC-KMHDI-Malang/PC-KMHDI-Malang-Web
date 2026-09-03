@@ -3,6 +3,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { SessionAutoLogout } from "@/components/auth/SessionAutoLogout";
 
+import { ChatBot } from "@/components/ui/ChatBot";
+
 export default async function PublicLayout({
   children,
 }: Readonly<{
@@ -15,6 +17,7 @@ export default async function PublicLayout({
       <SessionAutoLogout isLoggedIn={!!session?.user} timeoutMinutes={120} />
       <Navbar user={session?.user} />
       <div className="min-h-screen">{children}</div>
+      <ChatBot />
       <Footer />
     </>
   );

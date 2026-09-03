@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
+import { SafeImage as Image } from "@/components/ui/SafeImage";
 import { X, ChevronLeft, ChevronRight, Calendar, Maximize2 } from "lucide-react";
 
 export interface GalleryItem {

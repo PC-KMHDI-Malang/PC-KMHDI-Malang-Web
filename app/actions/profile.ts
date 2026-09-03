@@ -1,7 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase";
-import { auth } from "@/lib/auth";
+import { auth, update } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
@@ -17,15 +17,17 @@ export async function updateNameAction(prevState: unknown, formData: FormData) {
       return { error: "Nama lengkap minimal 2 karakter.", success: false };
     }
 
-    const { error } = await supabaseAdmin.from("User").update({ name: name.trim() }).eq("id", session.user.id);
+    const newName = name.trim();
+    const { error } = await supabaseAdmin.from("User").update({ name: newName }).eq("id", session.user.id);
 
     if (error) {
       return { error: "Gagal memperbarui profil.", success: false };
     }
 
-    revalidatePath("/profile");
-    revalidatePath("/admin/profile");
-    revalidatePath("/dashboard/profile");
+    // Perbarui session cookie NextAuth
+    await update({ user: { name: newName } });
+
+    revalidatePath("/", "layout");
 
     return { error: null, success: true };
   } catch {
@@ -62,7 +64,6 @@ export async function updatePasswordAction(prevState: unknown, formData: FormDat
 
     revalidatePath("/profile");
     revalidatePath("/admin/profile");
-    revalidatePath("/dashboard/profile");
 
     return { error: null, success: true };
   } catch {

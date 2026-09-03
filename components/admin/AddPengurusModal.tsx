@@ -17,11 +17,13 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      setError(null);
     } else {
       document.body.style.overflow = "unset";
     }
@@ -31,16 +33,19 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
   }, [isOpen]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/webp", "image/jpg"].includes(file.type)) {
-      alert("Format gambar harus JPG, PNG, atau WEBP.");
+      setError("Format gambar harus JPG, PNG, atau WEBP.");
+      e.target.value = "";
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("Ukuran file maksimal 2 MB.");
+      setError("Ukuran file maksimal 2 MB.");
+      e.target.value = "";
       return;
     }
 
@@ -53,9 +58,10 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
       setPreviewUrl(url);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
-      alert("Gagal mengunggah foto: " + msg);
+      setError("Gagal mengunggah foto: " + msg);
     } finally {
       setIsUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -105,6 +111,14 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-xl border border-red-100 dark:border-red-900/30 flex items-center justify-between">
+                    <span>{error}</span>
+                    <button type="button" onClick={() => setError(null)} className="text-red-400 hover:text-red-600 dark:hover:text-red-300 font-bold ml-2">
+                      &times;
+                    </button>
+                  </div>
+                )}
                 {/* Upload Foto Profil */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Foto Resmi Kader</label>

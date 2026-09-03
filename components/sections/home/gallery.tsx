@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage as Image } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -65,7 +65,10 @@ export default async function Gallery() {
 
       {/* Button */}
       <ScrollReveal direction="up" delay={0.35} className="mt-16 flex justify-center">
-        <Link href={fallbackData.button.href} className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 px-7 py-4 font-semibold text-white shadow-lg shadow-red-600/20 transition-all duration-300 hover:shadow-xl hover:shadow-red-600/30 hover:scale-[1.02]">
+        <Link
+          href={fallbackData.button.href}
+          className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 px-7 py-4 font-semibold text-white shadow-lg shadow-red-600/20 transition-all duration-300 hover:shadow-xl hover:shadow-red-600/30 hover:scale-[1.02]"
+        >
           {fallbackData.button.label}
           <ArrowRight size={18} />
         </Link>

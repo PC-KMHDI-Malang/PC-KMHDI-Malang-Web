@@ -2,15 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, ImagePlus } from "lucide-react";
+import { Edit2, X } from "lucide-react";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 
-interface AddGalleryModalProps {
+interface GalleryItem {
+  id: string;
+  title: string;
+  coverImage: string;
+  description?: string;
+  createdAt?: string;
+}
+
+interface EditGalleryModalProps {
+  item: GalleryItem;
   action: (formData: FormData) => void;
   usedBytes: number;
 }
 
-export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
+export function EditGalleryModal({ item, action, usedBytes }: EditGalleryModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -33,18 +42,24 @@ export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    // Jika tidak ada gambar baru, gunakan gambar lama
+    if (!formData.get("coverImageUrl")) {
+      formData.set("coverImageUrl", item.coverImage);
+    }
     action(formData);
     setIsOpen(false);
   };
+
+  const defaultDate = item.createdAt ? new Date(item.createdAt).toISOString().split("T")[0] : "";
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="bg-red-600 dark:bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-red-700 dark:hover:bg-rose-700 shadow-sm transition-all text-sm flex items-center justify-center gap-2 w-full md:w-auto"
+        className="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-110 transition-transform shadow-sm backdrop-blur-sm mr-2"
+        title="Edit Foto"
       >
-        <ImagePlus size={16} />
-        Tambah Foto Baru
+        <Edit2 size={18} />
       </button>
 
       {isRendered &&
@@ -70,11 +85,12 @@ export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
               </div>
 
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Tambah Foto Galeri</h3>
-                <p className="text-slate-500 dark:text-slate-400 text-sm">Upload dokumentasi kegiatan terbaru.</p>
+                <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Edit Foto Galeri</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Ubah detail dokumentasi kegiatan.</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
+                <input type="hidden" name="id" value={item.id} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Judul Foto</label>
@@ -82,28 +98,31 @@ export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
                       type="text"
                       name="title"
                       required
+                      defaultValue={item.title}
                       className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                       placeholder="Masukkan judul..."
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Tanggal Kegiatan (Opsional)</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Tanggal Kegiatan</label>
                     <input
                       type="date"
                       name="createdAt"
+                      defaultValue={defaultDate}
                       className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     />
-                    <p className="text-[10px] text-slate-500 mt-1">Jika dikosongkan, akan menggunakan tanggal hari ini.</p>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Foto Galeri</label>
-                  <ImagePicker bucket="gallery-photos" usedBytes={usedBytes} />
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Ganti Foto (Opsional)</label>
+                  <ImagePicker bucket="gallery-photos" usedBytes={usedBytes} defaultImageUrl={item.coverImage} />
+                  <p className="text-[10px] text-slate-500 mt-1">Kosongkan/biarkan jika tidak ingin mengganti foto saat ini.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Deskripsi Singkat (Opsional)</label>
                   <textarea
                     name="description"
+                    defaultValue={item.description || ""}
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     rows={3}
                     placeholder="Tuliskan deskripsi..."
@@ -118,8 +137,8 @@ export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
                   >
                     Batal
                   </button>
-                  <button type="submit" className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm">
-                    Upload Foto
+                  <button type="submit" className="px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 dark:bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-700 transition-colors shadow-sm">
+                    Simpan Perubahan
                   </button>
                 </div>
               </form>

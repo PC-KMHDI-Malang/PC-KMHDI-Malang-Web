@@ -7,6 +7,48 @@ import { auth } from "@/lib/auth";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
 import { LoginPromptModal } from "@/components/ui/LoginPromptModal";
 
+interface RelatedEbook {
+  id: string;
+  title: string;
+  coverImage: string;
+  genre: string;
+  publisher: string | null;
+  publishYear: number | null;
+  createdAt: string;
+}
+
+function EbookLiteCard({ item }: { item: RelatedEbook }) {
+  return (
+    <Link
+      href={`/buku/${item.id}`}
+      className="group rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-sm hover:shadow-xl hover:border-red-300 hover:-translate-y-1 transition-all duration-300"
+    >
+      <div className="relative h-40 bg-neutral-100 overflow-hidden">
+        <img src={item.coverImage} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <span className="flex flex-col items-center gap-1.5" title="View">
+            <span className="w-10 h-10 flex items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
+              <Eye size={18} />
+            </span>
+            <span className="text-white text-xs font-semibold drop-shadow">View</span>
+          </span>
+        </div>
+        <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 bg-red-600 text-white rounded-md text-[10px] font-bold uppercase tracking-wide">{item.genre}</span>
+        <span className="absolute bottom-3 left-3 inline-flex items-center px-2.5 py-1 bg-neutral-900/80 text-white rounded-md text-[10px] font-semibold">
+          {new Date(item.createdAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+        </span>
+      </div>
+      <div className="p-4 bg-white">
+        <h3 className="font-bold text-sm text-zinc-900 leading-snug line-clamp-2 mb-3 min-h-[2.5rem]">{item.title}</h3>
+        <div>
+          <p className="text-xs text-neutral-500">{item.publisher || "PP KMHDI"}</p>
+          <p className="text-xs font-semibold text-neutral-700">{item.publishYear || new Date(item.createdAt).getFullYear()}</p>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const { data: ebook } = await supabaseAdmin
@@ -53,13 +95,26 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
     notFound();
   }
 
-  const { data: related } = await supabaseAdmin
+  const { data: sameGenre } = await supabaseAdmin
     .from("Ebook")
     .select("*")
     .eq("genre", ebook.genre)
     .neq("id", ebook.id)
     .order("createdAt", { ascending: false })
     .limit(4);
+
+  const related = sameGenre || [];
+
+  // e-Book lain di luar yang genre-nya sama, supaya koleksi lainnya tetap tampil terpisah.
+  const excludeIds = [ebook.id, ...related.map((item) => item.id)];
+  const { data: othersData } = await supabaseAdmin
+    .from("Ebook")
+    .select("*")
+    .not("id", "in", `(${excludeIds.join(",")})`)
+    .order("createdAt", { ascending: false })
+    .limit(4);
+
+  const others = othersData || [];
 
   const isLoggedIn = !!session?.user;
   const loginHref = `/login?callbackUrl=${encodeURIComponent("/")}`;
@@ -189,45 +244,31 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
 
-        {related && related.length > 0 && (
+        {related.length > 0 && (
           <div className="mt-16">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">e-Book Terkait</h2>
-              <p className="text-neutral-500 mt-2">e-Book lainnya yang terkait...</p>
+              <p className="text-neutral-500 mt-2">e-Book lainnya dengan kategori {ebook.genre}.</p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {related.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/buku/${item.id}`}
-                  className="group rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-sm hover:shadow-xl hover:border-red-300 hover:-translate-y-1 transition-all duration-300"
-                >
-                  <div className="relative h-40 bg-neutral-100 overflow-hidden">
-                    <img src={item.coverImage} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <span className="flex flex-col items-center gap-1.5" title="View">
-                        <span className="w-10 h-10 flex items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
-                          <Eye size={18} />
-                        </span>
-                        <span className="text-white text-xs font-semibold drop-shadow">View</span>
-                      </span>
-                    </div>
-                    <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 bg-red-600 text-white rounded-md text-[10px] font-bold uppercase tracking-wide">
-                      {item.genre}
-                    </span>
-                    <span className="absolute bottom-3 left-3 inline-flex items-center px-2.5 py-1 bg-neutral-900/80 text-white rounded-md text-[10px] font-semibold">
-                      {new Date(item.createdAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
-                    </span>
-                  </div>
-                  <div className="p-4 bg-white">
-                    <h3 className="font-bold text-sm text-zinc-900 leading-snug line-clamp-2 mb-3 min-h-[2.5rem]">{item.title}</h3>
-                    <div>
-                      <p className="text-xs text-neutral-500">{item.publisher || "PP KMHDI"}</p>
-                      <p className="text-xs font-semibold text-neutral-700">{item.publishYear || new Date(item.createdAt).getFullYear()}</p>
-                    </div>
-                  </div>
-                </Link>
+                <EbookLiteCard key={item.id} item={item} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {others.length > 0 && (
+          <div className="mt-16">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900">e-Book Lainnya</h2>
+              <p className="text-neutral-500 mt-2">Jelajahi koleksi e-Book lainnya dari PC KMHDI Malang.</p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {others.map((item) => (
+                <EbookLiteCard key={item.id} item={item} />
               ))}
             </div>
           </div>

@@ -5,6 +5,7 @@ import { StorageUsage } from "@/components/admin/StorageUsage";
 import { STORAGE_BUCKETS, BUCKET_QUOTA_BYTES, deleteFromBucketByUrl, getBucketUsage } from "@/lib/storage";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { AddGalleryModal } from "@/components/admin/AddGalleryModal";
+import { EditGalleryModal } from "@/components/admin/EditGalleryModal";
 
 export default async function GalleryPage() {
   const { data: gallery, error } = await supabaseAdmin.from("Gallery").select("*").order("createdAt", { ascending: false });
@@ -16,13 +17,40 @@ export default async function GalleryPage() {
     const title = formData.get("title") as string;
     const coverImageUrl = formData.get("coverImageUrl") as string;
     const description = formData.get("description") as string;
+    const createdAt = formData.get("createdAt") as string;
 
     if (!title || !coverImageUrl) return;
 
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now();
     const coverImage = coverImageUrl;
 
-    await supabaseAdmin.from("Gallery").insert([{ title, coverImage, description, slug }]);
+    const payload: any = { title, coverImage, description, slug };
+    if (createdAt) {
+      payload.createdAt = new Date(createdAt).toISOString();
+    }
+
+    await supabaseAdmin.from("Gallery").insert([payload]);
+
+    revalidatePath("/admin/gallery");
+    revalidatePath("/");
+  }
+
+  async function editGallery(formData: FormData) {
+    "use server";
+    const id = formData.get("id") as string;
+    const title = formData.get("title") as string;
+    const coverImageUrl = formData.get("coverImageUrl") as string;
+    const description = formData.get("description") as string;
+    const createdAt = formData.get("createdAt") as string;
+
+    if (!id || !title || !coverImageUrl) return;
+
+    const payload: any = { title, coverImage: coverImageUrl, description };
+    if (createdAt) {
+      payload.createdAt = new Date(createdAt).toISOString();
+    }
+
+    await supabaseAdmin.from("Gallery").update(payload).eq("id", id);
 
     revalidatePath("/admin/gallery");
     revalidatePath("/");
@@ -71,7 +99,8 @@ export default async function GalleryPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300"></div>
               </div>
 
-              <div className="absolute top-3 right-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute top-3 right-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 flex items-center">
+                <EditGalleryModal item={item} action={editGallery} usedBytes={usage.usedBytes} />
                 <SubmitWithConfirm
                   id={item.id}
                   action={deleteGallery}

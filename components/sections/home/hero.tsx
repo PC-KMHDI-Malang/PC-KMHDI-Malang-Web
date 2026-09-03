@@ -1,13 +1,40 @@
 ﻿"use client";
 
+import { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import CountUp from "react-countup";
-import { motion, useMotionValue, useSpring, useTransform, type PanInfo } from "framer-motion";
+import { motion, useMotionValue, useScroll, useSpring, useTransform, type PanInfo, type Variants } from "framer-motion";
 
 import { heroData } from "@/data/hero";
 import AnimatedWord from "@/components/ui/AnimatedWord";
+
+// Gold dust motes drifting slowly across the whole hero, for a soft ambient shimmer.
+const dustMotes = [
+  { left: "4%", top: "70%", size: 3, delay: "0s", duration: "12s" },
+  { left: "11%", top: "30%", size: 2, delay: "2s", duration: "14s" },
+  { left: "19%", top: "55%", size: 3, delay: "4.5s", duration: "11s" },
+  { left: "27%", top: "15%", size: 2, delay: "1s", duration: "13s" },
+  { left: "38%", top: "80%", size: 3, delay: "6s", duration: "15s" },
+  { left: "49%", top: "40%", size: 2, delay: "3s", duration: "12.5s" },
+  { left: "58%", top: "20%", size: 3, delay: "5s", duration: "13.5s" },
+  { left: "66%", top: "65%", size: 2, delay: "0.5s", duration: "11.5s" },
+  { left: "74%", top: "35%", size: 3, delay: "7s", duration: "14.5s" },
+  { left: "83%", top: "58%", size: 2, delay: "2.5s", duration: "12s" },
+  { left: "91%", top: "22%", size: 3, delay: "4s", duration: "13s" },
+  { left: "96%", top: "75%", size: 2, delay: "6.5s", duration: "15s" },
+];
+
+const textReveal: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+};
+
+const revealItem: Variants = {
+  hidden: { opacity: 0, y: 18 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } },
+};
 
 // Pointer/touch-driven 3D tilt for the emblem — rotates in real 3D as you drag or hover it.
 function Tilt3DLogo() {
@@ -88,19 +115,84 @@ function Tilt3DLogo() {
 }
 
 export default function Hero() {
-  return (
-    <section className="relative -mt-32 overflow-hidden bg-gradient-to-b from-slate-950 via-red-950 to-slate-950 pt-36 pb-20 lg:pt-24">
-      {/* Ambient Glow */}
-      <div className="absolute -top-40 -left-40 h-[480px] w-[480px] rounded-full bg-red-600/15 blur-[130px] pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 h-[420px] w-[420px] rounded-full bg-red-900/20 blur-[130px] pointer-events-none" />
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
+  const bgY = useTransform(scrollYProgress, [0, 1], [0, 140]);
 
-      {/* Woven texture — quiet nod to traditional cloth motifs instead of a generic tech mesh */}
-      <div
-        className="absolute inset-0 opacity-[0.05] pointer-events-none"
-        style={{
-          backgroundImage: "repeating-linear-gradient(45deg, #fff 0px, #fff 1px, transparent 1px, transparent 14px), repeating-linear-gradient(-45deg, #fff 0px, #fff 1px, transparent 1px, transparent 14px)",
-        }}
-      />
+  return (
+    <section ref={sectionRef} className="relative -mt-32 overflow-hidden bg-gradient-to-b from-black via-red-950 to-black pt-36 pb-20 lg:pt-24">
+      {/* Background layer — parallax: scrolls slower than the foreground content for cinematic depth */}
+      <motion.div style={{ y: bgY }} className="absolute inset-0 pointer-events-none">
+        {/* Ambient Glow */}
+        <div className="absolute -top-40 -left-40 h-[480px] w-[480px] rounded-full bg-red-600/15 blur-[130px]" />
+        <div className="absolute -bottom-40 -right-40 h-[420px] w-[420px] rounded-full bg-red-900/20 blur-[130px]" />
+
+        {/* Gold spotlight from above, for a richer, more ceremonial feel */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_50%_0%,rgba(251,191,36,0.10),transparent_70%)]" />
+
+        {/* Vignette to frame the composition */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(0,0,0,0.6)_100%)]" />
+
+        {/* Firelight glowing up from the bottom edge */}
+        <div className="absolute inset-x-0 bottom-0 h-80 bg-[radial-gradient(ellipse_70%_100%_at_50%_100%,rgba(249,115,22,0.35),rgba(220,38,38,0.12)_55%,transparent_80%)] blur-2xl animate-flame-glow" />
+
+        {/* Cinematic light rays, swaying gently */}
+        <div
+          className="absolute left-[15%] top-[-10%] h-[140%] w-24 bg-gradient-to-b from-transparent via-amber-200/10 to-transparent blur-2xl animate-ray-sway"
+          style={{ "--ray-angle": "-16deg" } as React.CSSProperties}
+        />
+        <div
+          className="absolute right-[20%] top-[-15%] h-[140%] w-32 bg-gradient-to-b from-transparent via-amber-100/[0.08] to-transparent blur-2xl animate-ray-sway"
+          style={{ "--ray-angle": "12deg", animationDelay: "1.5s" } as React.CSSProperties}
+        />
+
+
+        {/* Rising embers */}
+        <div className="absolute inset-0 overflow-hidden">
+          {[
+            { left: "6%", size: 4, delay: "0s", duration: "6s" },
+            { left: "14%", size: 3, delay: "1.2s", duration: "7.5s" },
+            { left: "23%", size: 5, delay: "2.4s", duration: "6.8s" },
+            { left: "34%", size: 3, delay: "0.6s", duration: "8s" },
+            { left: "45%", size: 4, delay: "3s", duration: "6.2s" },
+            { left: "57%", size: 3, delay: "1.8s", duration: "7.2s" },
+            { left: "68%", size: 5, delay: "0.3s", duration: "7.8s" },
+            { left: "77%", size: 3, delay: "2.7s", duration: "6.5s" },
+            { left: "86%", size: 4, delay: "1.5s", duration: "8.4s" },
+            { left: "93%", size: 3, delay: "3.6s", duration: "7s" },
+          ].map((ember, i) => (
+            <span
+              key={i}
+              className="absolute bottom-0 rounded-full bg-gradient-to-t from-orange-500 via-amber-400 to-transparent shadow-[0_0_8px_2px_rgba(251,146,60,0.7)] animate-ember-rise"
+              style={{
+                left: ember.left,
+                width: ember.size,
+                height: ember.size,
+                animationDelay: ember.delay,
+                animationDuration: ember.duration,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Drifting gold dust motes, spread across the whole hero */}
+        <div className="absolute inset-0 overflow-hidden">
+          {dustMotes.map((dust, i) => (
+            <span
+              key={i}
+              className="absolute rounded-full bg-amber-200 shadow-[0_0_6px_1px_rgba(252,211,77,0.8)] animate-dust-drift"
+              style={{
+                left: dust.left,
+                top: dust.top,
+                width: dust.size,
+                height: dust.size,
+                animationDelay: dust.delay,
+                animationDuration: dust.duration,
+              }}
+            />
+          ))}
+        </div>
+      </motion.div>
 
       {/* Grid */}
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
@@ -130,15 +222,33 @@ export default function Hero() {
           </div>
 
           {/* TEXT — appears second on mobile (order-2), left side on desktop (lg:order-1) */}
-          <div className="order-2 lg:order-1">
-            <h1 className="text-3xl font-extrabold leading-[1.15] text-white sm:text-4xl lg:text-5xl">
-              {heroData.title.first} <AnimatedWord words={heroData.title.animated} />
-            </h1>
+          <motion.div variants={textReveal} initial="hidden" animate="show" className="order-2 lg:order-1">
+            {/* Ornamental flourish — a quiet, premium touch above the headline */}
+            <motion.div variants={revealItem} className="mb-5 flex items-center gap-3">
+              <span className="h-px w-10 bg-gradient-to-r from-transparent to-amber-400/70" />
+              <span className="h-1.5 w-1.5 rotate-45 bg-amber-400/80" />
+              <span className="h-px w-10 bg-gradient-to-l from-transparent to-amber-400/70" />
+            </motion.div>
 
-            <p className="mt-6 max-w-xl text-base leading-7 text-slate-300 md:text-lg">{heroData.description}</p>
+            <motion.h1 variants={revealItem} className="text-3xl font-extrabold leading-[1.15] text-white sm:text-4xl lg:text-5xl">
+              {heroData.title.first} <AnimatedWord words={heroData.title.animated} />
+            </motion.h1>
+
+            {/* Animated gold underline, drawing in beneath the headline */}
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.9, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              style={{ transformOrigin: "left" }}
+              className="mt-4 h-px w-28 bg-gradient-to-r from-amber-400 to-transparent"
+            />
+
+            <motion.p variants={revealItem} className="mt-6 max-w-xl text-base leading-7 text-slate-300 md:text-lg">
+              {heroData.description}
+            </motion.p>
 
             {/* Buttons */}
-            <div className="mt-9 flex flex-col gap-4 sm:flex-row">
+            <motion.div variants={revealItem} className="mt-9 flex flex-col gap-4 sm:flex-row">
               {heroData.buttons.map((button) => {
                 const isExternal = button.href.startsWith("http");
                 return (
@@ -158,10 +268,10 @@ export default function Hero() {
                   </Link>
                 );
               })}
-            </div>
+            </motion.div>
 
             {/* Statistics */}
-            <div className="mt-14 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-4">
+            <motion.div variants={revealItem} className="mt-14 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-4">
               {heroData.statistics.map((item) => (
                 <div key={item.label} className="bg-slate-950/60 p-5 text-center">
                   <h3 className="text-3xl font-bold text-white">
@@ -170,8 +280,8 @@ export default function Hero() {
                   <p className="mt-2 text-sm text-slate-400">{item.label}</p>
                 </div>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>
