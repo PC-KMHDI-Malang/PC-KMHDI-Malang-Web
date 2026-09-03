@@ -63,7 +63,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
   const authorName = news.authorName || news.author?.name || "Admin KMHDI";
 
   return (
-    <article className="-mt-32 bg-white transition-colors min-h-screen">
+    <article className="-mt-32 bg-white dark:bg-[#121212] transition-colors min-h-screen">
       {/* Red header behind navbar */}
       <div className="bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 pb-10 relative overflow-hidden">
         <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
@@ -77,56 +77,56 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
 
       <div className="mx-auto max-w-4xl px-5 sm:px-6 lg:px-8 py-10">
         {/* Category Badge */}
-        <span className="inline-flex rounded-full bg-red-100 px-4 py-2 text-sm font-semibold text-red-700">{categoryName}</span>
+        <span className="inline-flex rounded-full bg-red-100 dark:bg-red-900/30 px-4 py-2 text-sm font-semibold text-red-700 dark:text-red-400">{categoryName}</span>
 
         {/* Title */}
-        <h1 className="mt-6 text-3xl font-bold text-slate-900 sm:text-4xl lg:text-5xl leading-tight">{news.title}</h1>
+        <h1 className="mt-6 text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl lg:text-5xl leading-tight">{news.title}</h1>
 
         {/* Meta Info */}
-        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-600">
+        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-slate-600 dark:text-neutral-400">
           <span className="inline-flex items-center gap-2">
-            <span className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-600">
+            <span className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
               <UserIcon size={14} />
             </span>
-            <span className="font-medium text-slate-700">{authorName}</span>
+            <span className="font-medium text-slate-700 dark:text-neutral-300">{authorName}</span>
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500">
+            <span className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-500 dark:text-neutral-400">
               <CalendarDays size={14} />
             </span>
-            <span className="font-medium text-slate-700">{publishedDate}</span>
+            <span className="font-medium text-slate-700 dark:text-neutral-300">{publishedDate}</span>
           </span>
         </div>
 
         {/* Cover Image */}
         {news.coverImage && (
-          <div className="relative mt-10 h-64 sm:h-80 lg:h-[28rem] w-full overflow-hidden rounded-3xl shadow-xl border border-slate-200/60">
+          <div className="relative mt-10 h-64 sm:h-80 lg:h-[28rem] w-full overflow-hidden rounded-3xl shadow-xl border border-slate-200/60 dark:border-white/10">
             <Image src={news.coverImage} alt={news.title} fill className="object-cover" priority />
           </div>
         )}
 
         {/* Content Tab */}
         <div className="mt-10">
-          <div className="flex items-center gap-6 border-b border-slate-100">
-            <span className="pb-3 text-sm font-bold text-red-600 border-b-2 border-red-600">Isi Berita</span>
+          <div className="flex items-center gap-6 border-b border-slate-100 dark:border-white/10">
+            <span className="pb-3 text-sm font-bold text-red-600 dark:text-red-500 border-b-2 border-red-600 dark:border-red-500">Isi Berita</span>
           </div>
-          <div className="mt-6 prose prose-slate max-w-none">
-            <p className="whitespace-pre-line text-base leading-8 text-slate-700">{news.content}</p>
+          <div className="mt-6 prose prose-slate dark:prose-invert max-w-none">
+            <p className="whitespace-pre-line text-base leading-8 text-slate-700 dark:text-neutral-300">{news.content}</p>
           </div>
         </div>
 
         {/* Tag & Share Section */}
-        <div className="mt-12 pt-8 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="mt-12 pt-8 border-t border-slate-100 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
-            <p className="text-sm font-semibold text-slate-500 mb-2">Kategori :</p>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-full text-xs font-semibold">
+            <p className="text-sm font-semibold text-slate-500 dark:text-neutral-400 mb-2">Kategori :</p>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300 rounded-full text-xs font-semibold">
               <Tag size={12} />
               {categoryName}
             </span>
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-1.5 sm:justify-end">
+            <p className="text-sm font-semibold text-slate-500 dark:text-neutral-400 mb-2 flex items-center gap-1.5 sm:justify-end">
               <Share2 size={14} />
               Bagikan:
             </p>
@@ -148,8 +148,8 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
         {related.length > 0 && (
           <div className="mt-16">
             <div className="text-center mb-10">
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Berita Terkait</h2>
-              <p className="text-slate-500 mt-2">Berita lainnya dalam kategori {categoryName}</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Berita Terkait</h2>
+              <p className="text-slate-500 dark:text-neutral-400 mt-2">Berita lainnya dalam kategori {categoryName}</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -157,9 +157,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
                 <Link
                   key={item.id}
                   href={`/berita/${item.slug}`}
-                  className="group rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-sm hover:shadow-xl hover:border-red-200 hover:-translate-y-1 transition-all duration-300"
+                  className="group rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#1A1A1A] overflow-hidden shadow-sm hover:shadow-xl hover:border-red-200 dark:hover:border-red-500/30 hover:-translate-y-1 transition-all duration-300"
                 >
-                  <div className="relative h-40 bg-neutral-100 overflow-hidden">
+                  <div className="relative h-40 bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
                     <SafeImage src={item.coverImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <span className="flex flex-col items-center gap-1.5">
@@ -174,9 +174,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
                       {new Date(item.publishedAt || item.createdAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                     </span>
                   </div>
-                  <div className="p-4 bg-white">
-                    <h3 className="font-bold text-sm text-slate-800 leading-snug line-clamp-2 mb-3 min-h-[2.5rem] group-hover:text-red-600 transition-colors">{item.title}</h3>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <div className="p-4 bg-white dark:bg-[#1A1A1A]">
+                    <h3 className="font-bold text-sm text-slate-800 dark:text-white leading-snug line-clamp-2 mb-3 min-h-[2.5rem] group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">{item.title}</h3>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-neutral-500">
                       <UserIcon size={12} />
                       <span className="font-medium truncate">{item.authorName || item.author?.name || "Admin KMHDI"}</span>
                     </div>

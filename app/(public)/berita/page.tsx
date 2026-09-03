@@ -74,7 +74,7 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="-mt-32 bg-white transition-colors min-h-screen pb-12">
+    <div className="-mt-32 bg-white dark:bg-[#121212] transition-colors min-h-screen pb-12">
       {/* Hero Header */}
       <div className={`bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 relative overflow-hidden ${showSlider ? "pb-28" : "pb-12"}`}>
         {/* Background Glow */}
@@ -115,11 +115,11 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
           <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 mt-6">
               <div className="flex flex-wrap items-center gap-4">
-                <h3 className="text-xl font-bold text-slate-900">{query ? `Hasil pencarian "${query}"` : categoryFilter ? (fallbackUsed ? "Berita Terbaru Lainnya" : `Berita ${categoryFilter} Lainnya`) : "Berita Lainnya"}</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{query ? `Hasil pencarian "${query}"` : categoryFilter ? (fallbackUsed ? "Berita Terbaru Lainnya" : `Berita ${categoryFilter} Lainnya`) : "Berita Lainnya"}</h3>
                 {query && (
                   <Link
                     href={`/berita${categoryFilter ? `?category=${categoryFilter}` : ""}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
                   >
                     Bersihkan Pencarian
                   </Link>
@@ -135,18 +135,18 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
                 <Link
                   key={item.id}
                   href={`/berita/${item.slug}`}
-                  className="group flex flex-col sm:flex-row rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-md hover:shadow-xl hover:border-red-200 hover:-translate-y-1 transition-all duration-300"
+                  className="group flex flex-col sm:flex-row rounded-2xl overflow-hidden bg-white dark:bg-[#1A1A1A] border border-slate-200/80 dark:border-white/5 shadow-md hover:shadow-xl hover:border-red-200 dark:hover:border-red-500/30 hover:-translate-y-1 transition-all duration-300"
                 >
-                  <div className="relative w-full sm:w-48 h-44 sm:h-auto shrink-0 overflow-hidden bg-neutral-100">
+                  <div className="relative w-full sm:w-48 h-44 sm:h-auto shrink-0 overflow-hidden bg-neutral-100 dark:bg-neutral-800">
                     <SafeImage src={item.coverImage} alt={item.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                     <span className="absolute top-3 left-3 sm:top-2 sm:left-2 inline-flex items-center px-2.5 py-1 bg-red-600 text-white rounded-full text-[10px] font-bold uppercase tracking-wide shadow">
                       {item.Category?.name || "UMUM"}
                     </span>
                   </div>
-                  <div className="p-5 flex flex-col justify-center flex-1 min-w-0 bg-white">
-                    <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">{item.title}</h3>
-                    {item.content && <p className="mt-2 text-sm text-slate-600 line-clamp-2 leading-relaxed">{item.content}</p>}
-                    <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
+                  <div className="p-5 flex flex-col justify-center flex-1 min-w-0 bg-white dark:bg-[#1A1A1A]">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">{item.title}</h3>
+                    {item.content && <p className="mt-2 text-sm text-slate-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">{item.content}</p>}
+                    <div className="mt-3 flex items-center gap-4 text-xs text-slate-500 dark:text-neutral-500">
                       <span className="inline-flex items-center gap-1">
                         <UserIcon size={12} />
                         {item.authorName || item.author?.name || "Admin KMHDI"}
@@ -162,9 +162,9 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
             </div>
           </>
         ) : (!showSlider && displayGridNews.length === 0) || (showSlider && featuredItems.length === 0 && displayGridNews.length === 0) ? (
-          <div className="py-24 flex flex-col items-center justify-center text-slate-500 bg-white border border-slate-200/80 rounded-3xl shadow-sm mb-16 px-5 text-center">
-            <Newspaper size={40} className="mb-4 text-slate-400 opacity-60" />
-            <p className="text-lg font-medium text-slate-700 mb-4">{query ? `Tidak ada berita yang cocok dengan kata kunci "${query}".` : "Belum ada berita untuk kategori ini."}</p>
+          <div className="py-24 flex flex-col items-center justify-center text-slate-500 dark:text-neutral-500 bg-white dark:bg-[#1A1A1A] border border-slate-200/80 dark:border-white/5 rounded-3xl shadow-sm mb-16 px-5 text-center">
+            <Newspaper size={40} className="mb-4 text-slate-400 dark:text-neutral-600 opacity-60" />
+            <p className="text-lg font-medium text-slate-700 dark:text-neutral-300 mb-4">{query ? `Tidak ada berita yang cocok dengan kata kunci "${query}".` : "Belum ada berita untuk kategori ini."}</p>
             {query && (
               <Link
                 href={`/berita${categoryFilter ? `?category=${categoryFilter}` : ""}`}

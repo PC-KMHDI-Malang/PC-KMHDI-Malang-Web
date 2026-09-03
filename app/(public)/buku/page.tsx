@@ -75,10 +75,10 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
 
             {query && (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <h3 className="text-xl font-bold text-zinc-900">Hasil pencarian &quot;{query}&quot;</h3>
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Hasil pencarian &quot;{query}&quot;</h3>
                 <Link
                   href={`/buku${genreFilter.length > 0 ? "?" + genreFilter.map((g) => `genre=${encodeURIComponent(g)}`).join("&") : ""}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
                 >
                   Bersihkan Pencarian
                 </Link>
@@ -92,13 +92,13 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
                 ))}
               </div>
             ) : (
-              <div className="py-24 flex flex-col items-center justify-center text-neutral-400 bg-white border border-neutral-200 rounded-3xl text-center px-5">
+              <div className="py-24 flex flex-col items-center justify-center text-neutral-400 dark:text-neutral-500 bg-white dark:bg-[#121215] border border-neutral-200 dark:border-white/5 rounded-3xl text-center px-5 shadow-sm">
                 <BookOpen size={40} className="mb-4 opacity-30" />
-                <p className="text-lg mb-4">{query ? `Tidak ada e-Book yang cocok dengan kata kunci "${query}".` : "Belum ada e-Book untuk filter ini."}</p>
+                <p className="text-lg mb-4 text-zinc-900 dark:text-white">{query ? `Tidak ada e-Book yang cocok dengan kata kunci "${query}".` : "Belum ada e-Book untuk filter ini."}</p>
                 {query && (
                   <Link
                     href={`/buku${genreFilter.length > 0 ? "?" + genreFilter.map((g) => `genre=${encodeURIComponent(g)}`).join("&") : ""}`}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-sm"
                   >
                     Bersihkan Pencarian
                   </Link>
