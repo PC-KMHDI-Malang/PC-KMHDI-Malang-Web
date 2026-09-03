@@ -24,7 +24,7 @@ export function MemberCard({ member, featured = false }: MemberCardProps) {
       {/* Pasfoto Resmi Frame */}
       <div className={`relative w-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-red-800 via-red-900 to-slate-950 ${featured ? "h-64 sm:h-72" : "h-56 sm:h-60"}`}>
         {photo ? (
-          <Image src={photo} alt={member.name} fill unoptimized className="object-cover object-top group-hover:scale-105 transition-transform duration-500" />
+          <Image src={photo} alt={member.name} fill className="object-cover object-top group-hover:scale-105 transition-transform duration-500" />
         ) : (
           /* Pasfoto Resmi Jas Organisasi Silhouette */
           <div className="relative w-full h-full flex flex-col items-center justify-end overflow-hidden">

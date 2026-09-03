@@ -54,7 +54,6 @@ function ChartNode({
             src={photo}
             alt={member.name}
             fill
-            unoptimized
             className="object-cover object-top"
           />
         ) : (
@@ -114,7 +113,6 @@ function StafChartCard({
             src={photo}
             alt={member.name}
             fill
-            unoptimized
             className="object-cover object-top"
           />
         ) : (

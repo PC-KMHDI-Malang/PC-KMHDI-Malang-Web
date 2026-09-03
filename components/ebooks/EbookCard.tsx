@@ -23,7 +23,7 @@ export function EbookCard({ title, genre, coverImage, pdfUrl, createdAt, href }:
       <Link href={href} className="absolute inset-0 z-0" aria-label={`View ${title}`} />
 
       <div className="relative h-48 bg-neutral-100 dark:bg-neutral-900 overflow-hidden pointer-events-none">
-        <SafeImage src={coverImage} alt={title} fill unoptimized className="object-cover transition-transform duration-500" />
+        <SafeImage src={coverImage} alt={title} fill className="object-cover transition-transform duration-500" />
 
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 z-20 pointer-events-auto">

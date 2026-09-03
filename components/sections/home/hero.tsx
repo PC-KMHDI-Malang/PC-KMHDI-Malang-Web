@@ -98,7 +98,6 @@ function Tilt3DLogo() {
             width={520}
             height={520}
             priority
-            unoptimized
             draggable={false}
             className="h-full w-full select-none object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.55)]"
           />

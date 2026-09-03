@@ -378,7 +378,7 @@ export default async function AdminPengurusPage() {
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="relative w-12 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/5 shrink-0 border border-slate-200 dark:border-white/10 flex items-center justify-center">
                         {member.imageUrl ? (
-                          <Image src={member.imageUrl} alt={member.name} fill unoptimized className="object-cover" />
+                          <Image src={member.imageUrl} alt={member.name} fill className="object-cover" />
                         ) : (
                           <span className="text-xs font-black text-red-600 dark:text-red-400">
                             {member.name
@@ -456,7 +456,7 @@ export default async function AdminPengurusPage() {
                         <div className="flex items-center gap-3.5">
                           <div className="relative w-12 h-14 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/5 shrink-0 border border-slate-200 dark:border-white/10 flex items-center justify-center">
                             {member.imageUrl ? (
-                              <Image src={member.imageUrl} alt={member.name} fill unoptimized className="object-cover" />
+                              <Image src={member.imageUrl} alt={member.name} fill className="object-cover" />
                             ) : (
                               <span className="text-xs font-black text-red-600 dark:text-red-400">
                                 {member.name
