@@ -73,7 +73,7 @@ export const knowledgeBase = [
   // KADERISASI & KEGIATAN (21-30)
   {
     keywords: ["gabung", "daftar", "syarat", "ikut", "mpab", "cara bergabung"],
-    answer: "Untuk menjadi anggota PC KMHDI Malang, kamu wajib mengikuti kegiatan MPAB (Masa Penerimaan Anggota Baru). Syaratnya: mahasiswa Hindu yang berkuliah di Malang Raya. Pendaftaran diinfokan via Instagram @kmhdimalang.",
+    answer: "Untuk menjadi anggota PC KMHDI Malang, kamu wajib mengikuti kegiatan MPAB (Masa Penerimaan Anggota Baru). Syaratnya: mahasiswa Hindu yang berkuliah di Malang Raya. Pendaftaran diinfokan via Instagram @pc.kmhdimalang.",
   },
   {
     keywords: ["kaderisasi", "sistem", "tahapan"],
