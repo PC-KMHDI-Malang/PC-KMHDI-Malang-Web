@@ -2,8 +2,7 @@ export const knowledgeBase = [
   // ORGANISASI & SEJARAH (1-10)
   {
     keywords: ["apa itu", "pengertian", "profil", "tentang", "kmhdi"],
-    answer:
-      "KMHDI (Kesatuan Mahasiswa Hindu Dharma Indonesia) adalah satu-satunya organisasi kemahasiswaan bernapas Hindu bertaraf nasional di Indonesia. KMHDI berdiri pada tanggal 3 September 1993, berasaskan Pancasila, dan bertujuan untuk mewujudkan cita-cita proklamasi kemerdekaan 1945.",
+    answer: "KMHDI atau Kesatuan Mahasiswa Hindu Dharma Indonesia adalah satu-satunya organisasi kemahasiswaan tingkat nasional yang bernafaskan Hindu di Indonesia.",
   },
   {
     keywords: ["sejarah", "kapan berdiri", "berdiri", "deklarasi"],
@@ -61,8 +60,8 @@ export const knowledgeBase = [
     answer: "Struktur Kepengurusan PC KMHDI Malang terdiri dari: Ketua Cabang, Sekretaris, Bendahara, Bidang Organisasi, Kaderisasi, Litbang, dan Humas. Cek menu 'Profil' untuk melihat nama pengurus saat ini.",
   },
   {
-    keywords: ["lokasabha", "pemilihan ketua", "ganti pengurus"],
-    answer: "Lokasabha adalah forum musyawarah tertinggi di tingkat Pimpinan Cabang (Malang) yang diadakan setiap 2 tahun sekali untuk memilih Ketua Cabang baru dan mengevaluasi kepengurusan sebelumnya.",
+    keywords: ["sabha", "pemilihan ketua", "ganti pengurus"],
+    answer: "Sabha adalah forum musyawarah tertinggi di tingkat Pimpinan Cabang (Malang) yang diadakan setiap 2 tahun sekali untuk memilih Ketua Cabang baru dan mengevaluasi kepengurusan sebelumnya.",
   },
   {
     keywords: ["kampus", "universitas", "komisariat", "brawijaya", "um", "umm"],
@@ -73,7 +72,7 @@ export const knowledgeBase = [
   // KADERISASI & KEGIATAN (21-30)
   {
     keywords: ["gabung", "daftar", "syarat", "ikut", "mpab", "cara bergabung"],
-    answer: "Untuk menjadi anggota PC KMHDI Malang, kamu wajib mengikuti kegiatan MPAB (Masa Penerimaan Anggota Baru). Syaratnya: mahasiswa Hindu yang berkuliah di Malang Raya. Pendaftaran diinfokan via Instagram @pc.kmhdimalang.",
+    answer: "Untuk menjadi anggota PC KMHDI Malang, kamu wajib mengikuti kegiatan MPAB (Masa Penerimaan Anggota Baru). Syaratnya: mahasiswa Hindu yang berkuliah di Malang Raya. Pendaftaran diinfokan via Instagram @kmhdimalang.",
   },
   {
     keywords: ["kaderisasi", "sistem", "tahapan"],
