@@ -7,7 +7,6 @@ import { Menu, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, Book
 import { logoutAction } from "@/app/actions/auth";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
-import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 
 const menus = [
   {
@@ -51,6 +50,7 @@ export default function Navbar({ user }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = !!user;
@@ -67,6 +67,7 @@ export default function Navbar({ user }: NavbarProps) {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
+        setShowLogoutConfirm(false);
       }
     };
 
@@ -141,7 +142,10 @@ export default function Navbar({ user }: NavbarProps) {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     type="button"
-                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                    onClick={() => {
+                      setUserDropdownOpen(!userDropdownOpen);
+                      if (!userDropdownOpen) setShowLogoutConfirm(false);
+                    }}
                     className="flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-white/15 hover:border-white/30 cursor-pointer"
                   >
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-red-600 to-rose-500 font-bold text-xs text-white shadow">{userInitial}</div>
@@ -180,19 +184,37 @@ export default function Navbar({ user }: NavbarProps) {
 
                       {/* Logout Action */}
                       <div className="pt-1 border-t border-white/10">
-                        <SubmitWithConfirm
-                          wrapperClassName="w-full"
-                          action={logoutAction}
-                          modalTitle="Konfirmasi Keluar"
-                          modalDesc="Apakah Anda yakin ingin keluar dari akun Anda?"
-                          confirmText="Ya, Keluar"
-                          buttonElement={
-                            <div className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition text-left cursor-pointer">
-                              <LogOut size={14} />
-                              <span>Keluar</span>
+                        {showLogoutConfirm ? (
+                          <div className="px-3 py-2">
+                            <p className="text-[11px] text-slate-300 font-semibold mb-2 text-center">Yakin ingin keluar?</p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setShowLogoutConfirm(false)}
+                                className="flex-1 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold transition"
+                              >
+                                Batal
+                              </button>
+                              <form action={logoutAction} className="flex-1">
+                                <button
+                                  type="submit"
+                                  className="w-full py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold transition shadow-sm"
+                                >
+                                  Ya, Keluar
+                                </button>
+                              </form>
                             </div>
-                          }
-                        />
+                          </div>
+                        ) : (
+                          <button 
+                            type="button" 
+                            onClick={() => setShowLogoutConfirm(true)}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition text-left cursor-pointer"
+                          >
+                            <LogOut size={14} />
+                            <span>Keluar</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -296,21 +318,38 @@ export default function Navbar({ user }: NavbarProps) {
                         </Link>
                       )}
 
-                      <SubmitWithConfirm
-                        wrapperClassName="w-full"
-                        action={logoutAction}
-                        modalTitle="Konfirmasi Keluar"
-                        modalDesc="Apakah Anda yakin ingin keluar dari akun Anda?"
-                        confirmText="Ya, Keluar"
-                        buttonElement={
-                          <div
-                            className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 py-3 text-center text-sm font-semibold text-rose-400 transition hover:bg-rose-500/20 cursor-pointer"
-                          >
-                            <LogOut size={16} />
-                            <span>Keluar dari Akun</span>
+                      {showLogoutConfirm ? (
+                        <div className="w-full rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 animate-in fade-in zoom-in-95 duration-200">
+                          <p className="text-xs text-rose-300 font-semibold mb-3 text-center">Yakin ingin keluar dari akun?</p>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowLogoutConfirm(false)}
+                              className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition"
+                            >
+                              Batal
+                            </button>
+                            <form action={logoutAction} className="flex-1">
+                              <button
+                                type="submit"
+                                onClick={() => setMobileOpen(false)}
+                                className="w-full py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition shadow-md"
+                              >
+                                Ya, Keluar
+                              </button>
+                            </form>
                           </div>
-                        }
-                      />
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowLogoutConfirm(true)}
+                          className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 py-3 text-center text-sm font-semibold text-rose-400 transition hover:bg-rose-500/20 cursor-pointer"
+                        >
+                          <LogOut size={16} />
+                          <span>Keluar dari Akun</span>
+                        </button>
+                      )}
                     </>
                   ) : (
                     <button
