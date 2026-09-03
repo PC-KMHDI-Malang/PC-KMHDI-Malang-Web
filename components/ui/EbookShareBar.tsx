@@ -83,72 +83,119 @@ export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, c
     }
   };
 
-  const url = shareUrl || (typeof window !== "undefined" ? window.location.href : "");
-  const encodedUrl = encodeURIComponent(url);
-  const encodedTitle = encodeURIComponent(title);
+  const [isSharingIG, setIsSharingIG] = useState(false);
+
+  const currentUrl = shareUrl || (typeof window !== "undefined" ? window.location.href : "");
+  const waText = encodeURIComponent(`${title}\n\n${currentUrl}`);
+  const tweetText = encodeURIComponent(`${title}\n`);
+  const tweetUrl = encodeURIComponent(currentUrl);
+  const fbUrl = encodeURIComponent(currentUrl);
+
+  const handleInstagramShare = async () => {
+    if (isSharingIG) return;
+    setIsSharingIG(true);
+
+    // Otomatis salin link ke clipboard terlebih dahulu (agar user bisa langsung paste di stiker link IG)
+    try {
+      await navigator.clipboard.writeText(currentUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+
+    try {
+      // Generate gambar Story Card ala Spotify di latar belakang (tanpa pop up!)
+      const { generateStoryCardBlob } = await import("@/lib/generateStoryCard");
+      const blob = await generateStoryCardBlob({
+        title,
+        coverImage,
+        categoryOrGenre,
+        authorOrPublisher,
+      });
+
+      if (blob) {
+        const file = new File([blob], `kmhdi-story-${Date.now()}.png`, { type: "image/png" });
+
+        // Di HP (Android / iOS): navigator.share dengan file gambar langsung membuka target Instagram Stories!
+        if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: title,
+          });
+          setIsSharingIG(false);
+          return;
+        }
+
+        // Fallback (Desktop atau jika share file tidak didukung): langsung unduh gambar & buka Instagram
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = `KMHDI-Story-${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 5000);
+      }
+    } catch (err: any) {
+      if (err?.name !== "AbortError") {
+        console.error("Gagal share ke Instagram:", err);
+      }
+    } finally {
+      setIsSharingIG(false);
+    }
+
+    // Buka Instagram
+    window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="flex items-center gap-2">
+      {/* Facebook */}
       <a
-        href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
+        href={`https://www.facebook.com/sharer/sharer.php?u=${fbUrl}`}
         target="_blank"
         rel="noreferrer"
+        title="Bagikan ke Facebook"
         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-colors"
       >
         <Facebook size={16} />
       </a>
+
+      {/* Twitter / X */}
       <a
-        href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
+        href={`https://twitter.com/intent/tweet?text=${tweetText}&url=${tweetUrl}`}
         target="_blank"
         rel="noreferrer"
+        title="Bagikan ke Twitter/X"
         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-colors"
       >
         <Twitter size={16} />
       </a>
+
+      {/* WhatsApp */}
       <a
-        href={`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`}
+        href={`https://api.whatsapp.com/send?text=${waText}`}
         target="_blank"
         rel="noreferrer"
+        title="Bagikan ke WhatsApp"
         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-800 dark:hover:text-white transition-colors"
       >
         <WhatsAppIcon />
       </a>
 
-      {/* Tombol Langsung Share ke Instagram */}
+      {/* Instagram Story (1-klik langsung generate card & buka Story) */}
       <button
         type="button"
-        onClick={async () => {
-          const currentUrl = shareUrl || window.location.href;
-          // Di HP: langsung buka sheet share bawaan OS yang menghubungkan langsung ke aplikasi Instagram
-          if (typeof navigator !== "undefined" && navigator.share) {
-            try {
-              await navigator.share({
-                title: title,
-                text: `${title} | PC KMHDI Malang`,
-                url: currentUrl,
-              });
-              return;
-            } catch (err: any) {
-              if (err.name === "AbortError") return;
-            }
-          }
-
-          // Di Desktop / Fallback: Otomatis salin link & langsung arahkan ke Instagram
-          try {
-            await navigator.clipboard.writeText(currentUrl);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          } catch {
-            // ignore
-          }
-          window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
-        }}
-        title="Bagikan ke Instagram"
-        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:border-pink-500/40 hover:bg-gradient-to-tr hover:from-amber-500/15 hover:via-pink-500/15 hover:to-purple-500/15 hover:text-pink-600 dark:hover:text-pink-400 transition-all"
+        onClick={handleInstagramShare}
+        disabled={isSharingIG}
+        title="Bagikan ke Instagram Story (Card ala Spotify)"
+        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:border-pink-500/40 hover:bg-gradient-to-tr hover:from-amber-500/15 hover:via-pink-500/15 hover:to-purple-500/15 hover:text-pink-600 dark:hover:text-pink-400 transition-all disabled:opacity-60"
       >
-        <Instagram size={16} />
+        <Instagram size={16} className={isSharingIG ? "animate-spin" : ""} />
       </button>
 
+      {/* Salin Tautan */}
       <button
         type="button"
         onClick={handleCopy}
