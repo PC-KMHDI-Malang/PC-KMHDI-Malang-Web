@@ -7,6 +7,7 @@ import { Menu, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, Book
 import { logoutAction } from "@/app/actions/auth";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
+import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 
 const menus = [
   {
@@ -179,12 +180,19 @@ export default function Navbar({ user }: NavbarProps) {
 
                       {/* Logout Action */}
                       <div className="pt-1 border-t border-white/10">
-                        <form action={logoutAction}>
-                          <button type="submit" className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition text-left cursor-pointer">
-                            <LogOut size={14} />
-                            <span>Keluar</span>
-                          </button>
-                        </form>
+                        <SubmitWithConfirm
+                          wrapperClassName="w-full"
+                          action={logoutAction}
+                          modalTitle="Konfirmasi Keluar"
+                          modalDesc="Apakah Anda yakin ingin keluar dari akun Anda?"
+                          confirmText="Ya, Keluar"
+                          buttonElement={
+                            <div className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition text-left cursor-pointer">
+                              <LogOut size={14} />
+                              <span>Keluar</span>
+                            </div>
+                          }
+                        />
                       </div>
                     </div>
                   )}
@@ -288,16 +296,21 @@ export default function Navbar({ user }: NavbarProps) {
                         </Link>
                       )}
 
-                      <form action={logoutAction}>
-                        <button
-                          type="submit"
-                          onClick={() => setMobileOpen(false)}
-                          className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 py-3 text-center text-sm font-semibold text-rose-400 transition hover:bg-rose-500/20 cursor-pointer"
-                        >
-                          <LogOut size={16} />
-                          <span>Keluar dari Akun</span>
-                        </button>
-                      </form>
+                      <SubmitWithConfirm
+                        wrapperClassName="w-full"
+                        action={logoutAction}
+                        modalTitle="Konfirmasi Keluar"
+                        modalDesc="Apakah Anda yakin ingin keluar dari akun Anda?"
+                        confirmText="Ya, Keluar"
+                        buttonElement={
+                          <div
+                            className="w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 py-3 text-center text-sm font-semibold text-rose-400 transition hover:bg-rose-500/20 cursor-pointer"
+                          >
+                            <LogOut size={16} />
+                            <span>Keluar dari Akun</span>
+                          </div>
+                        }
+                      />
                     </>
                   ) : (
                     <button
