@@ -102,16 +102,23 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
         <AddEbookModal action={addEbook} usedBytes={usage.usedBytes} />
       </div>
 
-      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 transition-colors">
-        <div className="flex flex-col md:flex-row items-center justify-between mb-8 pb-4 border-b border-slate-100 dark:border-white/5 gap-4">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <span className="w-2 h-6 bg-slate-800 dark:bg-slate-300 rounded-full inline-block"></span>
-            Daftar E-Book
-          </h2>
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 transition-colors">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-slate-100 dark:border-white/5 gap-4">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <span className="w-2 h-6 bg-slate-800 dark:bg-slate-300 rounded-full inline-block"></span>
+              Daftar E-Book
+            </h2>
+            <span className="px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-full text-xs sm:text-sm font-semibold">{ebooks?.length || 0} E-Book</span>
+          </div>
 
-          <div className="flex items-center gap-3">
-            <form className="flex items-center gap-2">
-              <select name="genre" defaultValue={genreFilter} className="bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-sm outline-none cursor-pointer">
+          <div className="w-full lg:w-auto">
+            <form className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full">
+              <select
+                name="genre"
+                defaultValue={genreFilter}
+                className="w-full sm:w-auto bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none cursor-pointer"
+              >
                 <option value="Semua">Semua Jenis</option>
                 <option value="Organisasi">Organisasi</option>
                 <option value="Agama">Agama</option>
@@ -123,18 +130,21 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
                 <option value="Lainnya">Lainnya</option>
               </select>
 
-              <select name="sort" defaultValue={sortFilter} className="bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-sm outline-none cursor-pointer">
+              <select
+                name="sort"
+                defaultValue={sortFilter}
+                className="w-full sm:w-auto bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none cursor-pointer"
+              >
                 <option value="newest">Terbaru</option>
                 <option value="oldest">Terlama</option>
                 <option value="az">A-Z</option>
                 <option value="za">Z-A</option>
               </select>
 
-              <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors">
+              <button type="submit" className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-colors">
                 Terapkan
               </button>
             </form>
-            <span className="px-3 py-2 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-semibold">{ebooks?.length || 0} E-Book</span>
           </div>
         </div>
         {error && <p className="text-red-500 mb-4 font-medium">Gagal mengambil data.</p>}

@@ -93,6 +93,7 @@ export default function Navbar({ user }: NavbarProps) {
         <div className="w-full max-w-5xl pointer-events-auto">
           <nav
             className={`
+              relative z-50
               flex items-center justify-between
               rounded-full
               border
@@ -203,8 +204,14 @@ export default function Navbar({ user }: NavbarProps) {
 
           {/* 5. Mobile Menu Drawer (Dioptimasi untuk Layar HP) */}
           {mobileOpen && (
-            <div className="fixed inset-0 top-[65px] z-40 bg-black/40 backdrop-blur-sm lg:hidden animate-in fade-in duration-200 p-4">
-              <div className="w-full max-w-sm mx-auto rounded-3xl border border-white/20 bg-slate-900/80 p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-3xl backdrop-saturate-150 animate-in slide-in-from-top-4 duration-300 max-h-[85vh] overflow-y-auto flex flex-col justify-between">
+            <div
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 top-0 z-40 bg-black/30 backdrop-blur-md lg:hidden animate-in fade-in duration-200 p-4 pt-20 overflow-y-auto"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-sm mx-auto rounded-3xl border border-white/20 bg-slate-900/80 p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-3xl backdrop-saturate-150 animate-in slide-in-from-top-4 duration-300 max-h-[85vh] overflow-y-auto flex flex-col justify-between"
+              >
                 <div>
                   {/* Status Login di HP */}
                   {isLoggedIn ? (

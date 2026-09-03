@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className="bg-white dark:bg-slate-950 text-zinc-900 dark:text-zinc-50 antialiased transition-colors" suppressHydrationWarning>
+      <body className="bg-white text-zinc-900 antialiased" suppressHydrationWarning>
         <Providers>
           <ScrollToTop />
           {children}

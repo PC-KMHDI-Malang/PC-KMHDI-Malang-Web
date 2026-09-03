@@ -43,7 +43,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
   const { data: ebooks } = await dbQuery;
 
   return (
-    <div className="-mt-32 bg-slate-50 dark:bg-slate-950 transition-colors">
+    <div className="-mt-32 bg-white">
       {/* Header */}
       <div className="bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 pb-16 relative overflow-hidden">
         <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-3xl pointer-events-none" />
@@ -63,10 +63,10 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
           </aside>
 
           <div>
-            <form className="flex items-center gap-3 bg-white dark:bg-[#111111] border border-slate-100 dark:border-white/5 rounded-2xl p-3 mb-8">
+            <form className="flex items-center gap-3 bg-white border border-neutral-200 rounded-2xl p-3 mb-8 shadow-sm">
               <div className="flex items-center gap-2 flex-1 px-3">
-                <Search size={18} className="text-slate-400" />
-                <input type="text" name="q" defaultValue={query} placeholder="Pencarian e-Book ..." className="w-full bg-transparent outline-none text-sm dark:text-white placeholder:text-slate-400" />
+                <Search size={18} className="text-neutral-400" />
+                <input type="text" name="q" defaultValue={query} placeholder="Pencarian e-Book ..." className="w-full bg-transparent outline-none text-sm text-zinc-900 placeholder:text-neutral-400" />
               </div>
               <button type="submit" className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors">
                 Cari
@@ -75,10 +75,10 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
 
             {query && (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Hasil pencarian "{query}"</h3>
+                <h3 className="text-xl font-bold text-zinc-900">Hasil pencarian &quot;{query}&quot;</h3>
                 <Link
                   href={`/buku${genreFilter.length > 0 ? "?" + genreFilter.map((g) => `genre=${encodeURIComponent(g)}`).join("&") : ""}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-100 dark:bg-rose-900/30 text-red-700 dark:text-rose-400 rounded-full hover:bg-red-200 dark:hover:bg-rose-900/50 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
                 >
                   Bersihkan Pencarian
                 </Link>
@@ -92,7 +92,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
                 ))}
               </div>
             ) : (
-              <div className="py-24 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 bg-white dark:bg-[#111111] border border-slate-100 dark:border-white/5 rounded-3xl text-center px-5">
+              <div className="py-24 flex flex-col items-center justify-center text-neutral-400 bg-white border border-neutral-200 rounded-3xl text-center px-5">
                 <BookOpen size={40} className="mb-4 opacity-30" />
                 <p className="text-lg mb-4">{query ? `Tidak ada e-Book yang cocok dengan kata kunci "${query}".` : "Belum ada e-Book untuk filter ini."}</p>
                 {query && (

@@ -34,19 +34,19 @@ function LoginForm() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-50 relative overflow-hidden">
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 relative overflow-hidden transition-colors">
       {/* Tombol Kembali ke Website */}
       <div className="absolute top-6 left-6 md:top-10 md:left-10 z-10">
         <Link
           href="/"
-          className="flex items-center gap-2 bg-white/70 backdrop-blur-md px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all border border-slate-200 text-slate-700 font-semibold hover:text-red-700 hover:border-red-200 group"
+          className="flex items-center gap-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-semibold hover:text-red-700 dark:hover:text-white hover:border-red-200 dark:hover:border-white/20 group"
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
           Kembali ke Website
         </Link>
       </div>
 
-      <div className="w-full max-w-md rounded-[2rem] bg-white p-10 shadow-2xl border border-slate-100 z-10 relative">
+      <div className="w-full max-w-md rounded-[2rem] bg-white dark:bg-[#111111] p-10 shadow-2xl dark:shadow-none border border-slate-100 dark:border-white/10 z-10 relative">
         <div className="flex items-center gap-5 mb-8">
           <div className="w-20 h-20 shrink-0 bg-slate-50 border border-slate-100 shadow-sm rounded-2xl flex items-center justify-center p-2">
             <img src="/image/Logo.webp" alt="Logo" className="w-full h-full object-contain" />

@@ -8,10 +8,7 @@ interface AnimatedWordProps {
   interval?: number;
 }
 
-export default function AnimatedWord({
-  words,
-  interval = 2500,
-}: AnimatedWordProps) {
+export default function AnimatedWord({ words, interval = 2500 }: AnimatedWordProps) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {

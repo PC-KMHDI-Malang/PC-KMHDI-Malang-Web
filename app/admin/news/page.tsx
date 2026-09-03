@@ -107,8 +107,8 @@ export default async function NewsAdminPage() {
         <AddNewsModal action={addNews} usedBytes={usage.usedBytes} />
       </div>
 
-      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 transition-colors">
-        <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 dark:border-white/5">
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 transition-colors">
+        <div className="flex items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-slate-100 dark:border-white/5">
           <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <span className="w-2 h-6 bg-slate-800 dark:bg-slate-300 rounded-full inline-block"></span>
             Daftar Artikel
@@ -126,16 +126,16 @@ export default async function NewsAdminPage() {
               <div className="w-full md:w-64 h-48 md:h-auto relative overflow-hidden bg-slate-100 dark:bg-slate-800">
                 <img src={n.coverImage} alt={n.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               </div>
-              <div className="p-6 flex-1 flex flex-col justify-center">
+              <div className="p-4 sm:p-6 flex-1 flex flex-col justify-center">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="px-3 py-1 bg-red-50 dark:bg-rose-950/30 text-red-600 dark:text-rose-400 rounded-full text-xs font-bold tracking-wider uppercase border border-red-100 dark:border-rose-900/30">
                     {n.Category?.name || "UMUM"}
                   </span>
                 </div>
-                <h3 className="font-bold text-2xl text-slate-800 dark:text-white mb-2 leading-tight group-hover:text-red-600 dark:group-hover:text-rose-400 transition-colors">{n.title}</h3>
-                <p className="text-slate-500 dark:text-slate-400 text-base leading-relaxed line-clamp-2">{n.excerpt}</p>
-                <div className="mt-6 pt-4 border-t border-slate-50 dark:border-white/5 flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-400 dark:text-slate-500">Penulis: {n.authorName || n.author?.name || "Admin KMHDI"}</span>
+                <h3 className="font-bold text-xl sm:text-2xl text-slate-800 dark:text-white mb-2 leading-tight group-hover:text-red-600 dark:group-hover:text-rose-400 transition-colors">{n.title}</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base leading-relaxed line-clamp-2">{n.excerpt}</p>
+                <div className="mt-5 sm:mt-6 pt-4 border-t border-slate-50 dark:border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <span className="text-xs sm:text-sm font-medium text-slate-400 dark:text-slate-500">Penulis: {n.authorName || n.author?.name || "Admin KMHDI"}</span>
                   <div className="flex gap-2">
                     <Link
                       href={`/admin/news/${n.id}`}

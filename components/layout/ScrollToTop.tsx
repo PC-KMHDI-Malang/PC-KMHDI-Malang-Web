@@ -42,12 +42,12 @@ export default function ScrollToTop() {
         rounded-2xl
 
         border
-        border-white/20
+        border-slate-200
 
-        bg-white/15
+        bg-white/90
         backdrop-blur-2xl
 
-        text-white
+        text-slate-800
 
         shadow-xl
 
@@ -57,21 +57,16 @@ export default function ScrollToTop() {
         hover:-translate-y-1
         hover:scale-105
         hover:bg-red-600
+        hover:text-white
+        hover:border-red-600
 
         md:h-14
         md:w-14
 
-        ${
-          visible
-            ? "translate-y-0 opacity-100"
-            : "pointer-events-none translate-y-8 opacity-0"
-        }
+        ${visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-8 opacity-0"}
       `}
     >
-      <ChevronUp
-        size={22}
-        className="md:h-6 md:w-6"
-      />
+      <ChevronUp size={22} className="md:h-6 md:w-6" />
     </button>
   );
 }

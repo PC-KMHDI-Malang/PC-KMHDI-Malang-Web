@@ -50,17 +50,17 @@ export default async function GalleryPage() {
         <AddGalleryModal action={addGallery} usedBytes={usage.usedBytes} />
       </div>
 
-      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 transition-colors">
-        <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 dark:border-white/5">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 transition-colors">
+        <div className="flex items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-slate-100 dark:border-white/5">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <span className="w-2 h-6 bg-slate-800 dark:bg-slate-300 rounded-full inline-block"></span>
             Daftar Foto
           </h2>
-          <span className="px-3 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-full text-sm font-semibold">{gallery?.length || 0} Tersedia</span>
+          <span className="px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-full text-xs sm:text-sm font-semibold">{gallery?.length || 0} Tersedia</span>
         </div>
         {error && <p className="text-red-500 mb-4 font-medium">Gagal mengambil data.</p>}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {gallery?.map((item) => (
             <div
               key={item.id}
@@ -71,7 +71,7 @@ export default async function GalleryPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300"></div>
               </div>
 
-              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute top-3 right-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
                 <SubmitWithConfirm
                   id={item.id}
                   action={deleteGallery}
