@@ -76,7 +76,7 @@ export function ChatBot() {
   };
 
   return (
-    <div className="fixed bottom-24 right-5 md:right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-5 md:bottom-6 right-5 md:right-6 z-50 flex flex-col items-end">
       {/* Jendela Chat */}
       {isOpen && (
         <div className="mb-4 w-[320px] sm:w-[360px] overflow-hidden rounded-[24px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-5 fade-in duration-300">

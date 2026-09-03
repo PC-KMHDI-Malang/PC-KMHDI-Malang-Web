@@ -29,7 +29,7 @@ export default function ScrollToTop() {
       aria-label="Kembali ke atas"
       className={`
         fixed
-        bottom-5
+        bottom-24
         right-5
         z-50
 
