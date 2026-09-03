@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Facebook, Twitter, Link2, Heart, Check, Instagram } from "lucide-react";
-import { InstagramStoryModal } from "./InstagramStoryModal";
 
 function WhatsAppIcon() {
   return (
@@ -28,7 +27,6 @@ export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, c
   const [likesCount, setLikesCount] = useState(initialLikes);
   const [isPending, setIsPending] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
-  const [storyModalOpen, setStoryModalOpen] = useState(false);
 
   useEffect(() => {
     setShareUrl(window.location.href);
@@ -116,11 +114,36 @@ export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, c
         <WhatsAppIcon />
       </a>
 
-      {/* Tombol Instagram Story Card ala Spotify */}
+      {/* Tombol Langsung Share ke Instagram */}
       <button
         type="button"
-        onClick={() => setStoryModalOpen(true)}
-        title="Bagikan ke Instagram Story"
+        onClick={async () => {
+          const currentUrl = shareUrl || window.location.href;
+          // Di HP: langsung buka sheet share bawaan OS yang menghubungkan langsung ke aplikasi Instagram
+          if (typeof navigator !== "undefined" && navigator.share) {
+            try {
+              await navigator.share({
+                title: title,
+                text: `${title} | PC KMHDI Malang`,
+                url: currentUrl,
+              });
+              return;
+            } catch (err: any) {
+              if (err.name === "AbortError") return;
+            }
+          }
+
+          // Di Desktop / Fallback: Otomatis salin link & langsung arahkan ke Instagram
+          try {
+            await navigator.clipboard.writeText(currentUrl);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          } catch {
+            // ignore
+          }
+          window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+        }}
+        title="Bagikan ke Instagram"
         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:border-pink-500/40 hover:bg-gradient-to-tr hover:from-amber-500/15 hover:via-pink-500/15 hover:to-purple-500/15 hover:text-pink-600 dark:hover:text-pink-400 transition-all"
       >
         <Instagram size={16} />
@@ -150,9 +173,6 @@ export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, c
         <Heart size={15} className={liked ? "fill-red-600 dark:fill-rose-400 text-red-600 dark:text-rose-400" : ""} />
         <span>{likesCount}</span>
       </button>
-
-      {/* Modal Story ala Spotify */}
-      <InstagramStoryModal isOpen={storyModalOpen} onClose={() => setStoryModalOpen(false)} title={title} coverImage={coverImage} categoryOrGenre={categoryOrGenre} authorOrPublisher={authorOrPublisher} url={url} />
     </div>
   );
 }
