@@ -316,24 +316,31 @@ export function OrganizationSection({ members }: { members: Member[] }) {
             <div className="w-full flex flex-col items-center mt-6 relative">
               <div className="w-full grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4 relative z-10">
                 {[0, 1, 2, 3, 4, 5].map((idx) => (
-                  <div key={idx} className="relative flex justify-center h-8">
+                  /* Hanya sel baris pertama yang ditampilkan di tiap breakpoint: 2 di mobile,
+                     3 di tablet, 6 di desktop. Sebelumnya keenam sel selalu dirender, sehingga
+                     batang distribusi ikut tergambar ulang di baris kedua dan ketiga — itulah
+                     yang membuat garisnya tampak menumpuk tiga di mobile. */
+                  <div
+                    key={idx}
+                    className={`relative justify-center h-8 ${idx < 2 ? "flex" : idx === 2 ? "hidden md:flex" : "hidden xl:flex"}`}
+                  >
                     {/* Horizontal Connector per row */}
                     {/* Mobile (2 cols) */}
-                    <div className={`md:hidden absolute top-0 h-1 bg-red-600 
-                      ${idx % 2 === 0 ? "left-1/2 right-[-0.875rem] sm:right-[-1rem]" : "left-[-0.875rem] sm:left-[-1rem] right-1/2"}`} 
+                    <div className={`md:hidden absolute top-0 h-1 bg-red-600
+                      ${idx % 2 === 0 ? "left-1/2 right-[-0.875rem] sm:right-[-1rem]" : "left-[-0.875rem] sm:left-[-1rem] right-1/2"}`}
                     />
                     {/* Tablet (3 cols) */}
-                    <div className={`hidden md:block xl:hidden absolute top-0 h-1 bg-red-600 
-                      ${idx % 3 === 0 ? "left-1/2 right-[-1rem]" : idx % 3 === 2 ? "left-[-1rem] right-1/2" : "left-[-1rem] right-[-1rem]"}`} 
+                    <div className={`hidden md:block xl:hidden absolute top-0 h-1 bg-red-600
+                      ${idx % 3 === 0 ? "left-1/2 right-[-1rem]" : idx % 3 === 2 ? "left-[-1rem] right-1/2" : "left-[-1rem] right-[-1rem]"}`}
                     />
                     {/* Desktop (6 cols) */}
-                    <div className={`hidden xl:block absolute top-0 h-1 bg-red-600 
-                      ${idx === 0 ? "left-1/2 right-[-1rem]" : idx === 5 ? "left-[-1rem] right-1/2" : "left-[-1rem] right-[-1rem]"}`} 
+                    <div className={`hidden xl:block absolute top-0 h-1 bg-red-600
+                      ${idx === 0 ? "left-1/2 right-[-1rem]" : idx === 5 ? "left-[-1rem] right-1/2" : "left-[-1rem] right-[-1rem]"}`}
                     />
-                    
+
                     {/* Vertical drop */}
                     <div className="absolute top-0 w-1 h-8 bg-red-600" />
-                    
+
                     {/* Titik Sambungan Poros Tengah dari Ketua (hanya di baris pertama, persis di tengah struktur) */}
                     {idx === 2 && (
                       <div className="hidden md:block xl:hidden absolute top-0 right-[-0.5rem] w-1 h-1 bg-red-600" />

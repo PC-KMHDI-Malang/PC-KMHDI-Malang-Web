@@ -2,13 +2,26 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { Menu, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight } from "lucide-react";
+import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, Users, FolderOpen } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
 
-const menus = [
+type SubMenu = {
+  title: string;
+  href: string;
+};
+
+type NavMenu = {
+  title: string;
+  href: string;
+  icon: any;
+  submenus?: SubMenu[];
+};
+
+const menus: NavMenu[] = [
   {
     title: "Beranda",
     href: "/",
@@ -18,21 +31,35 @@ const menus = [
     title: "Profil",
     href: "/profil",
     icon: Info,
+    submenus: [
+      { title: "Sejarah", href: "/profil#sejarah" },
+      { title: "Visi & Misi", href: "/profil#visi-misi" },
+      { title: "Struktur Organisasi", href: "/profil#struktur" },
+    ],
   },
   {
     title: "Publikasi",
     href: "/berita",
     icon: Newspaper,
+    submenus: [
+      { title: "Berita & Artikel", href: "/berita" },
+      { title: "e-Book", href: "/buku" },
+      { title: "Galeri", href: "/galeri" },
+    ],
   },
   {
-    title: "e-Book",
-    href: "/buku",
-    icon: BookOpen,
+    title: "Organisasi",
+    href: "#",
+    icon: Users,
+    submenus: [
+      { title: "Pimpinan Cabang", href: "#" },
+      { title: "Komisariat", href: "#" },
+    ],
   },
   {
-    title: "Galeri",
-    href: "/galeri",
-    icon: ImageIcon,
+    title: "Direktori",
+    href: "#",
+    icon: FolderOpen,
   },
 ];
 
@@ -46,11 +73,13 @@ interface NavbarProps {
 }
 
 export default function Navbar({ user }: NavbarProps) {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [mobileOpenMenus, setMobileOpenMenus] = useState<Record<string, boolean>>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = !!user;
@@ -92,6 +121,14 @@ export default function Navbar({ user }: NavbarProps) {
     };
   }, [mobileOpen]);
 
+  const toggleMobileMenu = (title: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setMobileOpenMenus(prev => ({
+      ...prev,
+      [title]: !prev[title]
+    }));
+  };
+
   return (
     <>
       <header className="fixed left-0 top-3 sm:top-4 z-50 w-full px-3 sm:px-6 flex justify-center pointer-events-none">
@@ -119,20 +156,51 @@ export default function Navbar({ user }: NavbarProps) {
               <Image src="/image/Logo.webp" alt="PC KMHDI Malang Logo" width={48} height={48} unoptimized priority className="w-11 h-11 sm:w-12 sm:h-12 object-contain flex-shrink-0" />
 
               <div>
-                {/* Deliberately not an <h1>: the navbar renders on every page, and each page
-                    already has its own <h1>. Two H1s per page muddies the heading hierarchy. */}
                 <span className="block text-base sm:text-lg font-black tracking-tight text-white leading-tight">PC KMHDI</span>
                 <p className="text-xs font-medium text-white/75 tracking-wide">Kota Malang</p>
               </div>
             </Link>
 
             {/* 2. Desktop Navigation Links */}
-            <div className="hidden items-center gap-8 lg:flex">
-              {menus.map((menu) => (
-                <Link key={menu.title} href={menu.href} className="text-sm sm:text-base font-semibold text-white/80 transition-colors hover:text-white">
-                  {menu.title}
-                </Link>
-              ))}
+            <div className="hidden items-center gap-6 lg:flex">
+              {menus.map((menu) => {
+                const isActive = pathname === menu.href || (menu.href !== "/" && pathname.startsWith(menu.href));
+                
+                return (
+                  <div key={menu.title} className="relative group">
+                    <Link 
+                      href={menu.href} 
+                      className={`flex items-center gap-1.5 py-2 text-sm sm:text-base font-semibold transition-all relative ${
+                        isActive ? "text-white" : "text-white/80 hover:text-white"
+                      }`}
+                    >
+                      {menu.title}
+                      {menu.submenus && <ChevronDown size={14} className="opacity-70 group-hover:rotate-180 transition-transform duration-200" />}
+                      
+                      {/* Active Indicator Line */}
+                      {isActive && (
+                        <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-red-500 rounded-full"></span>
+                      )}
+                    </Link>
+
+                    {menu.submenus && (
+                      <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        <div className="w-48 bg-[#1e1e1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-1">
+                          {menu.submenus.map((sub) => (
+                            <Link 
+                              key={sub.title} 
+                              href={sub.href}
+                              className="px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+                            >
+                              {sub.title}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* 3. Desktop Actions (Theme Toggle & Auth) */}
@@ -242,7 +310,7 @@ export default function Navbar({ user }: NavbarProps) {
                 aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
                 className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white transition hover:bg-white/20 active:scale-95 border border-white/15 cursor-pointer"
               >
-                {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+                {mobileOpen ? <X size={22} /> : <MenuIcon size={22} />}
               </button>
             </div>
           </nav>
@@ -284,21 +352,52 @@ export default function Navbar({ user }: NavbarProps) {
                   <div className="flex flex-col gap-1.5 py-1">
                     {menus.map((menu) => {
                       const IconComponent = menu.icon;
+                      const hasSub = !!menu.submenus;
+                      const isExpanded = mobileOpenMenus[menu.title];
+
                       return (
-                        <Link
-                          key={menu.title}
-                          href={menu.href}
-                          onClick={() => setMobileOpen(false)}
-                          className="flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium text-slate-200 hover:text-white hover:bg-white/10 transition group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-300 group-hover:text-white group-hover:bg-red-600/20 transition">
-                              <IconComponent size={16} />
+                        <div key={menu.title} className="flex flex-col">
+                          <Link
+                            href={hasSub ? "#" : menu.href}
+                            onClick={hasSub ? (e) => toggleMobileMenu(menu.title, e) : () => setMobileOpen(false)}
+                            className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition group ${
+                              isExpanded ? "bg-white/10 text-white" : "text-slate-200 hover:text-white hover:bg-white/10"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition ${
+                                isExpanded ? "bg-red-600/30 text-red-400" : "bg-white/5 text-slate-300 group-hover:text-white group-hover:bg-red-600/20"
+                              }`}>
+                                <IconComponent size={16} />
+                              </div>
+                              <span>{menu.title}</span>
                             </div>
-                            <span>{menu.title}</span>
-                          </div>
-                          <ChevronRight size={15} className="text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition" />
-                        </Link>
+                            {hasSub ? (
+                              <ChevronDown size={15} className={`text-white/50 transition-transform ${isExpanded ? "rotate-180 text-white" : ""}`} />
+                            ) : (
+                              <ChevronRight size={15} className="text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition" />
+                            )}
+                          </Link>
+
+                          {hasSub && (
+                            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                              isExpanded ? "max-h-64 opacity-100 mt-1" : "max-h-0 opacity-0"
+                            }`}>
+                              <div className="pl-11 pr-2 py-2 flex flex-col gap-1 border-l-2 border-white/10 ml-5">
+                                {menu.submenus!.map((sub) => (
+                                  <Link
+                                    key={sub.title}
+                                    href={sub.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className="px-4 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                                  >
+                                    {sub.title}
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>
