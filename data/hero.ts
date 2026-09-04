@@ -23,26 +23,8 @@ export const heroData = {
     },
   ],
 
-  statistics: [
-    {
-      value: "12",
-      suffix: "+",
-      label: "Komisariat",
-    },
-    {
-      value: "500",
-      suffix: "+",
-      label: "Anggota",
-    },
-    {
-      value: "35",
-      suffix: "+",
-      label: "Program",
-    },
-    {
-      value: "15",
-      suffix: "+",
-      label: "Mitra",
-    },
-  ],
+  // Caption angka di bawah lambang. Fallback saja — nilai aktual dari kolom
+  // heroCaptionValue1/2 & heroCaptionLabel1/2 pada tabel "StatisticSection".
+  captionYears: { value: "35+", label: "Tahun Pengabdian" },
+  captionMembers: { value: "500+", label: "Kader Aktif" },
 };

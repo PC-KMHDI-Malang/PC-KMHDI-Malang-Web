@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ArrowRight } from "lucide-react";
 
 import { aboutData } from "@/data/about";
 import { ScrollReveal, ScrollStagger, ScrollStaggerItem, CountUpOnScroll } from "@/components/ui/ScrollReveal";
@@ -63,9 +63,10 @@ export default function About() {
             <ScrollReveal direction="up" delay={0.4}>
               <Link
                 href="/profil"
-                className="mt-10 inline-block rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 px-8 py-4 font-semibold text-white shadow-lg shadow-red-600/20 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-2 hover:shadow-xl hover:shadow-red-600/30"
+                className="mt-10 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 px-7 py-4 font-semibold text-white shadow-lg shadow-red-600/20 transition-all duration-300 hover:shadow-xl hover:shadow-red-600/30 hover:scale-[1.02]"
               >
                 Pelajari Profil Lengkap
+                <ArrowRight size={18} />
               </Link>
             </ScrollReveal>
           </div>

@@ -1,10 +1,7 @@
-import {
-  Users,
-  GraduationCap,
-  CalendarDays,
-  Handshake,
-} from "lucide-react";
-
+// Data statistik bawaan (fallback & seed awal).
+// Data aktual yang tampil di beranda diambil dari tabel Supabase "Statistic" & "StatisticSection"
+// dan bisa diedit lewat halaman /admin/statistics. Isi di bawah ini hanya dipakai jika
+// tabel tersebut belum dibuat atau masih kosong.
 export const statisticsData = {
   badge: "Pencapaian",
 
@@ -18,25 +15,25 @@ export const statisticsData = {
       id: 1,
       value: "500+",
       label: "Anggota Aktif",
-      icon: Users,
+      icon: "Users",
     },
     {
       id: 2,
       value: "12",
       label: "Komisariat",
-      icon: GraduationCap,
+      icon: "GraduationCap",
     },
     {
       id: 3,
       value: "35+",
       label: "Program Tahunan",
-      icon: CalendarDays,
+      icon: "CalendarDays",
     },
     {
       id: 4,
       value: "20+",
       label: "Mitra Kolaborasi",
-      icon: Handshake,
+      icon: "Handshake",
     },
   ],
 };

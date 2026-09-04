@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, BookOpen, Image as ImageIcon, Users, KeyRound, FileText, Network } from "lucide-react";
+import { LayoutDashboard, BookOpen, Image as ImageIcon, Users, KeyRound, FileText, Network, BarChart3 } from "lucide-react";
 
 interface SidebarNavProps {
   role: string;
@@ -13,6 +13,7 @@ export function SidebarNav({ role }: SidebarNavProps) {
 
   const links = [
     { href: "/admin", label: "Beranda", icon: LayoutDashboard },
+    { href: "/admin/statistics", label: "Statistik Pencapaian", icon: BarChart3 },
     { href: "/admin/pengurus", label: "Struktur Pengurus", icon: Network },
     { href: "/admin/ebooks", label: "Manajemen Ebook", icon: BookOpen },
     { href: "/admin/gallery", label: "Manajemen Galeri", icon: ImageIcon },

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, Users, FolderOpen } from "lucide-react";
+import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
@@ -12,6 +12,8 @@ import { LoginModal } from "@/components/auth/LoginModal";
 type SubMenu = {
   title: string;
   href: string;
+  icon?: any;
+  description?: string;
 };
 
 type NavMenu = {
@@ -32,9 +34,9 @@ const menus: NavMenu[] = [
     href: "/profil",
     icon: Info,
     submenus: [
-      { title: "Sejarah", href: "/profil#sejarah" },
-      { title: "Visi & Misi", href: "/profil#visi-misi" },
-      { title: "Struktur Organisasi", href: "/profil#struktur" },
+      { title: "Sejarah", href: "/profil#sejarah", icon: History },
+      { title: "Visi & Misi", href: "/profil#visi-misi", icon: Target },
+      { title: "Struktur Organisasi", href: "/profil#struktur", icon: Users2 },
     ],
   },
   {
@@ -42,15 +44,9 @@ const menus: NavMenu[] = [
     href: "/berita",
     icon: Newspaper,
     submenus: [
-      { title: "Berita & Artikel", href: "/berita" },
-      { title: "Opini", href: "/berita?category=Opini" },
-      { title: "Press Release", href: "/berita?category=Press+Release" },
+      { title: "Berita & Artikel", href: "/berita", icon: FileText },
+      { title: "Koleksi e-Book", href: "/buku", icon: BookOpen },
     ],
-  },
-  {
-    title: "e-Book",
-    href: "/buku",
-    icon: BookOpen,
   },
   {
     title: "Galeri",
@@ -176,16 +172,22 @@ export default function Navbar({ user }: NavbarProps) {
 
                     {menu.submenus && (
                       <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                        <div className="w-48 bg-[#1e1e1e]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-1">
-                          {menu.submenus.map((sub) => (
-                            <Link 
-                              key={sub.title} 
-                              href={sub.href}
-                              className="px-3 py-2 text-sm text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
-                            >
-                              {sub.title}
-                            </Link>
-                          ))}
+                        <div className="w-56 bg-[#1a1a1a]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col">
+                          {menu.submenus.map((sub) => {
+                            const SubIcon = sub.icon;
+                            return (
+                              <Link 
+                                key={sub.title} 
+                                href={sub.href}
+                                className="group/sub flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors z-10"
+                              >
+                                {SubIcon && (
+                                  <SubIcon size={14} className="text-slate-400 group-hover/sub:text-white transition-colors" />
+                                )}
+                                <span className="text-[13px] font-medium text-slate-300 group-hover/sub:text-white transition-colors">{sub.title}</span>
+                              </Link>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
