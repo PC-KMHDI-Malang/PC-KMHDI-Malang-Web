@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Berita & Informasi",
   description:
-    "Berita terbaru, siaran pers, opini kader, dan liputan kegiatan PC KMHDI Malang — Kesatuan Mahasiswa Hindu Dharma Indonesia Kota Malang.",
+    "Berita terbaru, siaran pers, opini kader, dan liputan kegiatan PC KMHDI Malang — Kesatuan Mahasiswa Hindu Dharma Indonesia.",
   // Filter and search params (?q, ?sort, ?category) produce the same content in a different
   // order, so they all canonicalise to the clean list URL.
   alternates: { canonical: "/berita" },

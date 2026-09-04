@@ -43,23 +43,19 @@ const menus: NavMenu[] = [
     icon: Newspaper,
     submenus: [
       { title: "Berita & Artikel", href: "/berita" },
-      { title: "e-Book", href: "/buku" },
-      { title: "Galeri", href: "/galeri" },
+      { title: "Opini", href: "/berita?category=Opini" },
+      { title: "Press Release", href: "/berita?category=Press+Release" },
     ],
   },
   {
-    title: "Organisasi",
-    href: "#",
-    icon: Users,
-    submenus: [
-      { title: "Pimpinan Cabang", href: "#" },
-      { title: "Komisariat", href: "#" },
-    ],
+    title: "e-Book",
+    href: "/buku",
+    icon: BookOpen,
   },
   {
-    title: "Direktori",
-    href: "#",
-    icon: FolderOpen,
+    title: "Galeri",
+    href: "/galeri",
+    icon: ImageIcon,
   },
 ];
 
