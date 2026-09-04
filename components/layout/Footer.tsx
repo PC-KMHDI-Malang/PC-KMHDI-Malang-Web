@@ -25,7 +25,7 @@ export default function Footer() {
               </div>
             </div>
 
-            <p className="mt-6 leading-7 text-zinc-400">Website resmi Pengurus Cabang Kesatuan Mahasiswa Hindu Dharma Indonesia Kota Malang sebagai pusat informasi, publikasi, dan pelayanan organisasi.</p>
+            <p className="mt-6 leading-7 text-zinc-400">Website resmi Pengurus Cabang Kesatuan Mahasiswa Hindu Dharma Indonesia Malang sebagai pusat informasi, publikasi, dan pelayanan organisasi.</p>
 
             {/* Social */}
             <div className="mt-8 flex gap-4">

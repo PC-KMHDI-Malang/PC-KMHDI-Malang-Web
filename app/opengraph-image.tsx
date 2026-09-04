@@ -38,7 +38,7 @@ export default async function OpengraphImage() {
         {/* Wordmark and tagline */}
         <div style={{ display: "flex", flexDirection: "column", marginLeft: 64 }}>
           <div style={{ display: "flex", fontSize: 92, fontWeight: 700, color: "#ffffff", letterSpacing: -2 }}>PC KMHDI</div>
-          <div style={{ display: "flex", fontSize: 46, fontWeight: 700, color: "#fbbf24", marginTop: 4 }}>Kota Malang</div>
+          <div style={{ display: "flex", fontSize: 46, fontWeight: 700, color: "#fbbf24", marginTop: 4 }}>Malang</div>
           <div style={{ display: "flex", width: 120, height: 6, backgroundColor: "#dc2626", borderRadius: 3, marginTop: 28 }} />
           <div style={{ display: "flex", fontSize: 30, color: "rgba(255,255,255,0.82)", marginTop: 28, lineHeight: 1.4, maxWidth: 620 }}>
             Kesatuan Mahasiswa Hindu Dharma Indonesia

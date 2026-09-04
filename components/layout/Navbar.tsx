@@ -157,7 +157,7 @@ export default function Navbar({ user }: NavbarProps) {
 
               <div>
                 <span className="block text-base sm:text-lg font-black tracking-tight text-white leading-tight">PC KMHDI</span>
-                <p className="text-xs font-medium text-white/75 tracking-wide">Kota Malang</p>
+                <p className="text-xs font-medium text-white/75 tracking-wide">Malang</p>
               </div>
             </Link>
 
@@ -176,11 +176,6 @@ export default function Navbar({ user }: NavbarProps) {
                     >
                       {menu.title}
                       {menu.submenus && <ChevronDown size={14} className="opacity-70 group-hover:rotate-180 transition-transform duration-200" />}
-                      
-                      {/* Active Indicator Line */}
-                      {isActive && (
-                        <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-red-500 rounded-full"></span>
-                      )}
                     </Link>
 
                     {menu.submenus && (
