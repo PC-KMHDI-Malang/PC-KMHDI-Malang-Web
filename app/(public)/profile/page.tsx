@@ -24,7 +24,10 @@ export default async function ProfilePage() {
 
   const userInitial = session.user.name?.[0]?.toUpperCase() || "U";
   const isAdmin = session.user.role === "ADMIN";
-  const isAccountLocked = isProtectedAccountEmail(session.user.email);
+  // KONTRIBUTOR dikunci dari ganti nama/password di sini juga — bukan cuma dari halaman
+  // /admin/profile — soalnya halaman publik ini ("/profile") tetap bisa diakses siapa pun yang
+  // login, apa pun role-nya (lihat authorized() di lib/auth.ts, blok isOnProfile).
+  const isAccountLocked = isProtectedAccountEmail(session.user.email) || session.user.role === "KONTRIBUTOR";
 
   return (
     <div className="-mt-32 bg-slate-50/70 dark:bg-[#0a0a0c] transition-colors min-h-screen pb-20">

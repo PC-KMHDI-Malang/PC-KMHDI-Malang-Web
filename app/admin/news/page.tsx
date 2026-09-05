@@ -8,11 +8,12 @@ import Link from "next/link";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { AddNewsModal } from "@/components/admin/AddNewsModal";
 import { RedirectToast } from "@/components/admin/RedirectToast";
+import { isAdminPanelRole } from "@/lib/roles";
 
 export default async function NewsAdminPage() {
   const session = await auth();
 
-  if (session?.user?.role !== "ADMIN") {
+  if (!isAdminPanelRole(session?.user?.role)) {
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold text-red-600 dark:text-rose-500">Akses Ditolak</h1>
@@ -63,7 +64,7 @@ export default async function NewsAdminPage() {
       }
 
       const authSession = await auth();
-      if (authSession?.user?.role !== "ADMIN") throw new Error("Unauthorized");
+      if (!authSession?.user || !isAdminPanelRole(authSession.user.role)) throw new Error("Unauthorized");
 
       const { error: insertNewsError } = await supabaseAdmin.from("News").insert([
         {
@@ -93,7 +94,7 @@ export default async function NewsAdminPage() {
     "use server";
     try {
       const authSession = await auth();
-      if (authSession?.user?.role !== "ADMIN") throw new Error("Unauthorized");
+      if (!isAdminPanelRole(authSession?.user?.role)) throw new Error("Unauthorized");
 
       const id = formData.get("id") as string;
       if (!id) return { error: "ID tidak ditemukan" };

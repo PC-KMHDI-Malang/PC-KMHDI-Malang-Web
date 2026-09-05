@@ -7,6 +7,7 @@ import { useEffect, useState, useRef } from "react";
 import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText, Handshake, ClipboardList, Loader2 } from "lucide-react";
 import { useFormStatus } from "react-dom";
 import { logoutAction } from "@/app/actions/auth";
+import { isAdminPanelRole } from "@/lib/roles";
 
 // useFormStatus hanya baca status <form> terdekat, jadi harus jadi komponen sendiri di dalam
 // <form action={logoutAction}> — kalau tombolnya ditulis langsung di Navbar, pending selalu
@@ -93,7 +94,11 @@ export default function Navbar({ user }: NavbarProps) {
 
   const isLoggedIn = !!user;
   const isAdmin = user?.role === "ADMIN";
-  const accountLink = isAdmin ? "/admin" : "/profile";
+  // KONTRIBUTOR juga punya akses ke panel admin (terbatas ke Artikel & e-Book, lihat lib/roles.ts)
+  // jadi tautan akun & pintasan "Panel Admin" di bawah pakai ini, bukan isAdmin yang ketat —
+  // beda dengan label "ADMINISTRATOR"/badge yang memang sengaja cuma untuk role ADMIN.
+  const hasAdminAccess = isAdminPanelRole(user?.role);
+  const accountLink = hasAdminAccess ? "/admin" : "/profile";
   const firstName = user?.name ? user.name.split(" ")[0] : "Akun";
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
@@ -291,7 +296,7 @@ export default function Navbar({ user }: NavbarProps) {
 
                       {/* Dropdown Links */}
                       <div className="py-1.5 flex flex-col gap-0.5">
-                        {isAdmin && (
+                        {hasAdminAccess && (
                           <Link href="/admin" onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
                             <Shield size={14} className="text-red-400" />
                             <span>Panel Admin</span>
@@ -394,7 +399,7 @@ export default function Navbar({ user }: NavbarProps) {
                       </div>
 
                       <Link href={accountLink} onClick={() => setMobileOpen(false)} className="rounded-xl bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition">
-                        {isAdmin ? "Admin" : "Profil"}
+                        {hasAdminAccess ? "Admin" : "Profil"}
                       </Link>
                     </div>
                   ) : null}
@@ -464,7 +469,7 @@ export default function Navbar({ user }: NavbarProps) {
                 <div className="mt-5 pt-4 border-t border-white/10 flex flex-col gap-2">
                   {isLoggedIn ? (
                     <>
-                      {isAdmin ? (
+                      {hasAdminAccess ? (
                         <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
                           <Shield size={16} className="text-red-400" />
                           <span>Masuk Panel Admin</span>

@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
 import { supabaseAdmin } from "@/lib/supabase";
+import { canAccessAdminPath, isAdminPanelRole } from "@/lib/roles";
 
 export const {
   handlers,
@@ -75,14 +76,17 @@ export const {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const role = (auth?.user as any)?.role;
-      const isAdmin = role === "ADMIN";
       const isOnAdmin = nextUrl.pathname.startsWith("/admin");
       const isOnProfile = nextUrl.pathname.startsWith("/profile");
 
       if (isOnAdmin) {
-        if (isLoggedIn && isAdmin) return true;
-        if (isLoggedIn && !isAdmin) return Response.redirect(new URL("/profile", nextUrl));
-        return false; // Redirect unauthenticated users to login page
+        if (!isLoggedIn) return false; // Redirect unauthenticated users to login page
+        // Role di luar ADMIN/KONTRIBUTOR (anggota biasa) tidak berurusan sama sekali dengan
+        // panel admin — diarahkan ke halaman profil kader. KONTRIBUTOR boleh masuk panel admin
+        // tapi cuma ke halaman yang diizinkan (Beranda, Artikel, e-Book) — lihat lib/roles.ts.
+        if (!isAdminPanelRole(role)) return Response.redirect(new URL("/profile", nextUrl));
+        if (!canAccessAdminPath(role, nextUrl.pathname)) return Response.redirect(new URL("/admin", nextUrl));
+        return true;
       }
 
       if (isOnProfile) {
@@ -91,7 +95,7 @@ export const {
       }
 
       if (isLoggedIn && nextUrl.pathname === "/login") {
-        if (isAdmin) return Response.redirect(new URL("/admin", nextUrl));
+        if (isAdminPanelRole(role)) return Response.redirect(new URL("/admin", nextUrl));
         return Response.redirect(new URL("/profile", nextUrl));
       }
       return true;

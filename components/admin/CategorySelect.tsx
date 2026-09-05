@@ -1,6 +1,6 @@
 ﻿"use client";
 
-const PREDEFINED_CATEGORIES = ["Umum", "Kegiatan", "Opini", "Press Release", "Informasi"];
+const PREDEFINED_CATEGORIES = ["Umum", "Kegiatan", "Opini", "Press Release", "Informasi", "Prestasi", "UKM Hindu"];
 
 interface CategorySelectProps {
   defaultCategoryName?: string;

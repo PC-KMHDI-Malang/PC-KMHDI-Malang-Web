@@ -4,7 +4,19 @@ import { auth } from "@/lib/auth";
 import { getIcon } from "@/lib/iconMap";
 import { EditStatModal } from "@/components/admin/EditStatModal";
 import { EditHeroCaptionModal } from "@/components/admin/EditHeroCaptionModal";
-import { AlertCircle, BarChart3, CalendarDays, Users } from "lucide-react";
+import { AlertCircle, BarChart3, CalendarDays, Users, Building2, ClipboardList, History } from "lucide-react";
+
+// Field caption Hero & strip statistik "Tentang" cuma dikirim satu per submit (satu modal = satu
+// field), jadi cukup daftarkan semuanya di sini lalu ambil yang benar-benar ada di formData —
+// tidak perlu ditulis satu-satu seperti sebelumnya.
+const SECTION_TEXT_FIELDS = [
+  "heroCaptionValue1",
+  "heroCaptionValue2",
+  "aboutStatValue1",
+  "aboutStatValue2",
+  "aboutStatValue3",
+  "aboutStatValue4",
+] as const;
 
 export default async function AdminStatisticsPage() {
   const session = await auth();
@@ -23,21 +35,19 @@ export default async function AdminStatisticsPage() {
 
   const items = dbItems || [];
 
-  // Server Action: Update caption hero
+  // Server Action: Update caption Hero / strip statistik "Tentang" (satu field per submit)
   async function updateSectionAction(formData: FormData) {
     "use server";
-    const heroCaptionValue1 = formData.get("heroCaptionValue1") as string;
-    const heroCaptionValue2 = formData.get("heroCaptionValue2") as string;
-
     const updatePayload: Record<string, unknown> = { id: 1, updatedAt: new Date().toISOString() };
-    if (heroCaptionValue1) updatePayload.heroCaptionValue1 = heroCaptionValue1;
-    if (heroCaptionValue2) updatePayload.heroCaptionValue2 = heroCaptionValue2;
+    for (const field of SECTION_TEXT_FIELDS) {
+      const value = formData.get(field) as string | null;
+      if (value) updatePayload[field] = value;
+    }
 
     let { error } = await supabaseAdmin.from("StatisticSection").upsert(updatePayload);
-    if (error && /heroCaption/i.test(error.message)) {
-      // Kolom caption hero belum ada (migrasi 012 belum dijalankan) — simpan tanpa kolom tsb.
-      delete updatePayload.heroCaptionValue1;
-      delete updatePayload.heroCaptionValue2;
+    if (error && /column .*(heroCaption|aboutStat).* does not exist/i.test(error.message)) {
+      // Kolom yang diedit belum ada (migrasi 012/020 belum dijalankan) — simpan tanpa kolom itu.
+      for (const field of SECTION_TEXT_FIELDS) delete updatePayload[field];
       const res = await supabaseAdmin.from("StatisticSection").upsert(updatePayload);
       error = res.error;
     }
@@ -136,6 +146,44 @@ export default async function AdminStatisticsPage() {
                 <EditHeroCaptionModal fieldName="heroCaptionValue2" label={section?.heroCaptionLabel2 || "Kader Aktif"} value={section?.heroCaptionValue2 || "500+"} action={updateSectionAction} />
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Form Strip Statistik "Tentang" */}
+      {!tablesMissing && (
+        <div className="bg-white dark:bg-[#111114] rounded-2xl border border-slate-200/80 dark:border-white/10 p-6">
+          <div className="mb-5">
+            <h3 className="font-bold text-slate-800 dark:text-white text-base">Strip Statistik &ldquo;Tentang&rdquo;</h3>
+            <p className="text-xs text-slate-400 mt-0.5">4 angka melayang di atas foto pada bagian &ldquo;Tentang&rdquo; beranda (mis. &ldquo;12+ Komisariat&rdquo;)</p>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { n: 1, icon: Building2, fallbackValue: "12+", fallbackLabel: "Komisariat" },
+              { n: 2, icon: Users, fallbackValue: "500+", fallbackLabel: "Anggota" },
+              { n: 3, icon: ClipboardList, fallbackValue: "35+", fallbackLabel: "Program" },
+              { n: 4, icon: History, fallbackValue: "1993", fallbackLabel: "Tahun Berdiri" },
+            ].map(({ n, icon: Icon, fallbackValue, fallbackLabel }) => {
+              const value = section?.[`aboutStatValue${n}`] || fallbackValue;
+              const label = section?.[`aboutStatLabel${n}`] || fallbackLabel;
+              return (
+                <div key={n} className="rounded-xl border border-slate-200/90 dark:border-white/10 p-4 flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 shrink-0">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-black text-slate-900 dark:text-white text-lg leading-snug truncate">{value}</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{label}</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex justify-end">
+                    <EditHeroCaptionModal fieldName={`aboutStatValue${n}`} label={label} value={value} action={updateSectionAction} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

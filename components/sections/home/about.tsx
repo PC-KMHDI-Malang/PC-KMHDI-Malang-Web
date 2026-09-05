@@ -2,10 +2,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 
+import { supabaseAdmin } from "@/lib/supabase";
 import { aboutData } from "@/data/about";
 import { ScrollReveal, ScrollStagger, ScrollStaggerItem, CountUpOnScroll } from "@/components/ui/ScrollReveal";
 
-export default function About() {
+// Strip statistik ("12+ Komisariat" dst.) diambil dari kolom aboutStat* pada tabel
+// "StatisticSection" di Supabase, bisa dikelola admin di /admin/statistics — sama seperti
+// caption Hero. Jatuh ke data/about.ts kalau baris/kolomnya belum ada (migrasi 020 belum jalan).
+export default async function About() {
+  const { data: section } = await supabaseAdmin.from("StatisticSection").select("*").eq("id", 1).maybeSingle();
+
+  const stats = [1, 2, 3, 4].map((n) => ({
+    value: section?.[`aboutStatValue${n}`] || aboutData.statistics[n - 1].value,
+    label: section?.[`aboutStatLabel${n}`] || aboutData.statistics[n - 1].label,
+  }));
+
   return (
     <section id="tentang" className="relative overflow-hidden bg-white dark:bg-[#0c0c0e] py-16 md:py-24 lg:py-32 transition-colors duration-300">
       {/* Background Glow */}
@@ -29,7 +40,7 @@ export default function About() {
             {/* Floating Stats */}
             <ScrollReveal direction="up" delay={0.3} duration={0.8} className="absolute -bottom-6 left-1/2 w-[92%] -translate-x-1/2">
               <div className="grid grid-cols-4 gap-4 rounded-2xl border border-slate-100 dark:border-white/10 bg-white/95 dark:bg-[#141417]/95 p-5 shadow-xl backdrop-blur-2xl">
-                {aboutData.statistics.map((item) => (
+                {stats.map((item) => (
                   <div key={item.label} className="text-center">
                     <h3 className="text-2xl font-bold bg-gradient-to-br from-red-600 to-rose-500 bg-clip-text text-transparent md:text-3xl">
                       <CountUpOnScroll value={item.value} />

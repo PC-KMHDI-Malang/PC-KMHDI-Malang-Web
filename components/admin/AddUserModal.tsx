@@ -131,6 +131,7 @@ export function AddUserModal({ action }: AddUserModalProps) {
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                   >
                     <option value="USER">User Biasa</option>
+                    <option value="KONTRIBUTOR">Kontributor</option>
                     <option value="ADMIN">Administrator</option>
                   </select>
                 </div>

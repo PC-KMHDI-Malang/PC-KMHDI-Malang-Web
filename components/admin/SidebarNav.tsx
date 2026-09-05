@@ -11,17 +11,26 @@ interface SidebarNavProps {
 export function SidebarNav({ role }: SidebarNavProps) {
   const pathname = usePathname();
 
-  const links = [
-    { href: "/admin", label: "Beranda", icon: LayoutDashboard },
-    { href: "/admin/statistics", label: "Statistik Pencapaian", icon: BarChart3 },
-    { href: "/admin/pengurus", label: "Struktur Pengurus", icon: Network },
-    { href: "/admin/mitra", label: "Mitra & Kolaborasi", icon: Handshake },
-    { href: "/admin/ebooks", label: "Manajemen Ebook", icon: BookOpen },
-    { href: "/admin/gallery", label: "Manajemen Galeri", icon: ImageIcon },
-    { href: "/admin/news", label: "Manajemen Artikel", icon: FileText },
-    ...(role === "ADMIN" ? [{ href: "/admin/users", label: "Manajemen User", icon: Users }] : []),
-    { href: "/admin/profile", label: "Ganti Password", icon: KeyRound },
-  ];
+  // KONTRIBUTOR cuma boleh ke Beranda, Artikel, dan e-Book (lihat lib/roles.ts) — termasuk tidak
+  // bisa ganti password/username sendiri, jadi menu "Ganti Password" juga disembunyikan untuknya.
+  const links =
+    role === "KONTRIBUTOR"
+      ? [
+          { href: "/admin", label: "Beranda", icon: LayoutDashboard },
+          { href: "/admin/ebooks", label: "Manajemen Ebook", icon: BookOpen },
+          { href: "/admin/news", label: "Manajemen Artikel", icon: FileText },
+        ]
+      : [
+          { href: "/admin", label: "Beranda", icon: LayoutDashboard },
+          { href: "/admin/statistics", label: "Statistik Pencapaian", icon: BarChart3 },
+          { href: "/admin/pengurus", label: "Struktur Pengurus", icon: Network },
+          { href: "/admin/mitra", label: "Mitra & Kolaborasi", icon: Handshake },
+          { href: "/admin/ebooks", label: "Manajemen Ebook", icon: BookOpen },
+          { href: "/admin/gallery", label: "Manajemen Galeri", icon: ImageIcon },
+          { href: "/admin/news", label: "Manajemen Artikel", icon: FileText },
+          ...(role === "ADMIN" ? [{ href: "/admin/users", label: "Manajemen User", icon: Users }] : []),
+          { href: "/admin/profile", label: "Ganti Password", icon: KeyRound },
+        ];
 
   return (
     <nav className="flex-1 p-4 space-y-2">

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowLeft, CalendarDays, User as UserIcon, Tag, Share2, Eye } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
@@ -9,6 +9,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl } from "@/lib/site";
 import { looksLikeHtml, stripHtml } from "@/lib/richText";
 import { incrementViewCount, formatViewCount } from "@/lib/views";
+import { legacyNewsSlugs } from "@/lib/legacyNewsSlugs";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -52,6 +53,10 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
   const { data: news } = await supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)").eq("slug", slug).eq("status", "PUBLISHED").single();
 
   if (!news) {
+    // Slug lama (sebelum akhiran timestamp-nya dibersihkan) diarahkan permanen ke slug barunya —
+    // lihat lib/legacyNewsSlugs.ts — supaya link yang sudah sempat dibagikan tidak 404.
+    const newSlug = legacyNewsSlugs[slug];
+    if (newSlug) permanentRedirect(`/${newSlug}`);
     notFound();
   }
 

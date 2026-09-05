@@ -187,9 +187,11 @@ export default function HeroClient({ captionYears, captionMembers }: HeroClientP
     <section ref={sectionRef} className="relative -mt-32 overflow-hidden bg-gradient-to-b from-black via-red-950 to-black pt-36 pb-20 lg:pt-24">
       {/* Background layer — parallax: scrolls slower than the foreground content for cinematic depth */}
       <motion.div style={{ y: bgY }} className="absolute inset-0 pointer-events-none">
-        {/* Ambient Glow */}
-        <div className="absolute -top-40 -left-40 h-[480px] w-[480px] rounded-full bg-red-600/15 blur-[130px]" />
-        <div className="absolute -bottom-40 -right-40 h-[420px] w-[420px] rounded-full bg-red-900/20 blur-[130px]" />
+        {/* Ambient Glow — disembunyikan di HP: blur radius sebesar ini mahal untuk GPU mobile,
+            dan cuma dekorasi tambahan, tidak mengubah keterbacaan konten. Tetap tampil di desktop
+            (lg+) tempat efeknya lebih kelihatan dan perangkatnya lebih kuat. */}
+        <div className="hidden lg:block absolute -top-40 -left-40 h-[480px] w-[480px] rounded-full bg-red-600/15 blur-[130px]" />
+        <div className="hidden lg:block absolute -bottom-40 -right-40 h-[420px] w-[420px] rounded-full bg-red-900/20 blur-[130px]" />
 
         {/* Gold spotlight from above, for a richer, more ceremonial feel */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_45%_at_50%_0%,rgba(251,191,36,0.10),transparent_70%)]" />
@@ -197,16 +199,18 @@ export default function HeroClient({ captionYears, captionMembers }: HeroClientP
         {/* Vignette to frame the composition */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(0,0,0,0.6)_100%)]" />
 
-        {/* Firelight glowing up from the bottom edge */}
-        <div className="absolute inset-x-0 bottom-0 h-80 bg-[radial-gradient(ellipse_70%_100%_at_50%_100%,rgba(249,115,22,0.35),rgba(220,38,38,0.12)_55%,transparent_80%)] blur-2xl animate-flame-glow" />
+        {/* Firelight glowing up from the bottom edge — disembunyikan di HP (blur besar + animasi
+            terus-menerus), tetap tampil di desktop. */}
+        <div className="hidden lg:block absolute inset-x-0 bottom-0 h-80 bg-[radial-gradient(ellipse_70%_100%_at_50%_100%,rgba(249,115,22,0.35),rgba(220,38,38,0.12)_55%,transparent_80%)] blur-2xl animate-flame-glow" />
 
-        {/* Cinematic light rays, swaying gently */}
+        {/* Cinematic light rays, swaying gently — disembunyikan di HP (blur besar + animasi
+            terus-menerus), tetap tampil di desktop. */}
         <div
-          className="absolute left-[15%] top-[-10%] h-[140%] w-24 bg-gradient-to-b from-transparent via-amber-200/10 to-transparent blur-2xl animate-ray-sway"
+          className="hidden lg:block absolute left-[15%] top-[-10%] h-[140%] w-24 bg-gradient-to-b from-transparent via-amber-200/10 to-transparent blur-2xl animate-ray-sway"
           style={{ "--ray-angle": "-16deg" } as React.CSSProperties}
         />
         <div
-          className="absolute right-[20%] top-[-15%] h-[140%] w-32 bg-gradient-to-b from-transparent via-amber-100/[0.08] to-transparent blur-2xl animate-ray-sway"
+          className="hidden lg:block absolute right-[20%] top-[-15%] h-[140%] w-32 bg-gradient-to-b from-transparent via-amber-100/[0.08] to-transparent blur-2xl animate-ray-sway"
           style={{ "--ray-angle": "12deg", animationDelay: "1.5s" } as React.CSSProperties}
         />
 
