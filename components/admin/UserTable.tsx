@@ -101,7 +101,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
             <option value="Kaderisasi">Kaderisasi</option>
             <option value="Data dan Informasi">Data dan Informasi</option>
             <option value="Sosial Masyarakat">Sosial Masyarakat</option>
-            <option value="Kajian dan Isu">Kajian dan Isu</option>
+            <option value="Litbang">Litbang</option>
             <option value="Hubungan Masyarakat">Hubungan Masyarakat</option>
             <option value="Tidak Ada">Tidak Ada</option>
           </select>
