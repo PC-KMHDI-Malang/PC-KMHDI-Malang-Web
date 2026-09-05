@@ -34,7 +34,7 @@ export function AdminMobileNav({ role }: AdminMobileNavProps) {
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white/95 dark:bg-[#0a0a0c]/95 backdrop-blur-md border-b border-slate-200 dark:border-white/10 shadow-sm transition-colors">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center p-1 border border-slate-200 dark:border-white/10 flex-shrink-0">
-            <Image src="/image/Logo.webp" alt="Logo KMHDI" width={28} height={28} unoptimized priority className="w-full h-full object-contain" />
+            <Image src="/image/Logo.webp" alt="Logo KMHDI" width={28} height={28} priority className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-sm font-bold text-slate-800 dark:text-white leading-tight">Admin Panel</h1>
@@ -69,7 +69,7 @@ export function AdminMobileNav({ role }: AdminMobileNavProps) {
               <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center p-1 border border-slate-100 dark:border-white/5 flex-shrink-0">
-                    <Image src="/image/Logo.webp" alt="Logo KMHDI" width={32} height={32} unoptimized priority className="w-full h-full object-contain" />
+                    <Image src="/image/Logo.webp" alt="Logo KMHDI" width={32} height={32} priority className="w-full h-full object-contain" />
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-slate-800 dark:text-white leading-tight">Admin Panel</h2>

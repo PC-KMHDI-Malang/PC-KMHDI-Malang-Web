@@ -87,7 +87,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
 
     revalidatePath("/admin/news");
     revalidatePath("/");
-    redirect("/admin/news");
+    redirect("/admin/news?updated=1");
   }
 
   return (

@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { updatePasswordAction } from "@/app/actions/profile";
 
 export function UpdatePasswordForm() {
@@ -10,6 +11,9 @@ export function UpdatePasswordForm() {
   useEffect(() => {
     if (state?.success) {
       formRef.current?.reset();
+      toast.success("Password berhasil diperbarui.");
+    } else if (state?.error) {
+      toast.error(state.error);
     }
   }, [state]);
 

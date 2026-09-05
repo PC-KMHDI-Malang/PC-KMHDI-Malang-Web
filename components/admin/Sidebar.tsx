@@ -19,7 +19,7 @@ export default async function Sidebar() {
       <aside className="hidden md:flex w-64 bg-white dark:bg-[#0a0a0c] text-slate-600 dark:text-slate-400 border-r border-slate-200 dark:border-white/10 h-screen fixed inset-y-0 left-0 flex-col shadow-xl z-20 transition-colors">
         <div className="p-6 border-b border-slate-100 dark:border-white/10 flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center p-1.5 shadow-sm border border-slate-100 dark:border-white/10">
-            <Image src="/image/Logo.webp" alt="Logo KMHDI" width={40} height={40} unoptimized priority className="w-full h-full object-contain" />
+            <Image src="/image/Logo.webp" alt="Logo KMHDI" width={40} height={40} priority className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col">
             <h2 className="text-lg font-bold text-slate-800 dark:text-white tracking-wide leading-tight">Admin Panel</h2>

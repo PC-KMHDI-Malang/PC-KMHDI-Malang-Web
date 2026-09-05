@@ -7,6 +7,7 @@ import { generateUniqueNewsSlug } from "@/lib/slug";
 import Link from "next/link";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { AddNewsModal } from "@/components/admin/AddNewsModal";
+import { RedirectToast } from "@/components/admin/RedirectToast";
 
 export default async function NewsAdminPage() {
   const session = await auth();
@@ -116,6 +117,7 @@ export default async function NewsAdminPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
+      <RedirectToast param="updated" message="Artikel berhasil diperbarui." />
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 transition-colors">Manajemen Artikel</h1>

@@ -118,7 +118,7 @@ export default async function AdminStatisticsPage() {
                 </div>
               </div>
               <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex justify-end">
-                <EditHeroCaptionModal fieldName="heroCaptionValue1" label={section?.heroCaptionLabel1 || "Tahun Pengabdian"} value={section?.heroCaptionValue1 || ""} action={updateSectionAction} />
+                <EditHeroCaptionModal fieldName="heroCaptionValue1" label={section?.heroCaptionLabel1 || "Tahun Pengabdian"} value={section?.heroCaptionValue1 || "35+"} action={updateSectionAction} />
               </div>
             </div>
 
@@ -133,7 +133,7 @@ export default async function AdminStatisticsPage() {
                 </div>
               </div>
               <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex justify-end">
-                <EditHeroCaptionModal fieldName="heroCaptionValue2" label={section?.heroCaptionLabel2 || "Kader Aktif"} value={section?.heroCaptionValue2 || ""} action={updateSectionAction} />
+                <EditHeroCaptionModal fieldName="heroCaptionValue2" label={section?.heroCaptionLabel2 || "Kader Aktif"} value={section?.heroCaptionValue2 || "500+"} action={updateSectionAction} />
               </div>
             </div>
           </div>

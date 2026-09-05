@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Edit2, X, Loader2 } from "lucide-react";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 
@@ -57,11 +58,13 @@ export function EditGalleryModal({ item, action }: EditGalleryModalProps) {
         formData.set("coverImageUrl", item.coverImage);
       }
       await action(formData);
+      toast.success("Foto galeri berhasil disimpan.");
       router.refresh();
       setIsOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan";
       setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

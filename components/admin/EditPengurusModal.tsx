@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { X, Edit2, Upload, Loader2, Image as ImageIcon, Instagram } from "lucide-react";
 import { uploadFileAction } from "@/lib/actions";
 import { Member, organizationRoleGroups } from "@/data/organization";
@@ -78,11 +79,13 @@ export function EditPengurusModal({ member, action }: EditPengurusModalProps) {
         formData.set("imageUrl", previewUrl);
       }
       await action(formData);
+      toast.success("Data pengurus berhasil disimpan.");
       router.refresh();
       setIsOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan";
       setError("Terjadi kesalahan: " + msg);
+      toast.error("Terjadi kesalahan: " + msg);
     } finally {
       setIsSubmitting(false);
     }

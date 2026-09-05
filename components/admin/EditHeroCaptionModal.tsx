@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { X, Edit2, Loader2 } from "lucide-react";
 
 interface EditHeroCaptionModalProps {
@@ -36,11 +37,13 @@ export function EditHeroCaptionModal({ fieldName, label, value, action }: EditHe
     try {
       const formData = new FormData(e.currentTarget);
       await action(formData);
+      toast.success(`${label} berhasil disimpan.`);
       router.refresh();
       setIsOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan";
       setError("Terjadi kesalahan: " + msg);
+      toast.error("Terjadi kesalahan: " + msg);
     } finally {
       setIsSubmitting(false);
     }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { X, Edit2, Loader2 } from "lucide-react";
 
 interface StatItem {
@@ -43,11 +44,13 @@ export function EditStatModal({ stat, action }: EditStatModalProps) {
       const formData = new FormData(e.currentTarget);
       formData.set("id", stat.id);
       await action(formData);
+      toast.success("Kartu statistik berhasil disimpan.");
       router.refresh();
       setIsOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan";
       setError("Terjadi kesalahan: " + msg);
+      toast.error("Terjadi kesalahan: " + msg);
     } finally {
       setIsSubmitting(false);
     }

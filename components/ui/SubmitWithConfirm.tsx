@@ -37,8 +37,11 @@ export function SubmitWithConfirm({ action, id, buttonElement, modalTitle, modal
         const result = await action(formData);
         if (result?.error) {
           toast.error(result.error);
-        } else if (result?.success) {
-          toast.success(result.message);
+        } else {
+          // Kebanyakan aksi hapus di admin cuma `throw` kalau gagal dan tidak mengembalikan apa
+          // pun kalau berhasil (bukan { success, message }) — tanpa fallback ini, berhasil hapus
+          // jadi senyap, tidak ada status apa pun yang muncul di pojok kanan atas.
+          toast.success(result?.message || "Berhasil dilakukan.");
         }
       } catch (e: any) {
         // redirect()/signOut({ redirectTo }) inside a server action work by throwing a special

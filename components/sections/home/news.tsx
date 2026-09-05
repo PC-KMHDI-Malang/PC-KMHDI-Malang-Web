@@ -7,11 +7,16 @@ import { NewsCarousel } from "@/components/ui/NewsCarousel";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 
 export default async function News() {
+  // Carousel cuma menampilkan 1-3 kartu sekaligus (lihat NewsCarousel) — tanpa limit, query ini
+  // dan DOM-nya ikut membesar terus tiap ada artikel baru (semua slide dirender sekaligus, Embla
+  // cuma menyembunyikannya lewat overflow-hidden, bukan virtualisasi). 9 sudah lebih dari cukup
+  // buat teaser di beranda; daftar lengkap tetap ada di /berita.
   const { data: latestNews } = await supabaseAdmin
     .from("News")
     .select("*, Category(name)")
     .eq("status", "PUBLISHED")
-    .order("createdAt", { ascending: false }); // No limit, fetch all for carousel
+    .order("createdAt", { ascending: false })
+    .limit(9);
 
   const displayNews = latestNews && latestNews.length > 0 ? latestNews.map(n => ({
     id: n.id,

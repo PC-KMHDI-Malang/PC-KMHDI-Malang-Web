@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { X, BookPlus, Loader2 } from "lucide-react";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { FilePicker } from "@/components/ui/FilePicker";
@@ -45,12 +46,14 @@ export function AddEbookModal({ action }: AddEbookModalProps) {
     try {
       const formData = new FormData(e.currentTarget);
       await action(formData);
+      toast.success("E-Book baru berhasil ditambahkan.");
       router.refresh();
       setIsOpen(false);
       (e.target as HTMLFormElement).reset();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan";
       setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

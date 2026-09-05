@@ -27,7 +27,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     alternates: { canonical: `/${slug}` },
     openGraph: {
       title: news.title,
-      description: desc,
+      // Prefix dateline cuma di sini (kartu preview link WA/FB/dll saat link di-paste) — bukan
+      // di teks pesan tombol "Bagikan" (lihat EbookShareBar di bawah), karena itu dua konteks
+      // yang beda: yang ini otomatis dari metadata halaman, yang itu teks manual yang diketik user.
+      description: `Malang, kmhdimalang.org — ${desc}`,
       url: `/${slug}`,
       siteName: "PC KMHDI Malang",
       // Gambarnya sengaja tidak dideklarasikan di sini — opengraph-image.tsx di folder yang
@@ -196,7 +199,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               categoryOrGenre={categoryName}
               authorOrPublisher={authorName}
               date={publishedDate}
-              description={`Malang, kmhdimalang.org — ${news.excerpt || stripHtml(news.content).slice(0, 180)}`}
+              description={news.excerpt || stripHtml(news.content).slice(0, 180)}
             />
           </div>
         </div>

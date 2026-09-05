@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { X, ImagePlus, Loader2 } from "lucide-react";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 
@@ -44,12 +45,14 @@ export function AddGalleryModal({ action }: AddGalleryModalProps) {
     try {
       const formData = new FormData(e.currentTarget);
       await action(formData);
+      toast.success("Foto baru berhasil ditambahkan ke galeri.");
       router.refresh();
       setIsOpen(false);
       (e.target as HTMLFormElement).reset();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan";
       setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

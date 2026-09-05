@@ -2,8 +2,7 @@ import { auth } from "@/lib/auth";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { SessionAutoLogout } from "@/components/auth/SessionAutoLogout";
-
-import { ChatBot } from "@/components/ui/ChatBot";
+import { ChatBot } from "@/components/ui/ChatBotLoader";
 
 export default async function PublicLayout({
   children,

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { X, Edit2, Loader2 } from "lucide-react";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { FilePicker } from "@/components/ui/FilePicker";
@@ -58,11 +59,13 @@ export function EditEbookModal({ ebook, action }: EditEbookModalProps) {
       const formData = new FormData(e.currentTarget);
       formData.append("id", ebook.id);
       await action(formData);
+      toast.success("E-Book berhasil disimpan.");
       router.refresh();
       setIsOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan";
       setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

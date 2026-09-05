@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { X, UserPlus, Upload, Loader2, Image as ImageIcon, Instagram } from "lucide-react";
 import { uploadFileAction } from "@/lib/actions";
 import { organizationRoleGroups } from "@/data/organization";
@@ -76,12 +77,14 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
         formData.set("imageUrl", previewUrl);
       }
       await action(formData);
+      toast.success("Pengurus baru berhasil ditambahkan.");
       router.refresh();
       setPreviewUrl("");
       setIsOpen(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan";
       setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

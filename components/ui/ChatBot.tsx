@@ -200,6 +200,12 @@ export function ChatBot() {
           </div>
         )}
 
+        {/* Cincin denyut di belakang tombol: elemen sendiri (bukan box-shadow di tombol, lihat
+            komentar @keyframes chatbot-ring-pulse di globals.css) DAN sibling sebelum <button>
+            (bukan child di dalamnya) supaya tidak menutupi ikon Bot/X — z-10 di tombol memastikan
+            tombol tetap di atas cincin ini apa pun urutan DOM-nya. */}
+        {!isOpen && <span className="absolute h-[60px] w-[60px] rounded-full bg-[#C00000] animate-chatbot-glow pointer-events-none" />}
+
         {/* Button */}
         <button
           onClick={() => {
@@ -213,7 +219,7 @@ export function ChatBot() {
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           className={`relative flex h-[60px] w-[60px] items-center justify-center rounded-full transition-all duration-300 hover:scale-110 active:scale-95 z-10 ${
-            isOpen ? "bg-slate-800 dark:bg-[#1E1E1E] text-white shadow-[0_10px_25px_rgba(168,0,0,0.5)]" : "bg-gradient-to-tr from-[#8B0000] to-[#C00000] text-white hover:brightness-110 animate-chatbot-glow"
+            isOpen ? "bg-slate-800 dark:bg-[#1E1E1E] text-white shadow-[0_10px_25px_rgba(168,0,0,0.5)]" : "bg-gradient-to-tr from-[#8B0000] to-[#C00000] text-white shadow-[0_4px_24px_rgba(168,0,0,0.4)] hover:brightness-110"
           }`}
         >
           {isOpen ? <X size={26} /> : <Bot size={28} />}

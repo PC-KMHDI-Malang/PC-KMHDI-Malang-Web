@@ -4,8 +4,22 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText, Handshake, ClipboardList } from "lucide-react";
+import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText, Handshake, ClipboardList, Loader2 } from "lucide-react";
+import { useFormStatus } from "react-dom";
 import { logoutAction } from "@/app/actions/auth";
+
+// useFormStatus hanya baca status <form> terdekat, jadi harus jadi komponen sendiri di dalam
+// <form action={logoutAction}> — kalau tombolnya ditulis langsung di Navbar, pending selalu
+// false karena Navbar bukan child form itu sendiri. Ini yang bikin tap "Ya, Keluar" terasa
+// tanpa reaksi/animasi apa pun sebelum redirect-nya kelar.
+function LogoutSubmitButton({ className }: { className: string }) {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending} className={`${className} ${pending ? "opacity-70 cursor-wait" : ""}`}>
+      {pending ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Ya, Keluar"}
+    </button>
+  );
+}
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
 
@@ -168,7 +182,7 @@ export default function Navbar({ user }: NavbarProps) {
         <div className="w-full max-w-5xl pointer-events-auto">
           <nav
             className={`
-              relative z-50
+              relative z-[65]
               flex items-center justify-between
               rounded-full
               border
@@ -186,7 +200,10 @@ export default function Navbar({ user }: NavbarProps) {
           >
             {/* 1. Logo Brand */}
             <Link href="/" className="flex items-center gap-3.5 transition hover:opacity-90 flex-shrink-0">
-              <Image src="/image/Logo.webp" alt="PC KMHDI Malang Logo" width={48} height={48} unoptimized priority className="w-11 h-11 sm:w-12 sm:h-12 object-contain flex-shrink-0" />
+              {/* Tanpa "unoptimized": file sumbernya 187 KB tapi tampil cuma ~48px di sini, jadi
+                  Next.js perlu meresize/mengompresnya dulu — kalau "unoptimized" dipasang, browser
+                  men-download file 187 KB itu utuh di SETIAP halaman (dengan priority pula). */}
+              <Image src="/image/Logo.webp" alt="PC KMHDI Malang Logo" width={48} height={48} priority className="w-11 h-11 sm:w-12 sm:h-12 object-contain flex-shrink-0" />
 
               <div>
                 <span className="block text-base sm:text-lg font-black tracking-tight text-white leading-tight">PC KMHDI</span>
@@ -301,12 +318,7 @@ export default function Navbar({ user }: NavbarProps) {
                                 Batal
                               </button>
                               <form action={logoutAction} className="flex-1">
-                                <button
-                                  type="submit"
-                                  className="w-full py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold transition shadow-sm"
-                                >
-                                  Ya, Keluar
-                                </button>
+                                <LogoutSubmitButton className="w-full py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold transition shadow-sm" />
                               </form>
                             </div>
                           </div>
@@ -351,9 +363,12 @@ export default function Navbar({ user }: NavbarProps) {
           </nav>
 
           {/* 5. Mobile Menu Drawer (Dioptimasi untuk Layar HP) */}
-          {/* z-[60] di sini cukup untuk menang atas isi header lainnya (dropdown akun, dll) —
-              menang atas ChatBot (sibling di luar header) ditentukan oleh z-index <header>
-              itu sendiri, lihat komentar di sana. */}
+          {/* z-[60] di sini lebih rendah dari <nav> di atas (z-[65]) dengan sengaja — supaya
+              nav bar (logo, tombol tema, tombol hamburger X) tetap tampil jelas di atas overlay
+              gelap/blur ini saat menu dibuka, bukan ikut menghitam/blur seperti sebelumnya.
+              Menang atas isi header lainnya (dropdown akun, dll) tetap terjamin karena keduanya
+              berbagi parent yang sama. Menang atas ChatBot (sibling di luar header) ditentukan
+              oleh z-index <header> itu sendiri, lihat komentar di sana. */}
           {mobileOpen && (
             <div
               onClick={() => setMobileOpen(false)}
@@ -479,12 +494,7 @@ export default function Navbar({ user }: NavbarProps) {
                                 Drawer ditutup otomatis lewat efek isLoggedIn di atas begitu sesi
                                 berubah setelah logoutAction redirect. */}
                             <form action={logoutAction} className="flex-1">
-                              <button
-                                type="submit"
-                                className="w-full py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition shadow-md"
-                              >
-                                Ya, Keluar
-                              </button>
+                              <LogoutSubmitButton className="w-full py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition shadow-md" />
                             </form>
                           </div>
                         </div>

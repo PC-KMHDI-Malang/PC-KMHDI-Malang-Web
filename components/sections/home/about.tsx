@@ -17,7 +17,12 @@ export default function About() {
           <div className="relative pb-16 md:pb-0">
             <ScrollReveal direction="left" delay={0.1} duration={0.8}>
               <div className="overflow-hidden rounded-[2.5rem] shadow-2xl ring-1 ring-slate-200 dark:ring-white/10">
-                <Image src={aboutData.image} alt={aboutData.title} width={700} height={800} className="h-full w-full object-cover transition-transform duration-700 hover:scale-105" />
+                {/* width/height di sini cuma rasio intrinsik — tampilannya "w-full" mengikuti
+                    lebar kolom (penuh di HP, ~separuh kontainer di desktop). Tanpa "sizes",
+                    Next.js menganggap gambar selalu tampil persis 700px dan cuma menyiapkan
+                    varian 700w/1400w — di HP yang lebarnya ~360-400px, itu 2x lebih besar dari
+                    yang perlu. */}
+                <Image src={aboutData.image} alt={aboutData.title} width={700} height={800} sizes="(min-width: 1024px) 640px, 100vw" className="h-full w-full object-cover transition-transform duration-700 hover:scale-105" />
               </div>
             </ScrollReveal>
 
