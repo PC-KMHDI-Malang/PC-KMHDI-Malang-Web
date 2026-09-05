@@ -91,6 +91,7 @@ export default function Navbar({ user }: NavbarProps) {
   useEffect(() => {
     setUserDropdownOpen(false);
     setShowLogoutConfirm(false);
+    setMobileOpen(false);
   }, [isLoggedIn]);
 
   useEffect(() => {
@@ -471,10 +472,15 @@ export default function Navbar({ user }: NavbarProps) {
                             >
                               Batal
                             </button>
+                            {/* Sengaja tidak ada onClick di sini yang memanggil setMobileOpen(false).
+                                Itu akan langsung meng-unmount drawer ini (dan <form> di dalamnya)
+                                pada render yang sama dengan klik, sebelum browser sempat mengirim
+                                submit form-nya — hasilnya logout tidak pernah benar-benar terjadi.
+                                Drawer ditutup otomatis lewat efek isLoggedIn di atas begitu sesi
+                                berubah setelah logoutAction redirect. */}
                             <form action={logoutAction} className="flex-1">
                               <button
                                 type="submit"
-                                onClick={() => setMobileOpen(false)}
                                 className="w-full py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition shadow-md"
                               >
                                 Ya, Keluar
