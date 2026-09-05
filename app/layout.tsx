@@ -100,6 +100,7 @@ const structuredData = {
 
 import NextTopLoader from "nextjs-toploader";
 import { Toaster } from "sonner";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function RootLayout({
   children,
@@ -116,6 +117,7 @@ export default function RootLayout({
           <ScrollToTop />
           {children}
         </Providers>
+        <SpeedInsights />
       </body>
     </html>
   );
