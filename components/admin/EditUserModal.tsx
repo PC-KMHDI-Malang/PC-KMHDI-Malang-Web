@@ -126,6 +126,10 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                       className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 pr-12 outline-none transition-all"
                       minLength={6}
                       placeholder="Biarkan kosong jika tidak ingin mengubah password"
+                      // Tanpa ini, bubble validasi bawaan browser tampil dalam bahasa browsernya
+                      // sendiri (bisa Inggris) — pesannya tidak ikut lang="id" di halaman.
+                      onInvalid={(e) => e.currentTarget.setCustomValidity("Kata sandi minimal 6 karakter.")}
+                      onInput={(e) => e.currentTarget.setCustomValidity("")}
                     />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}

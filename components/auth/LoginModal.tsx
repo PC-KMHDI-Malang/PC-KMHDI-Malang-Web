@@ -3,7 +3,6 @@
 import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { X, Eye, EyeOff, Lock, Mail, AlertCircle } from "lucide-react";
 import { signIn } from "next-auth/react";
 
@@ -13,7 +12,6 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
@@ -47,8 +45,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         if (res?.error) {
           setError("Email atau password yang Anda masukkan salah.");
         } else {
-          onClose();
-          router.refresh();
+          // router.refresh() cuma menyegarkan halaman yang sedang dibuka — halaman lain yang
+          // sempat dibuka/di-prefetch SEBELUM login (tersimpan di cache navigasi client-side
+          // Next.js) tetap menyimpan versi lama yang mengira belum login. Begitu diklik lagi,
+          // versi cache lama itu yang muncul, seolah-olah sesinya tidak terbaca — padahal
+          // login-nya sendiri berhasil. Reload penuh menjamin semua cache itu ikut dibuang.
+          window.location.reload();
         }
       } catch {
         setError("Terjadi kendala saat login. Silakan coba kembali.");

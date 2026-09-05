@@ -34,21 +34,30 @@ export function UpdatePasswordForm() {
       
       <div>
         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Password Saat Ini</label>
-        <input 
-          type="password" 
-          name="currentPassword" 
-          required 
-          className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-slate-800 dark:focus:border-slate-500 focus:ring-4 focus:ring-slate-800/10 dark:focus:ring-slate-500/20 rounded-xl p-3 outline-none transition-all font-medium" 
+        <input
+          type="password"
+          name="currentPassword"
+          required
+          className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-slate-800 dark:focus:border-slate-500 focus:ring-4 focus:ring-slate-800/10 dark:focus:ring-slate-500/20 rounded-xl p-3 outline-none transition-all font-medium"
+          // Tanpa ini, bubble validasi bawaan browser tampil dalam bahasa browsernya sendiri
+          // (bisa Inggris) — pesannya tidak ikut lang="id" di halaman.
+          onInvalid={(e) => e.currentTarget.setCustomValidity("Password saat ini wajib diisi.")}
+          onInput={(e) => e.currentTarget.setCustomValidity("")}
         />
       </div>
       <div>
         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Password Baru (Min. 6 Karakter)</label>
-        <input 
-          type="password" 
-          name="newPassword" 
-          required 
+        <input
+          type="password"
+          name="newPassword"
+          required
           minLength={6}
-          className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all font-medium" 
+          className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all font-medium"
+          onInvalid={(e) => {
+            const el = e.currentTarget;
+            el.setCustomValidity(el.validity.tooShort ? "Password baru minimal 6 karakter." : "Password baru wajib diisi.");
+          }}
+          onInput={(e) => e.currentTarget.setCustomValidity("")}
         />
       </div>
       <div className="pt-4 flex justify-end">
