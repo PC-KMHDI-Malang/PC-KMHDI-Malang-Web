@@ -26,8 +26,6 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
   const [sortBy, setSortBy] = useState<"createdAt" | "name" | "jabatan" | "bidang">("createdAt");
   const [filterJabatan, setFilterJabatan] = useState<string>("");
   const [filterBidang, setFilterBidang] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
 
   const filteredAndSortedUsers = useMemo(() => {
     let result = [...users];
@@ -57,9 +55,6 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
     });
   }, [users, sortBy, filterJabatan, filterBidang]);
 
-  const totalPages = Math.ceil(filteredAndSortedUsers.length / itemsPerPage);
-  const paginatedUsers = filteredAndSortedUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
   return (
     <div className="bg-white dark:bg-[#111114] p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-lg border border-slate-200/80 dark:border-white/10 transition-colors">
       {/* 1. Header & Filter Bar */}
@@ -78,7 +73,6 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
             value={filterJabatan}
             onChange={(e) => {
               setFilterJabatan(e.target.value);
-              setCurrentPage(1);
             }}
             className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium cursor-pointer"
           >
@@ -99,7 +93,6 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
             value={filterBidang}
             onChange={(e) => {
               setFilterBidang(e.target.value);
-              setCurrentPage(1);
             }}
             className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium cursor-pointer"
           >
@@ -118,7 +111,6 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
             value={sortBy}
             onChange={(e) => {
               setSortBy(e.target.value as any);
-              setCurrentPage(1);
             }}
             className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium cursor-pointer"
           >
@@ -133,7 +125,6 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
               onClick={() => {
                 setFilterJabatan("");
                 setFilterBidang("");
-                setCurrentPage(1);
               }}
               className="w-full sm:w-auto px-3 py-2 text-xs sm:text-sm font-bold text-red-600 dark:text-rose-500 hover:bg-red-50 dark:hover:bg-rose-500/10 rounded-xl transition-colors text-center"
             >
@@ -144,11 +135,13 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
       </div>
 
       {/* 2. Tampilan Mobile: Kartu Responsif (Khusus Layar HP < md) */}
-      <div className="block md:hidden space-y-3.5">
-        {paginatedUsers.length === 0 ? (
+      {/* max-h + overflow-y-auto gantinya pagination — daftarnya discroll sendiri begitu
+          melewati tinggi ini, bukan dipotong-potong jadi beberapa halaman. */}
+      <div className="block md:hidden max-h-[70vh] overflow-y-auto space-y-3.5 pr-1">
+        {filteredAndSortedUsers.length === 0 ? (
           <div className="py-12 text-center text-slate-500 dark:text-slate-400">Tidak ada user ditemukan.</div>
         ) : (
-          paginatedUsers.map((u) => (
+          filteredAndSortedUsers.map((u) => (
             <div key={u.id} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 p-4 space-y-3 shadow-xs">
               {/* Header Kartu: Nama & Role */}
               <div className="flex items-start justify-between gap-2">
@@ -236,9 +229,11 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
 
       {/* 3. Tampilan Desktop / Tablet: Tabel Lengkap (Layar >= md) */}
       <div className="hidden md:block overflow-hidden rounded-2xl bg-white dark:bg-white/5 shadow-sm dark:shadow-none border border-slate-100 dark:border-white/5">
-        <div className="overflow-x-auto">
+        {/* max-h + overflow-y-auto gantinya pagination — header dibuat sticky (dengan bg solid,
+            bukan transparan) supaya tetap kelihatan saat isi tabelnya discroll. */}
+        <div className="max-h-[70vh] overflow-auto">
           <table className="min-w-[760px] w-full border-collapse">
-            <thead>
+            <thead className="sticky top-0 z-10 bg-white dark:bg-[#1a1a1e]">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">Nama</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">Email</th>
@@ -249,14 +244,14 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
               </tr>
             </thead>
             <tbody>
-              {paginatedUsers.length === 0 ? (
+              {filteredAndSortedUsers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                     Tidak ada user ditemukan.
                   </td>
                 </tr>
               ) : (
-                paginatedUsers.map((u) => (
+                filteredAndSortedUsers.map((u) => (
                   <tr key={u.id} className="group transition-all duration-300 hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-50 dark:border-white/5 last:border-0">
                     <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white">{u.name}</td>
                     <td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">{u.email}</td>
@@ -326,42 +321,6 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
         </div>
       </div>
 
-      {/* 4. Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-6 sm:mt-8 flex flex-wrap justify-center items-center gap-1.5 sm:gap-2">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-white/10 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
-          >
-            Sebelumnya
-          </button>
-
-          <div className="flex items-center gap-1 flex-wrap">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-              <button
-                key={pageNum}
-                onClick={() => setCurrentPage(pageNum)}
-                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-xs sm:text-sm font-bold transition-colors ${
-                  currentPage === pageNum
-                    ? "bg-red-600 dark:bg-rose-600 text-white shadow-md shadow-red-600/20"
-                    : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10"
-                }`}
-              >
-                {pageNum}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-white/10 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
-          >
-            Berikutnya
-          </button>
-        </div>
-      )}
     </div>
   );
 }

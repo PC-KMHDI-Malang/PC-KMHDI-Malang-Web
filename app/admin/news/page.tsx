@@ -8,9 +8,16 @@ import Link from "next/link";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { AddNewsModal } from "@/components/admin/AddNewsModal";
 import { RedirectToast } from "@/components/admin/RedirectToast";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { isAdminPanelRole } from "@/lib/roles";
 
-export default async function NewsAdminPage() {
+const NEWS_PER_PAGE = 6;
+
+interface NewsAdminPageProps {
+  searchParams: Promise<{ q?: string; sort?: string; category?: string; page?: string }>;
+}
+
+export default async function NewsAdminPage({ searchParams: searchParamsPromise }: NewsAdminPageProps) {
   const session = await auth();
 
   if (!isAdminPanelRole(session?.user?.role)) {
@@ -22,8 +29,42 @@ export default async function NewsAdminPage() {
     );
   }
 
-  const { data: news, error } = await supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)").order("createdAt", { ascending: false });
+  const searchParams = await searchParamsPromise;
+  const query = searchParams?.q?.trim() || "";
+  const sortFilter = searchParams?.sort || "newest";
+  const categoryFilter = searchParams?.category || "Semua";
+  const currentPage = Math.max(1, parseInt(searchParams?.page || "1", 10) || 1);
+  const from = (currentPage - 1) * NEWS_PER_PAGE;
+  const to = from + NEWS_PER_PAGE - 1;
+
+  // Perlu di-resolve ke id dulu: kolom "categoryId" di News nunjuk ke tabel Category,
+  // sedangkan filter di URL pakai nama kategori (lebih enak dibaca daripada UUID).
   const { data: categories } = await supabaseAdmin.from("Category").select("id, name").order("name");
+  const matchingCategory = categoryFilter !== "Semua" ? categories?.find((c) => c.name === categoryFilter) : null;
+
+  let newsQuery = supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)", { count: "exact" });
+
+  if (query) {
+    const escaped = query.replace(/[%,]/g, "\\$&");
+    newsQuery = newsQuery.or(`title.ilike.%${escaped}%,excerpt.ilike.%${escaped}%`);
+  }
+
+  if (matchingCategory) {
+    newsQuery = newsQuery.eq("categoryId", matchingCategory.id);
+  }
+
+  if (sortFilter === "oldest") {
+    newsQuery = newsQuery.order("createdAt", { ascending: true });
+  } else if (sortFilter === "az") {
+    newsQuery = newsQuery.order("title", { ascending: true });
+  } else if (sortFilter === "za") {
+    newsQuery = newsQuery.order("title", { ascending: false });
+  } else {
+    newsQuery = newsQuery.order("createdAt", { ascending: false });
+  }
+
+  const { data: news, error, count } = await newsQuery.range(from, to);
+  const totalPages = Math.max(1, Math.ceil((count || 0) / NEWS_PER_PAGE));
 
   async function addNews(formData: FormData) {
     "use server";
@@ -128,12 +169,52 @@ export default async function NewsAdminPage() {
       </div>
 
       <div className="bg-white dark:bg-[#111114] p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-lg border border-slate-200/80 dark:border-white/10 transition-colors">
-        <div className="flex items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-slate-100 dark:border-white/5">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <span className="w-2 h-6 bg-slate-800 dark:bg-slate-300 rounded-full inline-block"></span>
-            Daftar Artikel
-          </h2>
-          <span className="px-3 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-full text-sm font-semibold">{news?.length || 0} Diterbitkan</span>
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-slate-100 dark:border-white/5 gap-4">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <span className="w-2 h-6 bg-slate-800 dark:bg-slate-300 rounded-full inline-block"></span>
+              Daftar Artikel
+            </h2>
+            <span className="px-3 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-full text-sm font-semibold">{count || 0} Diterbitkan</span>
+          </div>
+
+          <form className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
+            <input
+              type="text"
+              name="q"
+              defaultValue={query}
+              placeholder="Cari judul atau ringkasan…"
+              className="w-full sm:w-56 bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
+            />
+
+            <select
+              name="category"
+              defaultValue={categoryFilter}
+              className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none cursor-pointer"
+            >
+              <option value="Semua">Semua Jenis</option>
+              {categories?.map((c) => (
+                <option key={c.id} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              name="sort"
+              defaultValue={sortFilter}
+              className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none cursor-pointer"
+            >
+              <option value="newest">Terbaru</option>
+              <option value="oldest">Terlama</option>
+              <option value="az">Judul A-Z</option>
+              <option value="za">Judul Z-A</option>
+            </select>
+
+            <button type="submit" className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-colors">
+              Terapkan
+            </button>
+          </form>
         </div>
         {error && <p className="text-red-500 mb-4 font-medium">Gagal mengambil data.</p>}
 
@@ -192,10 +273,12 @@ export default async function NewsAdminPage() {
                   <path d="M19 20H5V4h14v16zM7 16h10v-2H7v2zm0-4h10v-2H7v2zm0-4h10V6H7v2z"></path>
                 </svg>
               </div>
-              <p className="text-lg">Belum ada artikel dipublikasikan.</p>
+              <p className="text-lg">{query ? `Tidak ada artikel yang cocok dengan "${query}".` : "Belum ada artikel dipublikasikan."}</p>
             </div>
           )}
         </div>
+
+        <AdminPagination basePath="/admin/news" currentPage={currentPage} totalPages={totalPages} searchParams={{ q: query, sort: sortFilter, category: categoryFilter }} />
       </div>
     </div>
   );

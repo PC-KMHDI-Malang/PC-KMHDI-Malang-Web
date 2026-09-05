@@ -7,13 +7,25 @@ import { ImagePicker } from "@/components/ui/ImagePicker";
 
 import { AddEbookModal } from "@/components/admin/AddEbookModal";
 import { EditEbookModal } from "@/components/admin/EditEbookModal";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 
-export default async function EbooksPage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ genre?: string; sort?: string }> }) {
+const EBOOKS_PER_PAGE = 6;
+
+export default async function EbooksPage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ q?: string; genre?: string; sort?: string; page?: string }> }) {
   const searchParams = await searchParamsPromise;
+  const q = searchParams?.q?.trim() || "";
   const genreFilter = searchParams?.genre || "Semua";
   const sortFilter = searchParams?.sort || "newest";
+  const currentPage = Math.max(1, parseInt(searchParams?.page || "1", 10) || 1);
+  const from = (currentPage - 1) * EBOOKS_PER_PAGE;
+  const to = from + EBOOKS_PER_PAGE - 1;
 
-  let query = supabaseAdmin.from("Ebook").select("*");
+  let query = supabaseAdmin.from("Ebook").select("*", { count: "exact" });
+
+  if (q) {
+    const escaped = q.replace(/[%,]/g, "\\$&");
+    query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
+  }
 
   if (genreFilter !== "Semua") {
     query = query.eq("genre", genreFilter);
@@ -29,7 +41,8 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     query = query.order("title", { ascending: false });
   }
 
-  const { data: ebooks, error } = await query;
+  const { data: ebooks, error, count } = await query.range(from, to);
+  const totalPages = Math.max(1, Math.ceil((count || 0) / EBOOKS_PER_PAGE));
 
   // Bucket "ebook-files" privat, jadi link "Buka PDF" di daftar admin ini juga butuh signed URL
   // sementara — bukan cuma halaman publik /e-book/[slug].
@@ -115,11 +128,19 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
               <span className="w-2 h-6 bg-slate-800 dark:bg-slate-300 rounded-full inline-block"></span>
               Daftar E-Book
             </h2>
-            <span className="px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-full text-xs sm:text-sm font-semibold">{ebooks?.length || 0} E-Book</span>
+            <span className="px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-full text-xs sm:text-sm font-semibold">{count || 0} E-Book</span>
           </div>
 
           <div className="w-full lg:w-auto">
             <form className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full">
+              <input
+                type="text"
+                name="q"
+                defaultValue={q}
+                placeholder="Cari judul atau deskripsi…"
+                className="w-full sm:w-48 bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
+              />
+
               <select
                 name="genre"
                 defaultValue={genreFilter}
@@ -219,10 +240,12 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
                   <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path>
                 </svg>
               </div>
-              <p className="text-lg">Belum ada ebook.</p>
+              <p className="text-lg">{q ? `Tidak ada e-book yang cocok dengan "${q}".` : "Belum ada ebook."}</p>
             </div>
           )}
         </div>
+
+        <AdminPagination basePath="/admin/ebooks" currentPage={currentPage} totalPages={totalPages} searchParams={{ q, genre: genreFilter, sort: sortFilter }} />
       </div>
     </div>
   );
