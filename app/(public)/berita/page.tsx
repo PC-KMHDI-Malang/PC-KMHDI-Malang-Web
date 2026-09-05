@@ -153,7 +153,7 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
               {displayGridNews.map((item) => (
                 <Link
                   key={item.id}
-                  href={`/berita/${item.slug}`}
+                  href={`/${item.slug}`}
                   className="group flex flex-col sm:flex-row rounded-2xl overflow-hidden bg-white dark:bg-[#1A1A1A] border border-slate-200/80 dark:border-white/5 shadow-md hover:shadow-xl hover:border-red-200 dark:hover:border-red-500/30 hover:-translate-y-1 transition-all duration-300"
                 >
                   <div className="relative w-full sm:w-48 h-44 sm:h-auto shrink-0 overflow-hidden bg-neutral-100 dark:bg-neutral-800">

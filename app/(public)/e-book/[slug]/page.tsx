@@ -13,6 +13,7 @@ import { absoluteUrl } from "@/lib/site";
 
 interface RelatedEbook {
   id: string;
+  slug: string;
   title: string;
   coverImage: string;
   genre: string;
@@ -24,7 +25,7 @@ interface RelatedEbook {
 function EbookLiteCard({ item }: { item: RelatedEbook }) {
   return (
     <Link
-      href={`/buku/${item.id}`}
+      href={`/e-book/${item.slug}`}
       className="group rounded-2xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-[#141417] overflow-hidden shadow-sm hover:shadow-xl hover:border-red-300 dark:hover:border-red-500/40 hover:-translate-y-1 transition-all duration-300"
     >
       <div className="relative h-40 bg-neutral-100 dark:bg-neutral-900 overflow-hidden">
@@ -53,12 +54,12 @@ function EbookLiteCard({ item }: { item: RelatedEbook }) {
   );
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id } = await params;
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
   const { data: ebook } = await supabaseAdmin
     .from("Ebook")
     .select("title, description, coverImage, genre, publisher")
-    .eq("id", id)
+    .eq("slug", slug)
     .single();
 
   if (!ebook) {
@@ -71,11 +72,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     // The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
     title: `${ebook.title} — e-Book`,
     description: desc,
-    alternates: { canonical: `/buku/${id}` },
+    alternates: { canonical: `/e-book/${slug}` },
     openGraph: {
       title: ebook.title,
       description: desc,
-      url: `/buku/${id}`,
+      url: `/e-book/${slug}`,
       siteName: "PC KMHDI Malang",
       // Gambarnya sengaja tidak dideklarasikan di sini — opengraph-image.tsx di folder yang
       // sama meng-generate kartu persegi (cover asli utuh di atas latar blur) secara otomatis,
@@ -90,12 +91,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default async function EbookDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ fileError?: string }> }) {
-  const { id } = await params;
+export default async function EbookDetailPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ fileError?: string }> }) {
+  const { slug } = await params;
   const { fileError } = await searchParams;
 
   const [{ data: ebook }, session] = await Promise.all([
-    supabaseAdmin.from("Ebook").select("*").eq("id", id).single(),
+    supabaseAdmin.from("Ebook").select("*").eq("slug", slug).single(),
     auth(),
   ]);
 
@@ -157,7 +158,7 @@ export default async function EbookDetailPage({ params, searchParams }: { params
     datePublished: new Date(ebook.createdAt).toISOString(),
     publisher: ebook.publisher || "PP KMHDI",
     inLanguage: "id-ID",
-    mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(`/buku/${ebook.id}`) },
+    mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(`/e-book/${slug}`) },
   };
 
   const breadcrumbSchema = {
@@ -165,8 +166,8 @@ export default async function EbookDetailPage({ params, searchParams }: { params
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Beranda", item: absoluteUrl("/") },
-      { "@type": "ListItem", position: 2, name: "e-Book", item: absoluteUrl("/buku") },
-      { "@type": "ListItem", position: 3, name: ebook.title, item: absoluteUrl(`/buku/${ebook.id}`) },
+      { "@type": "ListItem", position: 2, name: "e-Book", item: absoluteUrl("/e-book") },
+      { "@type": "ListItem", position: 3, name: ebook.title, item: absoluteUrl(`/e-book/${slug}`) },
     ],
   };
 
@@ -179,7 +180,7 @@ export default async function EbookDetailPage({ params, searchParams }: { params
         <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
         <div className="relative mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <Link
-            href="/buku"
+            href="/e-book"
             className="inline-flex items-center gap-2 text-sm font-semibold text-red-100/80 hover:text-white transition-colors"
           >
             <ArrowLeft size={16} />

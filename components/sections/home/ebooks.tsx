@@ -33,14 +33,14 @@ export default async function Ebooks() {
         <ScrollStagger staggerDelay={0.12} className="mt-16 flex flex-wrap justify-center gap-5">
           {ebooks.map((ebook) => (
             <ScrollStaggerItem key={ebook.id} className="w-[calc(50%-0.625rem)] lg:w-[calc(25%-0.9375rem)]">
-              <EbookCard id={ebook.id} title={ebook.title} genre={ebook.genre} coverImage={ebook.coverImage} pdfUrl={ebook.pdfUrl} createdAt={ebook.createdAt} href={`/buku/${ebook.id}`} />
+              <EbookCard id={ebook.id} title={ebook.title} genre={ebook.genre} coverImage={ebook.coverImage} pdfUrl={ebook.pdfUrl} createdAt={ebook.createdAt} href={`/e-book/${ebook.slug}`} />
             </ScrollStaggerItem>
           ))}
         </ScrollStagger>
 
         <ScrollReveal direction="up" delay={0.35} className="mt-16 flex justify-center">
           <Link
-            href="/buku"
+            href="/e-book"
             className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-red-600 to-rose-500 px-7 py-4 font-semibold text-white shadow-lg shadow-red-600/20 transition-all duration-300 hover:shadow-xl hover:shadow-red-600/30 hover:scale-[1.02]"
           >
             Lihat Semua e-Book

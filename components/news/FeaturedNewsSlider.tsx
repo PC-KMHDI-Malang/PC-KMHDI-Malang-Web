@@ -71,7 +71,7 @@ export function FeaturedNewsSlider({ items }: { items: FeaturedNews[] }) {
           const isActive = index === safeIndex;
           return (
             <div key={item.id} className={`w-full shrink-0 transition-opacity duration-1000 ease-in-out ${isActive ? "opacity-100 relative z-10" : "opacity-0 absolute inset-0 z-0 pointer-events-none"}`}>
-              <Link href={`/berita/${item.slug}`} className="group block h-full">
+              <Link href={`/${item.slug}`} className="group block h-full">
                 <div className="grid grid-cols-1 lg:grid-cols-2 h-full">
                   <div className="relative h-64 lg:h-full lg:min-h-[380px] overflow-hidden bg-neutral-100 dark:bg-neutral-800">
                     <SafeImage src={item.coverImage} alt={item.title} fill className={`object-cover transition-transform duration-1000 ${isActive ? "scale-105" : "scale-100"}`} />

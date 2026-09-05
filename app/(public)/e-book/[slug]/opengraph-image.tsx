@@ -11,9 +11,9 @@ export const contentType = "image/png";
 // bukan persegi — kalau ditaut langsung sebagai og:image, WhatsApp menampilkannya sebagai
 // thumbnail kecil di link preview, bukan kartu besar penuh lebar. Route ini men-generate versi
 // persegi (crop tengah) khusus untuk og:image, tanpa mengubah cover asli di halaman e-book itu sendiri.
-export default async function BukuOpengraphImage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const { data: ebook } = await supabaseAdmin.from("Ebook").select("title, coverImage").eq("id", id).maybeSingle();
+export default async function BukuOpengraphImage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const { data: ebook } = await supabaseAdmin.from("Ebook").select("title, coverImage").eq("slug", slug).maybeSingle();
 
   if (!ebook?.coverImage) {
     const logo = await readFile(join(process.cwd(), "public", "image", "logo-512.png"));

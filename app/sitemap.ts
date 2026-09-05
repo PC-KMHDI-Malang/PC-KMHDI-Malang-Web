@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl("/"), lastModified: now, changeFrequency: "weekly", priority: 1 },
     { url: absoluteUrl("/profil"), lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: absoluteUrl("/berita"), lastModified: now, changeFrequency: "daily", priority: 0.9 },
-    { url: absoluteUrl("/buku"), lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: absoluteUrl("/e-book"), lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: absoluteUrl("/galeri"), lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: absoluteUrl("/mitra"), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
   ];
@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // A sitemap must never break the build, so a failed query just yields the static routes.
   const [newsResult, ebookResult] = await Promise.allSettled([
     supabaseAdmin.from("News").select("slug, updatedAt, publishedAt, createdAt").eq("status", "PUBLISHED"),
-    supabaseAdmin.from("Ebook").select("id, updatedAt, createdAt"),
+    supabaseAdmin.from("Ebook").select("slug, updatedAt, createdAt"),
   ]);
 
   const newsRoutes: MetadataRoute.Sitemap =
@@ -28,7 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ? (newsResult.value.data ?? [])
           .filter((item) => item.slug)
           .map((item) => ({
-            url: absoluteUrl(`/berita/${item.slug}`),
+            url: absoluteUrl(`/${item.slug}`),
             lastModified: new Date(item.updatedAt || item.publishedAt || item.createdAt),
             changeFrequency: "monthly" as const,
             priority: 0.7,
@@ -37,12 +37,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const ebookRoutes: MetadataRoute.Sitemap =
     ebookResult.status === "fulfilled"
-      ? (ebookResult.value.data ?? []).map((item) => ({
-          url: absoluteUrl(`/buku/${item.id}`),
-          lastModified: new Date(item.updatedAt || item.createdAt),
-          changeFrequency: "monthly" as const,
-          priority: 0.6,
-        }))
+      ? (ebookResult.value.data ?? [])
+          .filter((item) => item.slug)
+          .map((item) => ({
+            url: absoluteUrl(`/e-book/${item.slug}`),
+            lastModified: new Date(item.updatedAt || item.createdAt),
+            changeFrequency: "monthly" as const,
+            priority: 0.6,
+          }))
       : [];
 
   return [...staticRoutes, ...newsRoutes, ...ebookRoutes];

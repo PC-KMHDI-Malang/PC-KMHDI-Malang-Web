@@ -24,11 +24,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     // The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
     title: news.title,
     description: desc,
-    alternates: { canonical: `/berita/${slug}` },
+    alternates: { canonical: `/${slug}` },
     openGraph: {
       title: news.title,
       description: desc,
-      url: `/berita/${slug}`,
+      url: `/${slug}`,
       siteName: "PC KMHDI Malang",
       // Gambarnya sengaja tidak dideklarasikan di sini — opengraph-image.tsx di folder yang
       // sama meng-generate versi persegi (crop tengah) dari cover asli secara otomatis, dan
@@ -86,7 +86,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
     publisher: { "@id": absoluteUrl("/#organization") },
     articleSection: categoryName,
     inLanguage: "id-ID",
-    mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(`/berita/${slug}`) },
+    mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(`/${slug}`) },
   };
 
   const breadcrumbSchema = {
@@ -95,7 +95,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Beranda", item: absoluteUrl("/") },
       { "@type": "ListItem", position: 2, name: "Berita", item: absoluteUrl("/berita") },
-      { "@type": "ListItem", position: 3, name: news.title, item: absoluteUrl(`/berita/${slug}`) },
+      { "@type": "ListItem", position: 3, name: news.title, item: absoluteUrl(`/${slug}`) },
     ],
   };
 
@@ -213,7 +213,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               {related.map((item) => (
                 <Link
                   key={item.id}
-                  href={`/berita/${item.slug}`}
+                  href={`/${item.slug}`}
                   className="group rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#1A1A1A] overflow-hidden shadow-sm hover:shadow-xl hover:border-red-200 dark:hover:border-red-500/30 hover:-translate-y-1 transition-all duration-300"
                 >
                   <div className="relative h-40 bg-neutral-100 dark:bg-neutral-800 overflow-hidden">

@@ -17,18 +17,19 @@ import { STORAGE_BUCKETS, getSignedFileUrl } from "@/lib/storage";
 // sebagai judul tab saat menampilkan PDF inline, bukan header Content-Disposition di bawah.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const { data: ebook } = await supabaseAdmin.from("Ebook").select("slug, pdfUrl, title").eq("id", id).maybeSingle();
+  const ebookHref = `/e-book/${ebook?.slug || id}`;
+
   const session = await auth();
   const isLoggedIn = !!session?.user && !isProtectedAccountEmail(session.user.email);
 
   if (!isLoggedIn) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", `/buku/${id}`);
+    loginUrl.searchParams.set("callbackUrl", ebookHref);
     return NextResponse.redirect(loginUrl);
   }
 
-  const { data: ebook } = await supabaseAdmin.from("Ebook").select("pdfUrl, title").eq("id", id).maybeSingle();
-
-  const fallback = new URL(`/buku/${id}`, request.url);
+  const fallback = new URL(ebookHref, request.url);
   fallback.searchParams.set("fileError", "1");
 
   if (!ebook?.pdfUrl) {

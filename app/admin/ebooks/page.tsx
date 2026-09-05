@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl, getSignedFileUrl } from "@/lib/storage";
+import { generateUniqueEbookSlug } from "@/lib/slug";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 
 import { AddEbookModal } from "@/components/admin/AddEbookModal";
@@ -31,7 +32,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
   const { data: ebooks, error } = await query;
 
   // Bucket "ebook-files" privat, jadi link "Buka PDF" di daftar admin ini juga butuh signed URL
-  // sementara — bukan cuma halaman publik /buku/[id].
+  // sementara — bukan cuma halaman publik /e-book/[slug].
   const signedPdfUrls = new Map(
     await Promise.all((ebooks || []).map(async (e) => [e.id, await getSignedFileUrl(STORAGE_BUCKETS.ebookFiles, e.pdfUrl)] as const)),
   );
@@ -49,15 +50,16 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     if (!title || !coverImageUrl || !pdfUrl) throw new Error("Judul, cover, dan file PDF wajib diisi.");
 
     const coverImage = coverImageUrl;
+    const slug = await generateUniqueEbookSlug(title);
 
-    const { error } = await supabaseAdmin.from("Ebook").insert([{ title, coverImage, pdfUrl, description, genre, publishYear, publisher }]);
+    const { error } = await supabaseAdmin.from("Ebook").insert([{ title, slug, coverImage, pdfUrl, description, genre, publishYear, publisher }]);
     if (error) {
       console.error("SUPABASE INSERT ERROR:", error);
       throw new Error(error.message);
     }
 
     revalidatePath("/admin/ebooks");
-    revalidatePath("/buku");
+    revalidatePath("/e-book");
   }
 
   async function editEbook(formData: FormData) {
@@ -80,7 +82,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     }
 
     revalidatePath("/admin/ebooks");
-    revalidatePath("/buku");
+    revalidatePath("/e-book");
   }
 
   async function deleteEbook(formData: FormData) {
@@ -93,7 +95,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     if (ebook?.coverImage) await deleteFromBucketByUrl(STORAGE_BUCKETS.ebook, ebook.coverImage);
     if (ebook?.pdfUrl) await deleteFromBucketByUrl(STORAGE_BUCKETS.ebookFiles, ebook.pdfUrl);
     revalidatePath("/admin/ebooks");
-    revalidatePath("/buku");
+    revalidatePath("/e-book");
   }
 
   return (

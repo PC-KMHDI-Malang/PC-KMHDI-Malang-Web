@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, uploadToBucket, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml, listBucketFiles } from "@/lib/storage";
+import { generateUniqueNewsSlug } from "@/lib/slug";
 import Link from "next/link";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { AddNewsModal } from "@/components/admin/AddNewsModal";
@@ -35,13 +36,7 @@ export default async function NewsAdminPage() {
       if (!coverImageUrl) return { error: "Gambar cover wajib diisi." };
       const coverImage = coverImageUrl;
 
-      const slug =
-        title
-          .toLowerCase()
-          .replace(/ /g, "-")
-          .replace(/[^\w-]+/g, "") +
-        "-" +
-        Date.now();
+      const slug = await generateUniqueNewsSlug(title);
 
       const catSlug = categoryName
         .toLowerCase()

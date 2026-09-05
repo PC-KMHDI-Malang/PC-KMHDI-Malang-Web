@@ -66,7 +66,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/buku" className="transition hover:text-white">
+                <Link href="/e-book" className="transition hover:text-white">
                   E-Book
                 </Link>
               </li>
@@ -93,12 +93,12 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/buku" className="transition hover:text-white">
+                <Link href="/e-book" className="transition hover:text-white">
                   Perpustakaan
                 </Link>
               </li>
               <li>
-                <Link href="/buku" className="transition hover:text-white">
+                <Link href="/e-book" className="transition hover:text-white">
                   Download
                 </Link>
               </li>

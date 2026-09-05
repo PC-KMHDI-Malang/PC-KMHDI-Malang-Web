@@ -19,7 +19,7 @@ export default async function News() {
     image: n.coverImage,
     category: n.Category?.name || "UMUM",
     date: new Date(n.createdAt).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }),
-    href: `/berita/${n.slug}`,
+    href: `/${n.slug}`,
   })) : fallbackData.news;
 
   return (

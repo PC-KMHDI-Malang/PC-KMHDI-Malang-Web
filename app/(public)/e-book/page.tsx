@@ -14,12 +14,12 @@ export const metadata: Metadata = {
     "Perpustakaan digital PC KMHDI Malang: materi kaderisasi, AD/ART, buku panduan organisasi, literatur Hindu, dan template surat yang bisa dibaca langsung.",
   // Search and genre filters (?q, ?sort, ?genre) reorder the same catalogue, so they all
   // canonicalise to the clean list URL.
-  alternates: { canonical: "/buku" },
+  alternates: { canonical: "/e-book" },
   openGraph: {
     type: "website",
     title: "Perpustakaan Digital e-Book | PC KMHDI Malang",
     description: "Materi kaderisasi, AD/ART, panduan organisasi, dan literatur Hindu yang bisa dibaca langsung.",
-    url: "/buku",
+    url: "/e-book",
   },
 };
 
@@ -75,7 +75,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
           <aside className="lg:sticky lg:top-32 lg:self-start transition-all">
             <Suspense fallback={null}>
-              <EbookFilters genres={genres} basePath="/buku" />
+              <EbookFilters genres={genres} basePath="/e-book" />
             </Suspense>
           </aside>
 
@@ -94,7 +94,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Hasil pencarian &quot;{query}&quot;</h3>
                 <Link
-                  href={`/buku${genreFilter.length > 0 ? "?" + genreFilter.map((g) => `genre=${encodeURIComponent(g)}`).join("&") : ""}`}
+                  href={`/e-book${genreFilter.length > 0 ? "?" + genreFilter.map((g) => `genre=${encodeURIComponent(g)}`).join("&") : ""}`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
                 >
                   Bersihkan Pencarian
@@ -105,7 +105,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
             {ebooks && ebooks.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
                 {ebooks.map((ebook) => (
-                  <EbookCard key={ebook.id} id={ebook.id} title={ebook.title} genre={ebook.genre} coverImage={ebook.coverImage} pdfUrl={ebook.pdfUrl} createdAt={ebook.createdAt} href={`/buku/${ebook.id}`} />
+                  <EbookCard key={ebook.id} id={ebook.id} title={ebook.title} genre={ebook.genre} coverImage={ebook.coverImage} pdfUrl={ebook.pdfUrl} createdAt={ebook.createdAt} href={`/e-book/${ebook.slug}`} />
                 ))}
               </div>
             ) : (
@@ -114,7 +114,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
                 <p className="text-lg mb-4 text-zinc-900 dark:text-white">{query ? `Tidak ada e-Book yang cocok dengan kata kunci "${query}".` : "Belum ada e-Book untuk filter ini."}</p>
                 {query && (
                   <Link
-                    href={`/buku${genreFilter.length > 0 ? "?" + genreFilter.map((g) => `genre=${encodeURIComponent(g)}`).join("&") : ""}`}
+                    href={`/e-book${genreFilter.length > 0 ? "?" + genreFilter.map((g) => `genre=${encodeURIComponent(g)}`).join("&") : ""}`}
                     className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-sm"
                   >
                     Bersihkan Pencarian

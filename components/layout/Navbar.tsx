@@ -46,7 +46,7 @@ const menus: NavMenu[] = [
     icon: Newspaper,
     submenus: [
       { title: "Berita & Artikel", href: "/berita", icon: FileText },
-      { title: "Koleksi e-Book", href: "/buku", icon: BookOpen },
+      { title: "Koleksi e-Book", href: "/e-book", icon: BookOpen },
       { title: "Galeri", href: "/galeri", icon: ImageIcon },
     ],
   },
