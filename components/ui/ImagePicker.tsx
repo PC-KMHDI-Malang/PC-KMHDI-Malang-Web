@@ -4,6 +4,22 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { uploadFileAction } from "@/lib/actions";
 
+function getImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}
+
 interface ImagePickerProps {
   defaultImageUrl?: string;
   bucket?: string;
@@ -49,6 +65,20 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name
       setError("Ukuran gambar maksimal 1 MB.");
       e.target.value = "";
       return;
+    }
+
+    // Bucket "news-covers" juga jadi sumber og:image saat artikel dibagikan ke WhatsApp/media
+    // sosial lain — tapi crop persegi untuk itu di-generate otomatis di server (lihat
+    // berita/[slug]/opengraph-image.tsx), jadi di sini cukup pastikan gambarnya cukup besar
+    // untuk di-crop tanpa pecah. Rasio boleh landscape seperti biasa, pas untuk tampilan
+    // banner di halaman artikel.
+    if (bucket === "news-covers") {
+      const dimensions = await getImageDimensions(file);
+      if (dimensions && (dimensions.width < 600 || dimensions.height < 315)) {
+        setError(`Gambar terlalu kecil (${dimensions.width}×${dimensions.height}px). Untuk cover berita, gunakan foto landscape minimal 600×315px (idealnya 1200×630px).`);
+        e.target.value = "";
+        return;
+      }
     }
 
     setIsUploading(true);
@@ -105,7 +135,9 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                   </svg>
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">Klik untuk memilih file</span>
-                  <span className="text-slate-400 dark:text-slate-500 text-sm mt-1">Mendukung format JPG, PNG (Maks 1 MB)</span>
+                  <span className="text-slate-400 dark:text-slate-500 text-sm mt-1">
+                    Mendukung format JPG, PNG (Maks 1 MB)
+                  </span>
                 </>
               )}
             </div>

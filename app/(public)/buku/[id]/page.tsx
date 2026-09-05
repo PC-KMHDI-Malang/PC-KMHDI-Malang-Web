@@ -77,16 +77,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       description: desc,
       url: `/buku/${id}`,
       siteName: "PC KMHDI Malang",
-      // The key is omitted entirely when there's no cover, so the site-wide default OG
-      // image applies; an empty array would instead leave the share card with no image.
-      ...(ebook.coverImage ? { images: [{ url: ebook.coverImage, width: 800, height: 1100, alt: ebook.title }] } : {}),
+      // Gambarnya sengaja tidak dideklarasikan di sini — opengraph-image.tsx di folder yang
+      // sama meng-generate kartu persegi (cover asli utuh di atas latar blur) secara otomatis,
+      // dan Next.js sudah menyuntikkan tag og:image/twitter:image yang mengarah ke situ sendiri.
       type: "book",
     },
     twitter: {
       card: "summary_large_image",
       title: ebook.title,
       description: desc,
-      ...(ebook.coverImage ? { images: [ebook.coverImage] } : {}),
     },
   };
 }

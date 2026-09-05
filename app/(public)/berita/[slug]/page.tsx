@@ -30,16 +30,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description: desc,
       url: `/berita/${slug}`,
       siteName: "PC KMHDI Malang",
-      // The key is omitted entirely when there's no cover, so the site-wide default OG
-      // image applies; an empty array would instead leave the share card with no image.
-      ...(news.coverImage ? { images: [{ url: news.coverImage, width: 1200, height: 630, alt: news.title }] } : {}),
+      // Gambarnya sengaja tidak dideklarasikan di sini — opengraph-image.tsx di folder yang
+      // sama meng-generate versi persegi (crop tengah) dari cover asli secara otomatis, dan
+      // Next.js sudah menyuntikkan tag og:image/twitter:image yang mengarah ke situ sendiri.
       type: "article",
     },
     twitter: {
       card: "summary_large_image",
       title: news.title,
       description: desc,
-      ...(news.coverImage ? { images: [news.coverImage] } : {}),
     },
   };
 }
