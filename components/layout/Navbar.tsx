@@ -148,7 +148,14 @@ export default function Navbar({ user }: NavbarProps) {
 
   return (
     <>
-      <header className="fixed left-0 top-3 sm:top-4 z-50 w-full px-3 sm:px-6 flex justify-center pointer-events-none">
+      {/* z-[70]: header ini adalah stacking context sendiri (karena z-index-nya), jadi z-[60]
+          pada drawer mobile di bawah cuma menang di DALAM konteks ini — dibandingkan terhadap
+          tombol ChatBot mengambang (sibling di luar header, z-50 — lihat ChatBot.tsx), yang
+          menang adalah z-index header itu sendiri. Kalau header ini z-50 (sama seperti ChatBot),
+          urutan DOM yang menentukan, dan ChatBot (dirender belakangan di layout) menutupi seluruh
+          header termasuk drawer-nya — itu sebabnya tombol "Keluar dari Akun" di drawer mobile
+          jadi tidak bisa di-tap sama sekali (ketiban tombol ChatBot). */}
+      <header className="fixed left-0 top-3 sm:top-4 z-[70] w-full px-3 sm:px-6 flex justify-center pointer-events-none">
         <div className="w-full max-w-5xl pointer-events-auto">
           <nav
             className={`
@@ -335,9 +342,9 @@ export default function Navbar({ user }: NavbarProps) {
           </nav>
 
           {/* 5. Mobile Menu Drawer (Dioptimasi untuk Layar HP) */}
-          {/* z-[60]: lebih tinggi dari tombol ChatBot mengambang (z-50 — lihat ChatBot.tsx),
-              supaya tombol drawer (termasuk "Ya, Keluar") tidak pernah ketiban tap yang malah
-              kena ChatBot saat posisi keduanya kebetulan bertumpuk di sudut layar. */}
+          {/* z-[60] di sini cukup untuk menang atas isi header lainnya (dropdown akun, dll) —
+              menang atas ChatBot (sibling di luar header) ditentukan oleh z-index <header>
+              itu sendiri, lihat komentar di sana. */}
           {mobileOpen && (
             <div
               onClick={() => setMobileOpen(false)}

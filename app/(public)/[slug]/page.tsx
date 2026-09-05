@@ -196,7 +196,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               categoryOrGenre={categoryName}
               authorOrPublisher={authorName}
               date={publishedDate}
-              description={news.excerpt || stripHtml(news.content).slice(0, 180)}
+              description={`Malang, kmhdimalang.org — ${news.excerpt || stripHtml(news.content).slice(0, 180)}`}
             />
           </div>
         </div>
