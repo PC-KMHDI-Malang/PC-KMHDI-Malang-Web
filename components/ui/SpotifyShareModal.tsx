@@ -142,7 +142,10 @@ export function SpotifyShareModal({ isOpen, onClose, title, coverImage, category
 
   // 3. Action: WhatsApp
   const handleWhatsApp = () => {
-    const waText = encodeURIComponent(`${title}\n\n${url}`);
+    // Judul tidak perlu diulang di teks pesan — begitu tautannya dikirim, WhatsApp otomatis
+    // menampilkan kartu preview dengan judul tebal (dari og:title) di atas pesan ini sendiri.
+    const message = description ? `${description}\n\n Baca Selengkapnya:\n${url}` : `${title}\n\n${url}`;
+    const waText = encodeURIComponent(message);
     window.open(`https://api.whatsapp.com/send?text=${waText}`, "_blank");
   };
 

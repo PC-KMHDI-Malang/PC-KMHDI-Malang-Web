@@ -79,7 +79,7 @@ export function ChatBot() {
     <div className="fixed bottom-5 md:bottom-6 right-5 md:right-6 z-50 flex flex-col items-end">
       {/* Jendela Chat */}
       {isOpen && (
-        <div className="mb-4 w-[320px] sm:w-[360px] max-h-[min(600px,calc(100dvh-140px))] flex flex-col overflow-hidden rounded-[24px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="mb-4 w-[320px] sm:w-[360px] max-h-[min(600px,calc(100dvh-140px))] flex flex-col overflow-hidden rounded-[24px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-chatbot-pop">
           {/* Header */}
           <div className="shrink-0 flex items-center justify-between bg-slate-50 dark:bg-[#1A1A1A] border-b border-slate-100 dark:border-white/5 px-5 py-4">
             <div className="flex items-center gap-3.5">
@@ -212,14 +212,11 @@ export function ChatBot() {
           }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          className={`relative flex h-[60px] w-[60px] items-center justify-center rounded-full shadow-[0_10px_25px_rgba(168,0,0,0.5)] transition-all duration-300 hover:scale-110 active:scale-95 z-10 ${
-            isOpen ? "bg-slate-800 dark:bg-[#1E1E1E] text-white" : "bg-gradient-to-tr from-[#8B0000] to-[#C00000] text-white hover:brightness-110"
+          className={`relative flex h-[60px] w-[60px] items-center justify-center rounded-full transition-all duration-300 hover:scale-110 active:scale-95 z-10 ${
+            isOpen ? "bg-slate-800 dark:bg-[#1E1E1E] text-white shadow-[0_10px_25px_rgba(168,0,0,0.5)]" : "bg-gradient-to-tr from-[#8B0000] to-[#C00000] text-white hover:brightness-110 animate-chatbot-glow"
           }`}
         >
           {isOpen ? <X size={26} /> : <Bot size={28} />}
-
-          {/* Animasi detak (ping) di belakang tombol */}
-          {!isOpen && <span className="absolute -z-10 inline-flex h-[110%] w-[110%] animate-ping rounded-full bg-[#A80000] opacity-40"></span>}
         </button>
       </div>
     </div>

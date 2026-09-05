@@ -158,6 +158,11 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
             <span className="pb-3 text-sm font-bold text-red-600 dark:text-red-500 border-b-2 border-red-600 dark:border-red-500">Isi Berita</span>
           </div>
           <div className="mt-6 max-w-none text-base leading-8 text-slate-700 dark:text-neutral-300">
+            {/* Dateline ala media massa (kota, domain) di depan paragraf pertama — sama di
+                setiap artikel tanpa admin perlu mengetiknya manual. `float-left` (bukan menyisip
+                ke string konten) supaya teks paragraf pertama tetap mengalir menyambung di
+                baris yang sama, apa pun bentuk konten aslinya (HTML dari editor atau teks polos). */}
+            <strong className="float-left mr-1.5 text-slate-900 dark:text-white">Malang, kmhdimalang.org —</strong>
             {news.content && looksLikeHtml(news.content) ? (
               // Konten dari RichTextEditor (hanya bisa ditulis oleh admin lewat toolbar terbatas) — bukan HTML input pengguna umum.
               <div className="rich-content" dangerouslySetInnerHTML={{ __html: news.content }} />

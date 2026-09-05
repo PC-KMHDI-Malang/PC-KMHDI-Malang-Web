@@ -143,6 +143,42 @@ body {
   animation: ray-sway 7s ease-in-out infinite;
 }
 
+/* ChatBot — denyut glow halus di tombol mengambang (pengganti animate-ping bawaan Tailwind,
+   yang butuh elemen ring terpisah dan terasa lebih "kasar" daripada box-shadow yang membesar). */
+@keyframes chatbot-glow-pulse {
+  0% {
+    box-shadow: 0 4px 24px rgba(168, 0, 0, 0.4), 0 0 0 0 rgba(168, 0, 0, 0.55);
+  }
+  70% {
+    box-shadow: 0 4px 24px rgba(168, 0, 0, 0.4), 0 0 0 14px rgba(168, 0, 0, 0);
+  }
+  100% {
+    box-shadow: 0 4px 24px rgba(168, 0, 0, 0.4), 0 0 0 0 rgba(168, 0, 0, 0);
+  }
+}
+
+.animate-chatbot-glow {
+  animation: chatbot-glow-pulse 2.2s ease infinite;
+}
+
+/* ChatBot — jendela chat muncul dengan "pop" (mengecil dari 0.6x lalu membesar ke ukuran
+   penuh sambil fade in), bukan slide dari bawah — terasa lebih hidup/cepat dibuka. */
+@keyframes chatbot-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-chatbot-pop {
+  animation: chatbot-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: bottom right;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

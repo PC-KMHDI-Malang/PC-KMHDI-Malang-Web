@@ -335,10 +335,13 @@ export default function Navbar({ user }: NavbarProps) {
           </nav>
 
           {/* 5. Mobile Menu Drawer (Dioptimasi untuk Layar HP) */}
+          {/* z-[60]: lebih tinggi dari tombol ChatBot mengambang (z-50 — lihat ChatBot.tsx),
+              supaya tombol drawer (termasuk "Ya, Keluar") tidak pernah ketiban tap yang malah
+              kena ChatBot saat posisi keduanya kebetulan bertumpuk di sudut layar. */}
           {mobileOpen && (
             <div
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 top-0 z-40 bg-black/30 backdrop-blur-md lg:hidden animate-in fade-in duration-200 p-4 pt-20 overflow-y-auto"
+              className="fixed inset-0 top-0 z-[60] bg-black/30 backdrop-blur-md lg:hidden animate-in fade-in duration-200 p-4 pt-20 overflow-y-auto"
             >
               <div
                 onClick={(e) => e.stopPropagation()}
