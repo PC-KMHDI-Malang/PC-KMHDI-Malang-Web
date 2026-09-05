@@ -144,7 +144,7 @@ export function SpotifyShareModal({ isOpen, onClose, title, coverImage, category
   const handleWhatsApp = () => {
     // Judul tidak perlu diulang di teks pesan — begitu tautannya dikirim, WhatsApp otomatis
     // menampilkan kartu preview dengan judul tebal (dari og:title) di atas pesan ini sendiri.
-    const message = description ? `${description}\n\n Baca Selengkapnya:\n${url}` : `${title}\n\n${url}`;
+    const message = description ? `${description}\n\n🔗 Baca Selengkapnya di:\n${url}` : `${title}\n\n${url}`;
     const waText = encodeURIComponent(message);
     window.open(`https://api.whatsapp.com/send?text=${waText}`, "_blank");
   };
