@@ -22,12 +22,20 @@ function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "";
 
   // Banner ini tampil untuk setiap halaman terkunci, jadi pesannya harus mengikuti tujuan
-  // aslinya — sebelumnya selalu berbunyi "membaca buku" walau datang dari halaman lain.
-  const lockedMessage = callbackUrl.includes("/e-book") || callbackUrl.includes("/api/ebook")
-    ? "Silakan login terlebih dahulu untuk membaca buku ini."
-    : callbackUrl.includes("/informasi-akun")
-      ? "Silakan login terlebih dahulu untuk melihat informasi akun kader."
-      : "Silakan login terlebih dahulu untuk membuka halaman ini.";
+  // aslinya — sebelumnya cuma menangani /e-book & /informasi-akun, padahal alur paling sering
+  // ke sini justru middleware yang menolak /admin/* atau /profile saat belum login (lihat
+  // authorized() di lib/auth.ts, yang otomatis menambahkan ?callbackUrl=... ke redirect-nya) —
+  // keduanya selalu jatuh ke pesan generik di bawah kalau tidak didaftarkan di sini juga.
+  let lockedMessage = "Silakan login terlebih dahulu untuk membuka halaman ini.";
+  if (callbackUrl.includes("/e-book") || callbackUrl.includes("/api/ebook")) {
+    lockedMessage = "Silakan login terlebih dahulu untuk membaca buku ini.";
+  } else if (callbackUrl.includes("/informasi-akun")) {
+    lockedMessage = "Silakan login terlebih dahulu untuk melihat informasi akun kader.";
+  } else if (callbackUrl.includes("/admin")) {
+    lockedMessage = "Silakan login terlebih dahulu untuk mengakses Panel Admin.";
+  } else if (callbackUrl.includes("/profile")) {
+    lockedMessage = "Silakan login terlebih dahulu untuk mengatur profil & kata sandi Anda.";
+  }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
