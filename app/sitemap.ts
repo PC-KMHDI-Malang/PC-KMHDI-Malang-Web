@@ -14,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl("/berita"), lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: absoluteUrl("/buku"), lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     { url: absoluteUrl("/galeri"), lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: absoluteUrl("/mitra"), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
   ];
 
   // A sitemap must never break the build, so a failed query just yields the static routes.

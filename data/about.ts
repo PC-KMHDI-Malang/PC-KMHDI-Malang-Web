@@ -1,7 +1,7 @@
 export const aboutData = {
   badge: "Tentang PC KMHDI Malang",
 
-  title: "Membangun Kader Hindu yang religius, humanis, nasionalis dan progresif",
+  title: "Membangun Kader Hindu yang Religius, Humanis, Nasionalis dan Progresif",
 
   description:
     "Pengurus Cabang Kesatuan Mahasiswa Hindu Dharma Indonesia (PC KMHDI) Malang merupakan organisasi kader yang menjadi ruang belajar, bertumbuh, dan mengabdi bagi mahasiswa Hindu di Malang Raya. Melalui kaderisasi, pengembangan kepemimpinan, serta pengabdian masyarakat, kami berkomitmen mencetak generasi yang berlandaskan Dharma dan siap memberikan kontribusi nyata bagi bangsa.",

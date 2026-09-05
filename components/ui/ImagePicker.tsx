@@ -7,24 +7,16 @@ import { uploadFileAction } from "@/lib/actions";
 interface ImagePickerProps {
   defaultImageUrl?: string;
   bucket?: string;
-  usedBytes?: number;
-  quotaBytes?: number;
+  /** Nama field hidden input yang menampung URL terpilih. Default "coverImageUrl" agar kompatibel dengan pemakaian yang sudah ada. */
+  name?: string;
 }
 
-export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", usedBytes, quotaBytes = 52428800 }: ImagePickerProps) {
+export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name = "coverImageUrl" }: ImagePickerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState(defaultImageUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Fungsi utilitas formatBytes
-  const formatBytes = (bytes: number) => {
-    if (bytes <= 0) return "0 B";
-    const units = ["B", "KB", "MB", "GB"];
-    const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
-    return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-  };
 
   useEffect(() => {
     setMounted(true);
@@ -119,23 +111,6 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", used
             </div>
             <input type="file" className="hidden" accept="image/jpeg, image/png, image/jpg" onChange={handleUpload} disabled={isUploading} />
           </label>
-
-          {typeof usedBytes !== "undefined" && typeof quotaBytes !== "undefined" && (
-            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/10">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Penyimpanan Storage</span>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  {formatBytes(usedBytes)} terpakai &middot; {formatBytes(Math.max(0, quotaBytes - usedBytes))} tersisa dari {formatBytes(quotaBytes)}
-                </span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${usedBytes / quotaBytes > 0.9 ? "bg-red-500" : usedBytes / quotaBytes > 0.7 ? "bg-amber-500" : "bg-emerald-500"}`}
-                  style={{ width: `${Math.min(100, (usedBytes / quotaBytes) * 100)}%` }}
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -143,7 +118,7 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", used
 
   return (
     <div>
-      <input type="hidden" name="coverImageUrl" value={selectedUrl} />
+      <input type="hidden" name={name} value={selectedUrl} />
       <div className="flex flex-wrap gap-4 items-center">
         {selectedUrl ? (
           <div className="relative inline-block group">

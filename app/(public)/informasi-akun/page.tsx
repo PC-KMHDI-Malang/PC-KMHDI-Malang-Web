@@ -4,6 +4,7 @@ import { ArrowLeft, Search, Mail, KeyRound, LogIn, ShieldAlert, Users } from "lu
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { LoginGate } from "@/components/auth/LoginGate";
+import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,9 @@ export default async function InformasiAkunPage({ searchParams: searchParamsProm
     }
 
     const { data } = await dbQuery;
-    kader = data || [];
+    // Akun bersama (mis. pcmalang@kmhdi.info) juga disembunyikan dari daftar ini — akun itu
+    // dipakai bersama, bukan akun pribadi satu kader, jadi tidak perlu muncul di direktori ini.
+    kader = (data || []).filter((item) => !isProtectedAccountEmail(item.email));
   }
 
   return (

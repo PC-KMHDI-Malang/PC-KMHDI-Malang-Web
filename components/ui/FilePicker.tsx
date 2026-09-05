@@ -7,23 +7,14 @@ import { uploadFileAction } from "@/lib/actions";
 interface FilePickerProps {
   defaultFileUrl?: string;
   bucket?: string;
-  usedBytes?: number;
-  quotaBytes?: number;
 }
 
-export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files", usedBytes, quotaBytes = 52428800 }: FilePickerProps) {
+export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files" }: FilePickerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState(defaultFileUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const formatBytes = (bytes: number) => {
-    if (bytes <= 0) return "0 B";
-    const units = ["B", "KB", "MB", "GB"];
-    const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
-    return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-  };
 
   useEffect(() => {
     setMounted(true);
@@ -52,8 +43,9 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files", usedBy
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError("Ukuran file maksimal 2 MB.");
+    // Bucket "ebook-files" di Supabase dikonfigurasi dengan batas 5 MB per file.
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Ukuran file maksimal 5 MB.");
       e.target.value = "";
       return;
     }
@@ -112,29 +104,12 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files", usedBy
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                   </svg>
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">Klik untuk memilih file</span>
-                  <span className="text-slate-400 dark:text-slate-500 text-sm mt-1">Mendukung format PDF (Maks 2 MB)</span>
+                  <span className="text-slate-400 dark:text-slate-500 text-sm mt-1">Mendukung format PDF (Maks 5 MB)</span>
                 </>
               )}
             </div>
             <input type="file" className="hidden" accept="application/pdf" onChange={handleUpload} disabled={isUploading} />
           </label>
-
-          {typeof usedBytes !== "undefined" && typeof quotaBytes !== "undefined" && (
-            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/10">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Penyimpanan Storage</span>
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  {formatBytes(usedBytes)} terpakai &middot; {formatBytes(Math.max(0, quotaBytes - usedBytes))} tersisa dari {formatBytes(quotaBytes)}
-                </span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${usedBytes / quotaBytes > 0.9 ? "bg-red-500" : usedBytes / quotaBytes > 0.7 ? "bg-amber-500" : "bg-emerald-500"}`}
-                  style={{ width: `${Math.min(100, (usedBytes / quotaBytes) * 100)}%` }}
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

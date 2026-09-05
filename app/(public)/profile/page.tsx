@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, KeyRound, UserCheck, Shield } from "lucide-react";
+import { ArrowLeft, KeyRound, UserCheck, Shield, Lock } from "lucide-react";
 import { ProfileSettingsForm } from "@/components/profile/ProfileSettingsForm";
 import { UpdatePasswordForm } from "@/components/admin/UpdatePasswordForm";
+import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
 
 export const metadata: Metadata = {
   // The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
@@ -23,6 +24,7 @@ export default async function ProfilePage() {
 
   const userInitial = session.user.name?.[0]?.toUpperCase() || "U";
   const isAdmin = session.user.role === "ADMIN";
+  const isAccountLocked = isProtectedAccountEmail(session.user.email);
 
   return (
     <div className="-mt-32 bg-slate-50/70 dark:bg-[#0a0a0c] transition-colors min-h-screen pb-20">
@@ -82,7 +84,16 @@ export default async function ProfilePage() {
                   <UserCheck size={16} className="text-red-600" />
                   Ubah Nama Profil
                 </h3>
-                <ProfileSettingsForm initialName={session.user.name || ""} email={session.user.email || ""} />
+                {isAccountLocked ? (
+                  <div className="flex gap-3 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/25 p-4">
+                    <Lock size={18} className="shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
+                    <p className="text-xs sm:text-[13px] text-amber-900 dark:text-amber-200/90 leading-relaxed">
+                      <span className="font-bold">Akun ini dikunci.</span> Nama dikelola langsung oleh Admin.
+                    </p>
+                  </div>
+                ) : (
+                  <ProfileSettingsForm initialName={session.user.name || ""} email={session.user.email || ""} />
+                )}
               </div>
             </div>
           </div>
@@ -100,7 +111,16 @@ export default async function ProfilePage() {
                 </div>
               </div>
 
-              <UpdatePasswordForm />
+              {isAccountLocked ? (
+                <div className="flex gap-3 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/25 p-4">
+                  <Lock size={18} className="shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
+                  <p className="text-xs sm:text-[13px] text-amber-900 dark:text-amber-200/90 leading-relaxed">
+                    <span className="font-bold">Akun ini dikunci.</span> Kata sandi dikelola langsung oleh Admin.
+                  </p>
+                </div>
+              ) : (
+                <UpdatePasswordForm />
+              )}
             </div>
           </div>
         </div>

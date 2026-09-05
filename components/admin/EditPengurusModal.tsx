@@ -45,8 +45,9 @@ export function EditPengurusModal({ member, action }: EditPengurusModalProps) {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError("Ukuran file maksimal 2 MB.");
+    // Bucket "organization-photos" di Supabase dikonfigurasi dengan batas 1 MB per file.
+    if (file.size > 1 * 1024 * 1024) {
+      setError("Ukuran file maksimal 1 MB.");
       e.target.value = "";
       return;
     }
@@ -105,7 +106,7 @@ export function EditPengurusModal({ member, action }: EditPengurusModalProps) {
         createPortal(
           <div className="fixed inset-y-0 right-0 left-0 md:left-64 z-[100] flex items-center justify-center p-4 text-left animate-in fade-in duration-200">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
 
             {/* Modal Card */}
             <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-200 dark:border-white/10 z-10 animate-in zoom-in-95 duration-200">

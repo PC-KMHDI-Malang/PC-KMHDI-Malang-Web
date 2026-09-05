@@ -99,7 +99,7 @@ export function AdminMobileNav({ role }: AdminMobileNavProps) {
               <Link
                 href="/"
                 onClick={() => setIsOpen(false)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-[#141417] hover:bg-slate-100 dark:hover:bg-neutral-800 text-slate-700 dark:text-white rounded-xl transition-colors border border-slate-200 dark:border-white/10 font-semibold text-xs"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-[#141417] hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-white rounded-xl transition-colors border border-slate-200 dark:border-white/10 font-semibold text-xs"
               >
                 <ArrowLeft size={15} />
                 <span>Kembali ke Website</span>

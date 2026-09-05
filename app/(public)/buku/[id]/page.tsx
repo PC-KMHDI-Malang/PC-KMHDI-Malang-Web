@@ -6,6 +6,10 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
 import { LoginPromptModal } from "@/components/ui/LoginPromptModal";
+import { incrementViewCount, formatViewCount } from "@/lib/views";
+import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { absoluteUrl } from "@/lib/site";
 
 interface RelatedEbook {
   id: string;
@@ -87,8 +91,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default async function EbookDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EbookDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ fileError?: string }> }) {
   const { id } = await params;
+  const { fileError } = await searchParams;
 
   const [{ data: ebook }, session] = await Promise.all([
     supabaseAdmin.from("Ebook").select("*").eq("id", id).single(),
@@ -98,6 +103,10 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
   if (!ebook) {
     notFound();
   }
+
+  // Tambah hitungan "dilihat" setiap kali halaman e-book diakses.
+  const updatedViews = await incrementViewCount("Ebook", ebook.id);
+  const viewCount = updatedViews ?? ebook.views ?? 0;
 
   const { data: sameGenre } = await supabaseAdmin
     .from("Ebook")
@@ -120,11 +129,52 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
 
   const others = othersData || [];
 
-  const isLoggedIn = !!session?.user;
-  const loginHref = `/login?callbackUrl=${encodeURIComponent("/")}`;
+  // Akun bersama untuk /informasi-akun sengaja diperlakukan seperti belum login di sini —
+  // aksesnya dibatasi hanya untuk melihat halaman itu, tidak untuk baca/unduh e-book.
+  const isLoggedIn = !!session?.user && !isProtectedAccountEmail(session.user.email);
+
+  // File PDF ada di bucket "ebook-files" yang privat. Tombol baca/unduh di bawah tidak
+  // pernah menaut langsung ke signed URL Supabase (itu kedaluwarsa dan berujung ke JSON
+  // error mentah dari domain Supabase) — keduanya menaut ke /api/ebook/[id]/file/[..], yang
+  // memverifikasi login lalu mengambilkan filenya di server sebelum diteruskan ke browser.
+  // Segmen terakhir URL cuma kosmetik — dipakai Chrome dkk. sebagai judul tab PDF viewer.
+  const pdfFileSlug = ebook.title.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "") || "ebook";
+  const fileHref = `/api/ebook/${ebook.id}/file/${pdfFileSlug}.pdf`;
+  const downloadHref = `${fileHref}?download=1`;
+
+  // callbackUrl mengarah langsung ke file yang tadi mau dibuka/diunduh, bukan ke beranda —
+  // supaya setelah login, pengguna langsung mendapat filenya, bukan harus klik ulang dari awal.
+  const readLoginHref = `/login?callbackUrl=${encodeURIComponent(fileHref)}`;
+  const downloadLoginHref = `/login?callbackUrl=${encodeURIComponent(downloadHref)}`;
+
+  // Makes the e-book eligible for Google's rich results (author, publish year, cover thumbnail).
+  const bookSchema = {
+    "@context": "https://schema.org",
+    "@type": "Book",
+    name: ebook.title,
+    description: ebook.description || undefined,
+    image: ebook.coverImage || undefined,
+    genre: ebook.genre,
+    datePublished: new Date(ebook.createdAt).toISOString(),
+    publisher: ebook.publisher || "PP KMHDI",
+    inLanguage: "id-ID",
+    mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(`/buku/${ebook.id}`) },
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Beranda", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "e-Book", item: absoluteUrl("/buku") },
+      { "@type": "ListItem", position: 3, name: ebook.title, item: absoluteUrl(`/buku/${ebook.id}`) },
+    ],
+  };
 
   return (
     <div className="-mt-32 bg-white dark:bg-[#121212] transition-colors">
+      <JsonLd data={bookSchema} />
+      <JsonLd data={breadcrumbSchema} />
       {/* Header behind navbar */}
       <div className="bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 pb-10 relative overflow-hidden">
         <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
@@ -151,7 +201,7 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white leading-snug">{ebook.title}</h1>
 
-            <div className="mt-6 grid grid-cols-2 gap-6">
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-6">
               <div>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">Tahun Terbit</p>
                 <p className="text-base font-bold text-zinc-800 dark:text-zinc-200 mt-1">{ebook.publishYear || new Date(ebook.createdAt).getFullYear()}</p>
@@ -160,6 +210,13 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">Nama Penerbit</p>
                 <p className="text-base font-bold text-zinc-800 dark:text-zinc-200 mt-1">{ebook.publisher || "PP KMHDI"}</p>
               </div>
+              <div>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+                  <Eye size={13} />
+                  Dilihat
+                </p>
+                <p className="text-base font-bold text-zinc-800 dark:text-zinc-200 mt-1">{formatViewCount(viewCount)}x</p>
+              </div>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -167,7 +224,7 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
                 isLoggedIn ? (
                   <>
                     <a
-                      href={ebook.pdfUrl}
+                      href={fileHref}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-2 bg-red-600 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-red-700 transition-colors shadow-sm text-sm"
@@ -176,10 +233,7 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
                       Baca Online
                     </a>
                     <a
-                      href={ebook.pdfUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      download
+                      href={downloadHref}
                       className="inline-flex items-center gap-2 bg-slate-800 dark:bg-slate-700 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors shadow-sm text-sm"
                     >
                       <Download size={16} />
@@ -189,13 +243,13 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
                 ) : (
                   <>
                     <LoginPromptModal
-                      loginHref={loginHref}
+                      loginHref={readLoginHref}
                       triggerLabel="Baca Online"
                       triggerIcon={<Eye size={16} />}
                       triggerClassName="inline-flex items-center gap-2 bg-red-600 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-red-700 transition-colors shadow-sm text-sm"
                     />
                     <LoginPromptModal
-                      loginHref={loginHref}
+                      loginHref={downloadLoginHref}
                       triggerLabel="Download PDF"
                       triggerIcon={<Download size={16} />}
                       triggerClassName="inline-flex items-center gap-2 bg-slate-800 dark:bg-slate-700 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors shadow-sm text-sm"
@@ -208,6 +262,12 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ id
                 </div>
               )}
             </div>
+
+            {fileError && (
+              <p className="mt-3 text-sm font-semibold text-amber-600 dark:text-amber-400">
+                File PDF tidak bisa dibuka saat ini. Silakan coba lagi beberapa saat lagi.
+              </p>
+            )}
 
             <div className="mt-10">
               <div className="flex items-center gap-6 border-b border-neutral-200 dark:border-white/10">

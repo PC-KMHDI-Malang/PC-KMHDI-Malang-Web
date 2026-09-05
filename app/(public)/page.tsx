@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Hero from "@/components/sections/home/hero";
 import About from "@/components/sections/home/about";
 import Statistics from "@/components/sections/home/statistics";
+import Partners from "@/components/sections/home/partners";
 import Programs from "@/components/sections/home/programs";
 import News from "@/components/sections/home/news";
 import Ebooks from "@/components/sections/home/ebooks";
@@ -21,6 +22,7 @@ export default function HomePage() {
       <Hero />
       <About />
       <Statistics />
+      <Partners />
       <Programs />
       <News />
       <Ebooks />

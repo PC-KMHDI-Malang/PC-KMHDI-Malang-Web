@@ -3,15 +3,16 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { X, Plus, Loader2 } from "lucide-react";
-import { IconPicker } from "./IconPicker";
+import { X, Edit2, Loader2 } from "lucide-react";
 
-interface AddStatModalProps {
+interface EditHeroCaptionModalProps {
+  fieldName: string;
+  label: string;
+  value: string;
   action: (formData: FormData) => Promise<void>;
-  nextOrderIndex: number;
 }
 
-export function AddStatModal({ action, nextOrderIndex }: AddStatModalProps) {
+export function EditHeroCaptionModal({ fieldName, label, value, action }: EditHeroCaptionModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,7 +38,6 @@ export function AddStatModal({ action, nextOrderIndex }: AddStatModalProps) {
       await action(formData);
       router.refresh();
       setIsOpen(false);
-      (e.target as HTMLFormElement).reset();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan";
       setError("Terjadi kesalahan: " + msg);
@@ -51,20 +51,20 @@ export function AddStatModal({ action, nextOrderIndex }: AddStatModalProps) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-rose-600 dark:hover:bg-rose-700 text-white text-sm font-bold shadow-md transition cursor-pointer"
+        className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white transition cursor-pointer"
+        title={`Edit ${label}`}
       >
-        <Plus size={16} />
-        <span>Tambah Statistik</span>
+        <Edit2 size={15} />
       </button>
 
       {isOpen &&
         createPortal(
           <div className="fixed inset-y-0 right-0 left-0 md:left-64 z-[100] flex items-center justify-center p-4 text-left animate-in fade-in duration-200">
-            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
 
-            <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-200 dark:border-white/10 z-10 animate-in zoom-in-95 duration-200">
+            <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-200 dark:border-white/10 z-10 animate-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/5 mb-6">
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Tambah Kartu Statistik</h3>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Edit {label}</h3>
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
@@ -84,49 +84,16 @@ export function AddStatModal({ action, nextOrderIndex }: AddStatModalProps) {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                      Nilai / Angka <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="value"
-                      required
-                      placeholder="mis. 500+"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500 font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                      Urutan Tampil <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      name="orderIndex"
-                      required
-                      defaultValue={nextOrderIndex}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                    Label / Keterangan <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">{label}</label>
                   <input
                     type="text"
-                    name="label"
+                    name={fieldName}
                     required
-                    placeholder="mis. Anggota Aktif"
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    autoFocus
+                    defaultValue={value}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500 font-bold"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Ikon</label>
-                  <IconPicker name="icon" defaultValue="Users" />
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-end gap-3">
@@ -139,7 +106,7 @@ export function AddStatModal({ action, nextOrderIndex }: AddStatModalProps) {
                     className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-rose-600 dark:hover:bg-rose-700 text-white text-sm font-bold shadow-md transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
                   >
                     {isSubmitting && <Loader2 size={16} className="animate-spin" />}
-                    <span>{isSubmitting ? "Menyimpan..." : "Simpan Statistik"}</span>
+                    <span>{isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}</span>
                   </button>
                 </div>
               </form>

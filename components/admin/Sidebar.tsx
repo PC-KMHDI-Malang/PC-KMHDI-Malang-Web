@@ -35,7 +35,7 @@ export default async function Sidebar() {
 
           <Link
             href="/"
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 dark:bg-[#141417] hover:bg-slate-100 dark:hover:bg-neutral-800 text-slate-700 dark:text-white rounded-2xl transition-colors border border-slate-200 dark:border-white/10 text-xs font-bold"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 dark:bg-[#141417] hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-white rounded-2xl transition-colors border border-slate-200 dark:border-white/10 text-xs font-bold"
           >
             <ArrowLeft size={16} />
             <span>Kembali ke Website</span>

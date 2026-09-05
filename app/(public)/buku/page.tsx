@@ -39,7 +39,8 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
   let dbQuery = supabaseAdmin.from("Ebook").select("*");
 
   if (query) {
-    dbQuery = dbQuery.ilike("title", `%${query}%`);
+    const escaped = query.replace(/[%,]/g, "\\$&");
+    dbQuery = dbQuery.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
   }
 
   if (genreFilter.length > 0) {

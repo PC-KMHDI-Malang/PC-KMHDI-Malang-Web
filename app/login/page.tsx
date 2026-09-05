@@ -23,7 +23,7 @@ function LoginForm() {
 
   // Banner ini tampil untuk setiap halaman terkunci, jadi pesannya harus mengikuti tujuan
   // aslinya — sebelumnya selalu berbunyi "membaca buku" walau datang dari halaman lain.
-  const lockedMessage = callbackUrl.includes("/buku")
+  const lockedMessage = callbackUrl.includes("/buku") || callbackUrl.includes("/api/ebook")
     ? "Silakan login terlebih dahulu untuk membaca buku ini."
     : callbackUrl.includes("/informasi-akun")
       ? "Silakan login terlebih dahulu untuk melihat informasi akun kader."

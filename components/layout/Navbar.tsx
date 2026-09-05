@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText } from "lucide-react";
+import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText, Handshake, ClipboardList } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
@@ -37,6 +37,7 @@ const menus: NavMenu[] = [
       { title: "Sejarah", href: "/profil#sejarah", icon: History },
       { title: "Visi & Misi", href: "/profil#visi-misi", icon: Target },
       { title: "Struktur Organisasi", href: "/profil#struktur", icon: Users2 },
+      { title: "Program Kerja", href: "/program", icon: ClipboardList },
     ],
   },
   {
@@ -46,12 +47,13 @@ const menus: NavMenu[] = [
     submenus: [
       { title: "Berita & Artikel", href: "/berita", icon: FileText },
       { title: "Koleksi e-Book", href: "/buku", icon: BookOpen },
+      { title: "Galeri", href: "/galeri", icon: ImageIcon },
     ],
   },
   {
-    title: "Galeri",
-    href: "/galeri",
-    icon: ImageIcon,
+    title: "Mitra",
+    href: "/mitra",
+    icon: Handshake,
   },
 ];
 
@@ -79,6 +81,16 @@ export default function Navbar({ user }: NavbarProps) {
   const accountLink = isAdmin ? "/admin" : "/profile";
   const firstName = user?.name ? user.name.split(" ")[0] : "Akun";
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
+
+  // logoutAction redirects to "/", which stays inside the same (public) layout that renders
+  // this Navbar — so the component never unmounts, and userDropdownOpen/showLogoutConfirm
+  // survive the round trip. Without this, logging back in (e.g. via the LoginModal, with no
+  // full page reload) makes the dropdown reappear exactly as it was left: still open, with the
+  // "Yakin ingin keluar?" confirm panel already showing.
+  useEffect(() => {
+    setUserDropdownOpen(false);
+    setShowLogoutConfirm(false);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -119,6 +131,19 @@ export default function Navbar({ user }: NavbarProps) {
       ...prev,
       [title]: !prev[title]
     }));
+  };
+
+  // Navigasi ke anchor section tanpa menampilkan "#id" di address bar. Kalau sudah berada
+  // di halaman tujuan, scroll langsung di tempat; kalau belum, biarkan Link pindah halaman dan
+  // hash akan dibersihkan otomatis begitu sampai (lihat HashCleanup di halaman tujuan).
+  const handleAnchorClick = (e: React.MouseEvent, href: string) => {
+    const [path, hash] = href.split("#");
+    if (!hash) return;
+    if (pathname === path) {
+      e.preventDefault();
+      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.history.replaceState(null, "", path);
+    }
   };
 
   return (
@@ -172,13 +197,14 @@ export default function Navbar({ user }: NavbarProps) {
 
                     {menu.submenus && (
                       <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                        <div className="w-56 bg-[#1a1a1a]/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col">
+                        <div className="w-56 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col">
                           {menu.submenus.map((sub) => {
                             const SubIcon = sub.icon;
                             return (
-                              <Link 
-                                key={sub.title} 
+                              <Link
+                                key={sub.title}
                                 href={sub.href}
+                                onClick={(e) => handleAnchorClick(e, sub.href)}
                                 className="group/sub flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors z-10"
                               >
                                 {SubIcon && (
@@ -381,7 +407,10 @@ export default function Navbar({ user }: NavbarProps) {
                                   <Link
                                     key={sub.title}
                                     href={sub.href}
-                                    onClick={() => setMobileOpen(false)}
+                                    onClick={(e) => {
+                                      setMobileOpen(false);
+                                      handleAnchorClick(e, sub.href);
+                                    }}
                                     className="px-4 py-2.5 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
                                   >
                                     {sub.title}

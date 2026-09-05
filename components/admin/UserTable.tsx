@@ -17,8 +17,8 @@ interface User {
 
 interface UserTableProps {
   users: User[];
-  editAction: (formData: FormData) => void;
-  deleteAction: (formData: FormData) => void;
+  editAction: (formData: FormData) => Promise<{ error?: string; success?: boolean; message?: string }>;
+  deleteAction: (formData: FormData) => Promise<{ error?: string; success?: boolean; message?: string }>;
   currentUserEmail?: string;
 }
 
@@ -61,7 +61,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
   const paginatedUsers = filteredAndSortedUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 transition-colors">
+    <div className="bg-white dark:bg-[#111114] p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-lg border border-slate-200/80 dark:border-white/10 transition-colors">
       {/* 1. Header & Filter Bar */}
       <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-slate-100 dark:border-white/5 gap-4">
         <div className="flex items-center gap-2.5">
@@ -69,9 +69,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
             <span className="w-2 h-6 bg-slate-800 dark:bg-slate-300 rounded-full inline-block"></span>
             Daftar Akun
           </h2>
-          <span className="px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-full text-xs sm:text-sm font-semibold">
-            {users.length} Terdaftar
-          </span>
+          <span className="px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-full text-xs sm:text-sm font-semibold">{users.length} Terdaftar</span>
         </div>
 
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
@@ -82,7 +80,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
               setFilterJabatan(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full sm:w-auto bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium cursor-pointer"
+            className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium cursor-pointer"
           >
             <option value="">Semua Jabatan</option>
             <option value="Ketua Cabang">Ketua Cabang</option>
@@ -103,7 +101,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
               setFilterBidang(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full sm:w-auto bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium cursor-pointer"
+            className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium cursor-pointer"
           >
             <option value="">Semua Bidang</option>
             <option value="Organisasi">Organisasi</option>
@@ -122,7 +120,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
               setSortBy(e.target.value as any);
               setCurrentPage(1);
             }}
-            className="w-full sm:w-auto bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium cursor-pointer"
+            className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium cursor-pointer"
           >
             <option value="createdAt">Sort: Terbaru</option>
             <option value="name">Sort: Nama (A-Z)</option>
@@ -148,21 +146,14 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
       {/* 2. Tampilan Mobile: Kartu Responsif (Khusus Layar HP < md) */}
       <div className="block md:hidden space-y-3.5">
         {paginatedUsers.length === 0 ? (
-          <div className="py-12 text-center text-slate-500 dark:text-slate-400">
-            Tidak ada user ditemukan.
-          </div>
+          <div className="py-12 text-center text-slate-500 dark:text-slate-400">Tidak ada user ditemukan.</div>
         ) : (
           paginatedUsers.map((u) => (
-            <div
-              key={u.id}
-              className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-slate-900/50 p-4 space-y-3 shadow-xs"
-            >
+            <div key={u.id} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 p-4 space-y-3 shadow-xs">
               {/* Header Kartu: Nama & Role */}
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white truncate">
-                    {u.name}
-                  </h3>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white truncate">{u.name}</h3>
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                     <Mail size={13} className="flex-shrink-0" />
                     <span className="truncate">{u.email}</span>
@@ -171,9 +162,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
 
                 <span
                   className={`flex-shrink-0 px-2.5 py-1 text-[10px] rounded-full font-bold tracking-wider uppercase ${
-                    u.role === "ADMIN"
-                      ? "bg-red-600 dark:bg-rose-600 text-white shadow-xs"
-                      : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    u.role === "ADMIN" ? "bg-red-600 dark:bg-rose-600 text-white shadow-xs" : "bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300"
                   }`}
                 >
                   {u.role}
@@ -183,15 +172,11 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
               {/* Posisi & Tanggal */}
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 dark:border-white/5 text-xs">
                 <div>
-                  <span className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 block mb-0.5">
-                    Posisi / Jabatan
-                  </span>
+                  <span className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 block mb-0.5">Posisi / Jabatan</span>
                   {u.jabatan || u.bidang ? (
                     <div className="flex flex-col font-medium text-slate-700 dark:text-slate-300">
                       {u.jabatan && <span className="font-bold">{u.jabatan}</span>}
-                      {u.bidang && u.bidang !== "Tidak Ada" && (
-                        <span className="text-[11px] text-slate-500">{u.bidang}</span>
-                      )}
+                      {u.bidang && u.bidang !== "Tidak Ada" && <span className="text-[11px] text-slate-500">{u.bidang}</span>}
                     </div>
                   ) : (
                     <span className="text-slate-400 italic text-[11px]">Belum diatur</span>
@@ -199,9 +184,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
                 </div>
 
                 <div>
-                  <span className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 block mb-0.5">
-                    Terdaftar
-                  </span>
+                  <span className="text-[10px] font-semibold uppercase text-slate-400 dark:text-slate-500 block mb-0.5">Terdaftar</span>
                   <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400 text-xs">
                     <Calendar size={12} className="flex-shrink-0 text-slate-400" />
                     <span>
@@ -243,9 +226,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
                     }
                   />
                 ) : (
-                  <span className="text-slate-400 dark:text-slate-500 text-xs italic px-2 py-1">
-                    Akun Anda
-                  </span>
+                  <span className="text-slate-400 dark:text-slate-500 text-xs italic px-2 py-1">Akun Anda</span>
                 )}
               </div>
             </div>
@@ -254,61 +235,36 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
       </div>
 
       {/* 3. Tampilan Desktop / Tablet: Tabel Lengkap (Layar >= md) */}
-      <div className="hidden md:block overflow-hidden rounded-2xl bg-white dark:bg-slate-900/40 shadow-sm dark:shadow-none border border-slate-100 dark:border-white/5">
+      <div className="hidden md:block overflow-hidden rounded-2xl bg-white dark:bg-white/5 shadow-sm dark:shadow-none border border-slate-100 dark:border-white/5">
         <div className="overflow-x-auto">
           <table className="min-w-[760px] w-full border-collapse">
             <thead>
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
-                  Nama
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
-                  Email
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
-                  Posisi
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
-                  Role
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
-                  Tanggal Daftar
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
-                  Aksi
-                </th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">Nama</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">Email</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">Posisi</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">Role</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">Tanggal Daftar</th>
+                <th className="px-6 py-4 text-right text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {paginatedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                     Tidak ada user ditemukan.
                   </td>
                 </tr>
               ) : (
                 paginatedUsers.map((u) => (
-                  <tr
-                    key={u.id}
-                    className="group transition-all duration-300 hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-50 dark:border-white/5 last:border-0"
-                  >
-                    <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white">
-                      {u.name}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">
-                      {u.email}
-                    </td>
+                  <tr key={u.id} className="group transition-all duration-300 hover:bg-slate-50 dark:hover:bg-white/5 border-b border-slate-50 dark:border-white/5 last:border-0">
+                    <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white">{u.name}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">{u.email}</td>
                     <td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">
                       {u.jabatan || u.bidang ? (
                         <div className="flex flex-col">
-                          {u.jabatan && (
-                            <span className="font-bold text-slate-700 dark:text-slate-300">
-                              {u.jabatan}
-                            </span>
-                          )}
-                          {u.bidang && u.bidang !== "Tidak Ada" && (
-                            <span className="text-xs text-slate-500">{u.bidang}</span>
-                          )}
+                          {u.jabatan && <span className="font-bold text-slate-700 dark:text-slate-300">{u.jabatan}</span>}
+                          {u.bidang && u.bidang !== "Tidak Ada" && <span className="text-xs text-slate-500">{u.bidang}</span>}
                         </div>
                       ) : (
                         <span className="text-slate-400 italic text-xs">Belum diatur</span>
@@ -317,9 +273,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
                     <td className="px-6 py-4">
                       <span
                         className={`px-3 py-1 text-xs rounded-full font-bold tracking-wider uppercase shadow-sm ${
-                          u.role === "ADMIN"
-                            ? "bg-red-600 dark:bg-rose-600 text-white"
-                            : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                          u.role === "ADMIN" ? "bg-red-600 dark:bg-rose-600 text-white" : "bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300"
                         }`}
                       >
                         {u.role}
@@ -360,9 +314,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
                             }
                           />
                         ) : (
-                          <span className="text-slate-300 dark:text-slate-600 text-sm font-medium italic px-3 py-1.5">
-                            Akun Anda
-                          </span>
+                          <span className="text-slate-300 dark:text-slate-600 text-sm font-medium italic px-3 py-1.5">Akun Anda</span>
                         )}
                       </div>
                     </td>
@@ -380,7 +332,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-white/10 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            className="px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-white/10 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
           >
             Sebelumnya
           </button>
@@ -393,7 +345,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
                 className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl text-xs sm:text-sm font-bold transition-colors ${
                   currentPage === pageNum
                     ? "bg-red-600 dark:bg-rose-600 text-white shadow-md shadow-red-600/20"
-                    : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-700"
+                    : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10"
                 }`}
               >
                 {pageNum}
@@ -404,7 +356,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-white/10 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            className="px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-white/5 text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-white/10 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
           >
             Berikutnya
           </button>

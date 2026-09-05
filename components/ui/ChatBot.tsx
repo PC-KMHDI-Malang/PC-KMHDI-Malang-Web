@@ -79,9 +79,9 @@ export function ChatBot() {
     <div className="fixed bottom-5 md:bottom-6 right-5 md:right-6 z-50 flex flex-col items-end">
       {/* Jendela Chat */}
       {isOpen && (
-        <div className="mb-4 w-[320px] sm:w-[360px] overflow-hidden rounded-[24px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="mb-4 w-[320px] sm:w-[360px] max-h-[min(600px,calc(100dvh-140px))] flex flex-col overflow-hidden rounded-[24px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-5 fade-in duration-300">
           {/* Header */}
-          <div className="flex items-center justify-between bg-slate-50 dark:bg-[#1A1A1A] border-b border-slate-100 dark:border-white/5 px-5 py-4">
+          <div className="shrink-0 flex items-center justify-between bg-slate-50 dark:bg-[#1A1A1A] border-b border-slate-100 dark:border-white/5 px-5 py-4">
             <div className="flex items-center gap-3.5">
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#A80000] font-black text-white shadow-lg tracking-wider">KA</div>
               <div>
@@ -101,7 +101,7 @@ export function ChatBot() {
           </div>
 
           {/* Area Pesan */}
-          <div className="h-[360px] overflow-y-auto bg-white dark:bg-[#121212] p-5 flex flex-col gap-4">
+          <div className="flex-1 min-h-[140px] overflow-y-auto bg-white dark:bg-[#121212] p-5 flex flex-col gap-4">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex w-full ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                 <div
@@ -130,7 +130,7 @@ export function ChatBot() {
           </div>
 
           {/* Tombol Aksi Cepat */}
-          <div className="bg-white dark:bg-[#121212] px-5 pb-3 flex gap-2 overflow-x-auto hide-scrollbar border-t border-slate-50 dark:border-transparent pt-2">
+          <div className="shrink-0 bg-white dark:bg-[#121212] px-5 pb-3 flex gap-2 overflow-x-auto hide-scrollbar border-t border-slate-50 dark:border-transparent pt-2">
             <button
               onClick={() => handleSend("Apa itu KMHDI?")}
               className="shrink-0 rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#1E1E1E] px-3.5 py-1.5 text-xs font-semibold text-slate-600 dark:text-neutral-300 hover:border-[#A80000]/50 hover:text-[#A80000] dark:hover:text-white transition-colors"
@@ -152,7 +152,7 @@ export function ChatBot() {
           </div>
 
           {/* Area Input */}
-          <div className="bg-slate-50 dark:bg-[#1A1A1A] p-4 border-t border-slate-100 dark:border-white/5">
+          <div className="shrink-0 bg-slate-50 dark:bg-[#1A1A1A] p-4 border-t border-slate-100 dark:border-white/5">
             <form
               onSubmit={(e) => {
                 e.preventDefault();

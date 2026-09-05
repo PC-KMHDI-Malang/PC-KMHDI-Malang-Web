@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { X, Edit2, Loader2 } from "lucide-react";
-import { IconPicker } from "./IconPicker";
 
 interface StatItem {
   id: string;
@@ -68,7 +67,7 @@ export function EditStatModal({ stat, action }: EditStatModalProps) {
       {isOpen &&
         createPortal(
           <div className="fixed inset-y-0 right-0 left-0 md:left-64 z-[100] flex items-center justify-center p-4 text-left animate-in fade-in duration-200">
-            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
 
             <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-200 dark:border-white/10 z-10 animate-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/5 mb-6">
@@ -97,50 +96,19 @@ export function EditStatModal({ stat, action }: EditStatModalProps) {
                   </div>
                 )}
                 <input type="hidden" name="id" value={stat.id} />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                      Nilai / Angka <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="value"
-                      required
-                      defaultValue={stat.value}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500 font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                      Urutan Tampil <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      name="orderIndex"
-                      required
-                      defaultValue={stat.orderIndex}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                  </div>
-                </div>
+                <input type="hidden" name="label" value={stat.label} />
+                <input type="hidden" name="icon" value={stat.icon} />
+                <input type="hidden" name="orderIndex" value={stat.orderIndex} />
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                    Label / Keterangan <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">{stat.label}</label>
                   <input
                     type="text"
-                    name="label"
+                    name="value"
                     required
-                    defaultValue={stat.label}
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    defaultValue={stat.value}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500 font-bold"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Ikon</label>
-                  <IconPicker name="icon" defaultValue={stat.icon} />
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-end gap-3">

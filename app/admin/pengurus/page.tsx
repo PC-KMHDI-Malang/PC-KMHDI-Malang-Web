@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase";
+﻿import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import Image from "next/image";
@@ -7,7 +7,7 @@ import { EditPengurusModal } from "@/components/admin/EditPengurusModal";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { deleteFromBucketByUrl } from "@/lib/storage";
 import { allMembers, Member } from "@/data/organization";
-import { Users, GraduationCap, Trash2, Sparkles, AlertCircle, HardDrive, Hash, Info, CheckCircle2 } from "lucide-react";
+import { Users, GraduationCap, Trash2, Sparkles, AlertCircle, Hash, Info } from "lucide-react";
 
 export default async function AdminPengurusPage() {
   const session = await auth();
@@ -16,36 +16,13 @@ export default async function AdminPengurusPage() {
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold text-red-600 dark:text-rose-500">Akses Ditolak</h1>
-        <p className="mt-2 text-gray-700 dark:text-gray-300">Halaman ini hanya dapat diakses oleh Administrator.</p>
+        <p className="mt-2 text-slate-700 dark:text-slate-300">Halaman ini hanya dapat diakses oleh Administrator.</p>
       </div>
     );
   }
 
   // Ambil data pengurus dari database Supabase
   const { data: dbMembers, error: dbError } = await supabaseAdmin.from("Pengurus").select("*").order("orderIndex", { ascending: true });
-
-  // Ambil data file & kapasitas storage dari bucket organization-photos
-  let storageFilesCount = 0;
-  let storageTotalBytes = 0;
-  try {
-    const { data: storageFiles } = await supabaseAdmin.storage.from("organization-photos").list("", { limit: 1000 });
-    if (storageFiles) {
-      storageFilesCount = storageFiles.length;
-      storageTotalBytes = storageFiles.reduce((acc, file) => acc + (file.metadata?.size || 0), 0);
-    }
-  } catch (err) {
-    console.error("Gagal mengambil data storage:", err);
-  }
-
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return "0 B";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  };
-
-  const totalMaxBytes = 50 * 1024 * 1024; // 50 MB batas kapasitas bucket Supabase
-  const usedPercent = Math.min(100, parseFloat(((storageTotalBytes / totalMaxBytes) * 100).toFixed(2)));
 
   const members: Member[] = (dbMembers || []).map((m) => ({
     id: m.id,
@@ -75,7 +52,7 @@ export default async function AdminPengurusPage() {
     const instagramRaw = (formData.get("instagram") as string) || "";
     const instagram = instagramRaw.trim().replace(/^@/, "") || "pc.kmhdimalang";
 
-    if (!name || !role || !department || !campus || !major) return;
+    if (!name || !role || !department || !campus || !major) throw new Error("Nama, jabatan, departemen, kampus, dan jurusan wajib diisi.");
 
     const insertPayload: Record<string, unknown> = {
       name,
@@ -119,7 +96,7 @@ export default async function AdminPengurusPage() {
     const instagramRaw = (formData.get("instagram") as string) || "";
     const instagram = instagramRaw.trim().replace(/^@/, "") || "pc.kmhdimalang";
 
-    if (!id || !name || !role) return;
+    if (!id || !name || !role) throw new Error("Nama dan jabatan wajib diisi.");
 
     const updatePayload: Record<string, unknown> = {
       name,
@@ -156,7 +133,7 @@ export default async function AdminPengurusPage() {
     const id = formData.get("id") as string;
     if (!id) return;
 
-    const { data: member } = await supabaseAdmin.from("Pengurus").select("imageUrl").eq("id", id).single();
+    const { data: member } = await supabaseAdmin.from("Pengurus").select("imageUrl").eq("id", id).maybeSingle();
     await supabaseAdmin.from("Pengurus").delete().eq("id", id);
 
     if (member?.imageUrl) {
@@ -239,56 +216,9 @@ export default async function AdminPengurusPage() {
       )}
 
       {/* 2 KARTU INFORMASI: STATUS STORAGE & PANDUAN PENOMORAN */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Card 1: Kapasitas Storage Bucket organization-photos */}
-        <div className="lg:col-span-5 rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#121215] p-6 shadow-sm flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center">
-                  <HardDrive size={17} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-800 dark:text-white text-sm">Storage Foto Profil</h3>
-                  <p className="text-[11px] text-slate-400 font-mono">bucket: organization-photos</p>
-                </div>
-              </div>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">Aktif (Public)</span>
-            </div>
-
-            <div className="mt-4 space-y-2">
-              <div className="flex justify-between items-baseline text-xs">
-                <span className="text-slate-500 dark:text-slate-400">Total File Foto:</span>
-                <span className="font-bold text-slate-800 dark:text-white">{storageFilesCount} foto terunggah</span>
-              </div>
-
-              <div className="flex justify-between items-baseline text-xs">
-                <span className="text-slate-500 dark:text-slate-400">Kapasitas Terpakai:</span>
-                <span className="font-bold text-slate-800 dark:text-white">
-                  {formatBytes(storageTotalBytes)} <span className="text-slate-400 font-normal">/ 50 MB</span>
-                </span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="w-full bg-slate-100 dark:bg-white/5 h-2.5 rounded-full overflow-hidden mt-2">
-                <div className="bg-gradient-to-r from-red-600 to-rose-500 h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(1, usedPercent)}%` }} />
-              </div>
-
-              <div className="flex justify-between items-center text-[10px] text-slate-400 pt-0.5">
-                <span>{usedPercent}% terpakai</span>
-                <span>Maks. 2 MB / foto</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-100 dark:border-white/5 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <CheckCircle2 size={13} className="text-red-500 shrink-0" />
-            <span>Format foto didukung: JPG, PNG, WEBP dengan rasio pasfoto resmi.</span>
-          </div>
-        </div>
-
-        {/* Card 2: Panduan Alokasi Nomor Urut */}
-        <div className="lg:col-span-7 rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#121215] p-6 shadow-sm flex flex-col justify-between space-y-4">
+      <div className="grid grid-cols-1 gap-6">
+        {/* Panduan Alokasi Nomor Urut */}
+        <div className="rounded-3xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#111114] p-6 shadow-sm flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
@@ -348,7 +278,7 @@ export default async function AdminPengurusPage() {
       </div>
 
       {/* Tabel Pengurus */}
-      <div className="bg-white dark:bg-[#121215] rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-lg overflow-hidden transition-colors">
+      <div className="bg-white dark:bg-[#111114] rounded-3xl border border-slate-200/80 dark:border-white/10 shadow-lg overflow-hidden transition-colors">
         <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center justify-center">

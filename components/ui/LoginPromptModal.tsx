@@ -21,15 +21,19 @@ export function LoginPromptModal({ loginHref, triggerLabel, triggerIcon, trigger
     if (isOpen) {
       setTimeout(() => setIsRendered(true), 0);
       setTimeout(() => setIsVisible(true), 10);
-      document.body.style.overflow = "hidden";
     } else {
       setIsVisible(false);
-      const timer = setTimeout(() => {
-        setIsRendered(false);
-        document.body.style.overflow = "unset";
-      }, 300);
+      const timer = setTimeout(() => setIsRendered(false), 300);
       return () => clearTimeout(timer);
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [isOpen]);
 
   return (

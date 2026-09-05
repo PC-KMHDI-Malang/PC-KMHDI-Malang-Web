@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 const PREDEFINED_CATEGORIES = ["Umum", "Kegiatan", "Opini", "Press Release", "Informasi"];
 
@@ -18,7 +18,7 @@ export function CategorySelect({ defaultCategoryName, focusColor = "blue" }: Cat
         <select
           name="categoryName"
           defaultValue={defaultCategoryName || "Umum"}
-          className={`w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:ring-4 rounded-xl p-3 outline-none transition-all cursor-pointer ${focusClass}`}
+          className={`w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:ring-4 rounded-xl p-3 outline-none transition-all cursor-pointer ${focusClass}`}
         >
           {PREDEFINED_CATEGORIES.map((cat) => (
             <option key={cat} value={cat}>

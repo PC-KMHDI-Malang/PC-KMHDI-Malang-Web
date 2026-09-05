@@ -16,6 +16,7 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,8 +44,9 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError("Ukuran file maksimal 2 MB.");
+    // Bucket "organization-photos" di Supabase dikonfigurasi dengan batas 1 MB per file.
+    if (file.size > 1 * 1024 * 1024) {
+      setError("Ukuran file maksimal 1 MB.");
       e.target.value = "";
       return;
     }
@@ -67,14 +69,22 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    if (previewUrl) {
-      formData.set("imageUrl", previewUrl);
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      if (previewUrl) {
+        formData.set("imageUrl", previewUrl);
+      }
+      await action(formData);
+      router.refresh();
+      setPreviewUrl("");
+      setIsOpen(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal menyimpan";
+      setError(msg);
+    } finally {
+      setIsSubmitting(false);
     }
-    await action(formData);
-    router.refresh();
-    setPreviewUrl("");
-    setIsOpen(false);
   };
 
   return (
@@ -92,7 +102,7 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
         createPortal(
           <div className="fixed inset-y-0 right-0 left-0 md:left-64 z-[100] flex items-center justify-center p-4 text-left animate-in fade-in duration-200">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
 
             {/* Modal Card */}
             <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-200 dark:border-white/10 z-10 animate-in zoom-in-95 duration-200">
@@ -292,10 +302,11 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
                   </button>
                   <button
                     type="submit"
-                    disabled={isUploading}
-                    className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-rose-600 dark:hover:bg-rose-700 text-white text-sm font-bold shadow-md transition cursor-pointer disabled:opacity-50"
+                    disabled={isUploading || isSubmitting}
+                    className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 dark:bg-rose-600 dark:hover:bg-rose-700 text-white text-sm font-bold shadow-md transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
                   >
-                    Simpan Pengurus
+                    {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                    <span>{isSubmitting ? "Menyimpan..." : "Simpan Pengurus"}</span>
                   </button>
                 </div>
               </form>

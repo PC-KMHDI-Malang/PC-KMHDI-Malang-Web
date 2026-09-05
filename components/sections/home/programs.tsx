@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { programsData } from "@/data/programs";
 import { ScrollReveal, ScrollStagger, ScrollStaggerItem } from "@/components/ui/ScrollReveal";
@@ -5,7 +6,10 @@ import { CardCarousel } from "@/components/ui/CardCarousel";
 
 function ProgramCard({ program }: { program: (typeof programsData.programs)[number] }) {
   return (
-    <div className="group rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:border-white/20 hover:bg-white/10 hover:shadow-xl hover:shadow-black/20 h-full flex flex-col justify-between">
+    <Link
+      href="/program"
+      className="group rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:border-white/20 hover:bg-white/10 hover:shadow-xl hover:shadow-black/20 h-full flex flex-col justify-between"
+    >
       <div>
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 transition-all duration-300 group-hover:bg-gradient-to-br group-hover:from-red-500 group-hover:to-rose-600 group-hover:shadow-lg group-hover:shadow-red-500/20">
           <program.icon className="h-7 w-7 text-red-300 transition-colors duration-300 group-hover:text-white" aria-hidden="true" />
@@ -16,7 +20,7 @@ function ProgramCard({ program }: { program: (typeof programsData.programs)[numb
       <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-red-300 transition-all duration-300 group-hover:gap-3 group-hover:text-white">
         Pelajari Program <ArrowUpRight className="h-4 w-4" />
       </div>
-    </div>
+    </Link>
   );
 }
 

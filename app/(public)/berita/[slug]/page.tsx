@@ -7,6 +7,8 @@ import { EbookShareBar } from "@/components/ui/EbookShareBar";
 import { SafeImage } from "@/components/ui/SafeImage";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl } from "@/lib/site";
+import { looksLikeHtml, stripHtml } from "@/lib/richText";
+import { incrementViewCount, formatViewCount } from "@/lib/views";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -50,6 +52,10 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
   if (!news) {
     notFound();
   }
+
+  // Tambah hitungan "dilihat" setiap kali halaman artikel diakses.
+  const updatedViews = await incrementViewCount("News", news.id);
+  const viewCount = updatedViews ?? news.views ?? 0;
 
   const publishedDate = new Date(news.publishedAt || news.createdAt).toLocaleDateString("id-ID", {
     day: "numeric",
@@ -130,6 +136,12 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
             </span>
             <span className="font-medium text-slate-700 dark:text-neutral-300">{publishedDate}</span>
           </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-500 dark:text-neutral-400">
+              <Eye size={14} />
+            </span>
+            <span className="font-medium text-slate-700 dark:text-neutral-300">{formatViewCount(viewCount)} kali dilihat</span>
+          </span>
         </div>
 
         {/* Cover Image */}
@@ -146,8 +158,13 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
           <div className="flex items-center gap-6 border-b border-slate-100 dark:border-white/10">
             <span className="pb-3 text-sm font-bold text-red-600 dark:text-red-500 border-b-2 border-red-600 dark:border-red-500">Isi Berita</span>
           </div>
-          <div className="mt-6 prose prose-slate dark:prose-invert max-w-none">
-            <p className="whitespace-pre-line text-base leading-8 text-slate-700 dark:text-neutral-300">{news.content}</p>
+          <div className="mt-6 max-w-none text-base leading-8 text-slate-700 dark:text-neutral-300">
+            {news.content && looksLikeHtml(news.content) ? (
+              // Konten dari RichTextEditor (hanya bisa ditulis oleh admin lewat toolbar terbatas) — bukan HTML input pengguna umum.
+              <div className="rich-content" dangerouslySetInnerHTML={{ __html: news.content }} />
+            ) : (
+              <p className="whitespace-pre-line">{news.content}</p>
+            )}
           </div>
         </div>
 
@@ -175,7 +192,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               categoryOrGenre={categoryName}
               authorOrPublisher={authorName}
               date={publishedDate}
-              description={news.excerpt || news.content?.slice(0, 180)}
+              description={news.excerpt || stripHtml(news.content).slice(0, 180)}
             />
           </div>
         </div>

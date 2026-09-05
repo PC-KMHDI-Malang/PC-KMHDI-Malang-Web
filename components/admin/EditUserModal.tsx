@@ -2,20 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Edit2, Eye, EyeOff } from "lucide-react";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  jabatan?: string | null;
-  bidang?: string | null;
-}
+import { X, Pencil, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 
 interface EditUserModalProps {
-  user: User;
-  action: (formData: FormData) => void;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    jabatan?: string | null;
+    bidang?: string | null;
+  };
+  action: (formData: FormData) => Promise<{ error?: string; success?: boolean; message?: string }>;
 }
 
 export function EditUserModal({ user, action }: EditUserModalProps) {
@@ -28,22 +28,29 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
     if (isOpen) {
       setTimeout(() => setIsRendered(true), 0);
       setTimeout(() => setIsVisible(true), 10);
-      document.body.style.overflow = "hidden";
     } else {
       setIsVisible(false);
-      const timer = setTimeout(() => {
-        setIsRendered(false);
-        document.body.style.overflow = "unset";
-      }, 300);
+      const timer = setTimeout(() => setIsRendered(false), 300);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    action(formData);
-    setIsOpen(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  const handleFormAction = async (formData: FormData) => {
+    const result = await action(formData);
+    if (result?.error) {
+      toast.error(result.error);
+    } else if (result?.success) {
+      toast.success(result.message);
+      setIsOpen(false);
+    }
   };
 
   return (
@@ -52,7 +59,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
         onClick={() => setIsOpen(true)}
         className="text-slate-600 dark:text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors text-sm flex items-center justify-center gap-1.5"
       >
-        <Edit2 size={14} />
+        <Pencil size={14} />
         Edit
       </button>
 
@@ -64,7 +71,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
 
             {/* Modal Card */}
             <div
-              className={`relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-8 transform transition-all duration-300 border border-slate-100 dark:border-white/5 ${
+              className={`relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-8 transform transition-all duration-300 border border-slate-200 dark:border-white/10 ${
                 isVisible ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-4"
               }`}
             >
@@ -83,7 +90,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Ubah informasi akun untuk {user.name}.</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form action={handleFormAction} className="space-y-5">
                 <input type="hidden" name="id" value={user.id} />
 
                 <div>
@@ -118,7 +125,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                       name="password"
                       className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 pr-12 outline-none transition-all"
                       minLength={6}
-                      placeholder="Kosongkan jika tidak ingin mengubah password"
+                      placeholder="Biarkan kosong jika tidak ingin mengubah password"
                     />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -184,9 +191,9 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                   >
                     Batal
                   </button>
-                  <button type="submit" className="px-5 py-2.5 rounded-xl font-semibold text-white bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-black dark:hover:bg-slate-200 transition-colors shadow-sm">
+                  <SubmitButton variant="primary" className="px-5 py-2.5">
                     Simpan Perubahan
-                  </button>
+                  </SubmitButton>
                 </div>
               </form>
             </div>

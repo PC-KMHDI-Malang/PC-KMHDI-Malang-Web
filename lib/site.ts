@@ -4,7 +4,7 @@
  * The canonical origin comes from NEXT_PUBLIC_SITE_URL so a domain change only needs an
  * environment variable update (e.g. in the Vercel dashboard), never a code change.
  */
-const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://pc-kmhdi-malang-web.vercel.app";
+const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.kmhdimalang.org";
 
 export const siteConfig = {
   name: "PC KMHDI Malang",

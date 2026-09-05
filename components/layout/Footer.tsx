@@ -131,8 +131,14 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="mt-16 border-t border-white/10 pt-8">
-          <div className="flex flex-col items-center justify-between gap-4 text-center text-sm text-zinc-500 md:flex-row">
-            <p>© {new Date().getFullYear()} PC KMHDI Malang. All Rights Reserved.</p>
+          <div className="flex flex-col items-center justify-between gap-4 text-left text-sm text-zinc-500 md:flex-row">
+            <p>
+              © {new Date().getFullYear()} PC KMHDI Malang. All Rights Reserved. <br />
+              Designed by{" "}
+              <Link href="https://www.instagram.com/pujarajisthaa_aw" className="text-zinc-300 hover:underline">
+                Rajistha
+              </Link>
+            </p>
           </div>
         </div>
       </div>

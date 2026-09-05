@@ -13,6 +13,7 @@ interface ConfirmModalProps {
   confirmText?: string;
   cancelText?: string;
   isDestructive?: boolean;
+  isLoading?: boolean;
 }
 
 export function ConfirmModal({
@@ -24,6 +25,7 @@ export function ConfirmModal({
   confirmText = "Konfirmasi",
   cancelText = "Batal",
   isDestructive = true,
+  isLoading = false,
 }: ConfirmModalProps) {
   const [isRendered, setIsRendered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -33,15 +35,19 @@ export function ConfirmModal({
       setTimeout(() => setIsRendered(true), 0);
       // Small delay to allow initial render before triggering animation
       setTimeout(() => setIsVisible(true), 10);
-      document.body.style.overflow = 'hidden';
     } else {
       setIsVisible(false);
-      const timer = setTimeout(() => {
-        setIsRendered(false);
-        document.body.style.overflow = 'unset';
-      }, 300); // matches transition duration
+      const timer = setTimeout(() => setIsRendered(false), 300); // matches transition duration
       return () => clearTimeout(timer);
     }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen]);
 
   if (!isRendered) return null;
@@ -49,11 +55,11 @@ export function ConfirmModal({
   const modalContent = (
     <div className="fixed inset-y-0 right-0 left-0 md:left-64 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className={`absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
-        onClick={onClose}
+        onClick={isLoading ? undefined : onClose}
       />
       
       {/* Modal Card */}
@@ -63,9 +69,10 @@ export function ConfirmModal({
         }`}
       >
         <div className="absolute top-4 right-4">
-          <button 
+          <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-800 dark:hover:text-white transition-colors"
+            disabled={isLoading}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-800 dark:hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X size={18} />
           </button>
@@ -86,19 +93,21 @@ export function ConfirmModal({
         </div>
 
         <div className="flex gap-3 justify-end">
-          <button 
+          <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+            disabled={isLoading}
+            className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {cancelText}
           </button>
-          <button 
+          <button
             onClick={onConfirm}
-            className={`px-5 py-2.5 rounded-xl font-semibold text-white transition-colors shadow-sm ${
+            disabled={isLoading}
+            className={`px-5 py-2.5 rounded-xl font-semibold text-white transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
               isDestructive ? 'bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 hover:shadow-red-600/30 dark:hover:shadow-rose-900/30' : 'bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-black dark:hover:bg-slate-200'
             }`}
           >
-            {confirmText}
+            {isLoading ? "Memproses..." : confirmText}
           </button>
         </div>
       </div>

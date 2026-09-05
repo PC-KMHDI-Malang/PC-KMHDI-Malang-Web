@@ -1,16 +1,12 @@
-import { supabaseAdmin } from "@/lib/supabase";
+﻿import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
-import { StorageUsage } from "@/components/admin/StorageUsage";
-import { STORAGE_BUCKETS, BUCKET_QUOTA_BYTES, deleteFromBucketByUrl, getBucketUsage } from "@/lib/storage";
-import { ImagePicker } from "@/components/ui/ImagePicker";
+import { STORAGE_BUCKETS, deleteFromBucketByUrl } from "@/lib/storage";
 import { AddGalleryModal } from "@/components/admin/AddGalleryModal";
 import { EditGalleryModal } from "@/components/admin/EditGalleryModal";
 
 export default async function GalleryPage() {
   const { data: gallery, error } = await supabaseAdmin.from("Gallery").select("*").order("createdAt", { ascending: false });
-
-  const usage = await getBucketUsage(STORAGE_BUCKETS.gallery);
 
   async function addGallery(formData: FormData) {
     "use server";
@@ -19,7 +15,7 @@ export default async function GalleryPage() {
     const description = formData.get("description") as string;
     const createdAt = formData.get("createdAt") as string;
 
-    if (!title || !coverImageUrl) return;
+    if (!title || !coverImageUrl) throw new Error("Judul dan gambar foto wajib diisi.");
 
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now();
     const coverImage = coverImageUrl;
@@ -29,7 +25,8 @@ export default async function GalleryPage() {
       payload.createdAt = new Date(createdAt).toISOString();
     }
 
-    await supabaseAdmin.from("Gallery").insert([payload]);
+    const { error: insertError } = await supabaseAdmin.from("Gallery").insert([payload]);
+    if (insertError) throw new Error("Gagal menambah foto: " + insertError.message);
 
     revalidatePath("/admin/gallery");
     revalidatePath("/");
@@ -43,14 +40,15 @@ export default async function GalleryPage() {
     const description = formData.get("description") as string;
     const createdAt = formData.get("createdAt") as string;
 
-    if (!id || !title || !coverImageUrl) return;
+    if (!id || !title || !coverImageUrl) throw new Error("Judul dan gambar foto wajib diisi.");
 
     const payload: any = { title, coverImage: coverImageUrl, description };
     if (createdAt) {
       payload.createdAt = new Date(createdAt).toISOString();
     }
 
-    await supabaseAdmin.from("Gallery").update(payload).eq("id", id);
+    const { error: updateError } = await supabaseAdmin.from("Gallery").update(payload).eq("id", id);
+    if (updateError) throw new Error("Gagal menyimpan perubahan foto: " + updateError.message);
 
     revalidatePath("/admin/gallery");
     revalidatePath("/");
@@ -61,7 +59,7 @@ export default async function GalleryPage() {
     const id = formData.get("id") as string;
     if (!id) return;
 
-    const { data: gal } = await supabaseAdmin.from("Gallery").select("coverImage").eq("id", id).single();
+    const { data: gal } = await supabaseAdmin.from("Gallery").select("coverImage").eq("id", id).maybeSingle();
     await supabaseAdmin.from("Gallery").delete().eq("id", id);
     if (gal?.coverImage) await deleteFromBucketByUrl(STORAGE_BUCKETS.gallery, gal.coverImage);
     revalidatePath("/admin/gallery");
@@ -75,10 +73,10 @@ export default async function GalleryPage() {
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 transition-colors">Manajemen Galeri</h1>
           <p className="text-slate-500 dark:text-slate-400 text-lg transition-colors">Kelola foto-foto dokumentasi kegiatan KMHDI Malang.</p>
         </div>
-        <AddGalleryModal action={addGallery} usedBytes={usage.usedBytes} />
+        <AddGalleryModal action={addGallery} />
       </div>
 
-      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 transition-colors">
+      <div className="bg-white dark:bg-[#111114] p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-lg border border-slate-200/80 dark:border-white/10 transition-colors">
         <div className="flex items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-slate-100 dark:border-white/5">
           <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <span className="w-2 h-6 bg-slate-800 dark:bg-slate-300 rounded-full inline-block"></span>
@@ -92,15 +90,15 @@ export default async function GalleryPage() {
           {gallery?.map((item) => (
             <div
               key={item.id}
-              className="group relative rounded-2xl overflow-hidden bg-slate-50 dark:bg-[#111111] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-2xl dark:hover:shadow-black/50 transition-all duration-500 hover:-translate-y-1"
+              className="group relative rounded-2xl overflow-hidden bg-slate-50 dark:bg-[#111114] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-2xl dark:hover:shadow-black/50 transition-all duration-500 hover:-translate-y-1"
             >
-              <div className="relative aspect-square overflow-hidden bg-slate-200 dark:bg-slate-800">
+              <div className="relative aspect-square overflow-hidden bg-slate-200 dark:bg-white/5">
                 <img src={item.coverImage} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300"></div>
               </div>
 
               <div className="absolute top-3 right-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 flex items-center">
-                <EditGalleryModal item={item} action={editGallery} usedBytes={usage.usedBytes} />
+                <EditGalleryModal item={item} action={editGallery} />
                 <SubmitWithConfirm
                   id={item.id}
                   action={deleteGallery}

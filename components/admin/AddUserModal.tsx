@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, UserPlus, Eye, EyeOff } from "lucide-react";
 
+import { toast } from "sonner";
+import { SubmitButton } from "@/components/ui/SubmitButton";
+
 interface AddUserModalProps {
-  action: (formData: FormData) => void;
+  action: (formData: FormData) => Promise<{ error?: string; success?: boolean; message?: string }>;
 }
 
 export function AddUserModal({ action }: AddUserModalProps) {
@@ -13,27 +16,35 @@ export function AddUserModal({ action }: AddUserModalProps) {
   const [isRendered, setIsRendered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setIsRendered(true), 0);
       setTimeout(() => setIsVisible(true), 10);
-      document.body.style.overflow = "hidden";
     } else {
       setIsVisible(false);
-      const timer = setTimeout(() => {
-        setIsRendered(false);
-        document.body.style.overflow = "unset";
-      }, 300);
+      const timer = setTimeout(() => setIsRendered(false), 300);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    action(formData);
-    setIsOpen(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  const handleFormAction = async (formData: FormData) => {
+    const result = await action(formData);
+    if (result?.error) {
+      toast.error(result.error);
+    } else if (result?.success) {
+      toast.success(result.message);
+      setIsOpen(false);
+    }
   };
 
   return (
@@ -73,7 +84,7 @@ export function AddUserModal({ action }: AddUserModalProps) {
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Daftarkan akun administrator atau anggota sistem.</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form action={handleFormAction} className="space-y-5">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Nama Lengkap</label>
                   <input
@@ -168,9 +179,9 @@ export function AddUserModal({ action }: AddUserModalProps) {
                   >
                     Batal
                   </button>
-                  <button type="submit" className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm">
+                  <SubmitButton variant="destructive" className="px-5 py-2.5">
                     Daftarkan Akun
-                  </button>
+                  </SubmitButton>
                 </div>
               </form>
             </div>

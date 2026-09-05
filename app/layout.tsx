@@ -15,16 +15,7 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  keywords: [
-    "KMHDI",
-    "PC KMHDI",
-    "KMHDI Malang",
-    "PC KMHDI Malang",
-    "Mahasiswa Hindu Malang",
-    "Kesatuan Mahasiswa Hindu Dharma Indonesia",
-    "organisasi mahasiswa Hindu",
-    "Hindu Malang Raya",
-  ],
+  keywords: ["KMHDI", "PC KMHDI", "KMHDI Malang", "PC KMHDI Malang", "Mahasiswa Hindu Malang", "Kesatuan Mahasiswa Hindu Dharma Indonesia", "organisasi mahasiswa Hindu", "Hindu Malang Raya"],
   applicationName: siteConfig.name,
   authors: [{ name: siteConfig.name, url: siteConfig.url }],
   creator: siteConfig.name,
@@ -107,6 +98,9 @@ const structuredData = {
   ],
 };
 
+import NextTopLoader from "nextjs-toploader";
+import { Toaster } from "sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -116,6 +110,8 @@ export default function RootLayout({
     <html lang="id" suppressHydrationWarning>
       <body className="bg-white dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 antialiased selection:bg-red-600 selection:text-white transition-colors duration-300" suppressHydrationWarning>
         <JsonLd data={structuredData} />
+        <NextTopLoader color="#dc2626" showSpinner={false} />
+        <Toaster position="top-right" richColors />
         <Providers>
           <ScrollToTop />
           {children}

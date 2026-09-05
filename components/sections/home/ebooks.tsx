@@ -30,9 +30,9 @@ export default async function Ebooks() {
           </div>
         </ScrollReveal>
 
-        <ScrollStagger staggerDelay={0.12} className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-5">
+        <ScrollStagger staggerDelay={0.12} className="mt-16 flex flex-wrap justify-center gap-5">
           {ebooks.map((ebook) => (
-            <ScrollStaggerItem key={ebook.id}>
+            <ScrollStaggerItem key={ebook.id} className="w-[calc(50%-0.625rem)] lg:w-[calc(25%-0.9375rem)]">
               <EbookCard id={ebook.id} title={ebook.title} genre={ebook.genre} coverImage={ebook.coverImage} pdfUrl={ebook.pdfUrl} createdAt={ebook.createdAt} href={`/buku/${ebook.id}`} />
             </ScrollStaggerItem>
           ))}

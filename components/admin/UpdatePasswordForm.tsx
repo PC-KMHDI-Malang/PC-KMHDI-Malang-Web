@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useActionState, useEffect, useRef } from "react";
 import { updatePasswordAction } from "@/app/actions/profile";
@@ -34,7 +34,7 @@ export function UpdatePasswordForm() {
           type="password" 
           name="currentPassword" 
           required 
-          className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-slate-800 dark:focus:border-slate-500 focus:ring-4 focus:ring-slate-800/10 dark:focus:ring-slate-500/20 rounded-xl p-3 outline-none transition-all font-medium" 
+          className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-slate-800 dark:focus:border-slate-500 focus:ring-4 focus:ring-slate-800/10 dark:focus:ring-slate-500/20 rounded-xl p-3 outline-none transition-all font-medium" 
         />
       </div>
       <div>
@@ -44,7 +44,7 @@ export function UpdatePasswordForm() {
           name="newPassword" 
           required 
           minLength={6}
-          className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all font-medium" 
+          className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all font-medium" 
         />
       </div>
       <div className="pt-4 flex justify-end">

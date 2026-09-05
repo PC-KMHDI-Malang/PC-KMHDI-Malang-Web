@@ -1,8 +1,7 @@
-import { supabaseAdmin } from "@/lib/supabase";
+﻿import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
-import { StorageUsage } from "@/components/admin/StorageUsage";
-import { STORAGE_BUCKETS, BUCKET_QUOTA_BYTES, deleteFromBucketByUrl, getBucketUsage } from "@/lib/storage";
+import { STORAGE_BUCKETS, deleteFromBucketByUrl, getSignedFileUrl } from "@/lib/storage";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 
 import { AddEbookModal } from "@/components/admin/AddEbookModal";
@@ -31,8 +30,11 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
 
   const { data: ebooks, error } = await query;
 
-  const usage = await getBucketUsage(STORAGE_BUCKETS.ebook);
-  const filesUsage = await getBucketUsage(STORAGE_BUCKETS.ebookFiles);
+  // Bucket "ebook-files" privat, jadi link "Buka PDF" di daftar admin ini juga butuh signed URL
+  // sementara — bukan cuma halaman publik /buku/[id].
+  const signedPdfUrls = new Map(
+    await Promise.all((ebooks || []).map(async (e) => [e.id, await getSignedFileUrl(STORAGE_BUCKETS.ebookFiles, e.pdfUrl)] as const)),
+  );
 
   async function addEbook(formData: FormData) {
     "use server";
@@ -44,7 +46,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     const publishYear = parseInt(formData.get("publishYear") as string, 10) || null;
     const publisher = (formData.get("publisher") as string) || "PP KMHDI";
 
-    if (!title || !coverImageUrl || !pdfUrl) return;
+    if (!title || !coverImageUrl || !pdfUrl) throw new Error("Judul, cover, dan file PDF wajib diisi.");
 
     const coverImage = coverImageUrl;
 
@@ -69,7 +71,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     const publishYear = parseInt(formData.get("publishYear") as string, 10) || null;
     const publisher = (formData.get("publisher") as string) || "PP KMHDI";
 
-    if (!id || !title || !coverImageUrl || !pdfUrl) return;
+    if (!id || !title || !coverImageUrl || !pdfUrl) throw new Error("Judul, cover, dan file PDF wajib diisi.");
 
     const { error } = await supabaseAdmin.from("Ebook").update({ title, coverImage: coverImageUrl, pdfUrl, description, genre, publishYear, publisher }).eq("id", id);
     if (error) {
@@ -86,9 +88,10 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     const id = formData.get("id") as string;
     if (!id) return;
 
-    const { data: ebook } = await supabaseAdmin.from("Ebook").select("coverImage").eq("id", id).single();
+    const { data: ebook } = await supabaseAdmin.from("Ebook").select("coverImage, pdfUrl").eq("id", id).maybeSingle();
     await supabaseAdmin.from("Ebook").delete().eq("id", id);
     if (ebook?.coverImage) await deleteFromBucketByUrl(STORAGE_BUCKETS.ebook, ebook.coverImage);
+    if (ebook?.pdfUrl) await deleteFromBucketByUrl(STORAGE_BUCKETS.ebookFiles, ebook.pdfUrl);
     revalidatePath("/admin/ebooks");
     revalidatePath("/buku");
   }
@@ -100,10 +103,10 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 transition-colors">Manajemen E-Book</h1>
           <p className="text-slate-500 dark:text-slate-400 text-lg transition-colors">Kelola dan tambahkan koleksi buku saku digital KMHDI Malang.</p>
         </div>
-        <AddEbookModal action={addEbook} usedBytes={usage.usedBytes} filesUsedBytes={filesUsage.usedBytes} />
+        <AddEbookModal action={addEbook} />
       </div>
 
-      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 transition-colors">
+      <div className="bg-white dark:bg-[#111114] p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-lg border border-slate-200/80 dark:border-white/10 transition-colors">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-slate-100 dark:border-white/5 gap-4">
           <div className="flex items-center gap-2.5">
             <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -118,7 +121,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
               <select
                 name="genre"
                 defaultValue={genreFilter}
-                className="w-full sm:w-auto bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none cursor-pointer"
+                className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none cursor-pointer"
               >
                 <option value="Semua">Semua Jenis</option>
                 <option value="Fiksi">Fiksi</option>
@@ -132,7 +135,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
               <select
                 name="sort"
                 defaultValue={sortFilter}
-                className="w-full sm:w-auto bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none cursor-pointer"
+                className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none cursor-pointer"
               >
                 <option value="newest">Terbaru</option>
                 <option value="oldest">Terlama</option>
@@ -152,9 +155,9 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
           {ebooks?.map((ebook) => (
             <div
               key={ebook.id}
-              className="group border border-slate-100 dark:border-white/5 rounded-2xl overflow-hidden flex flex-col md:flex-row bg-white dark:bg-[#111111] hover:shadow-xl dark:hover:shadow-black/50 hover:-translate-y-1 transition-all duration-300"
+              className="group border border-slate-100 dark:border-white/5 rounded-2xl overflow-hidden flex flex-col md:flex-row bg-white dark:bg-[#111114] hover:shadow-xl dark:hover:shadow-black/50 hover:-translate-y-1 transition-all duration-300"
             >
-              <div className="w-full md:w-56 p-6 flex items-center justify-center bg-slate-100 dark:bg-slate-800/50">
+              <div className="w-full md:w-56 p-6 flex items-center justify-center bg-slate-100 dark:bg-white/5">
                 <div className="relative w-32 h-44 md:w-full md:h-[220px] shadow-[10px_10px_15px_rgba(0,0,0,0.2),-3px_0_5px_rgba(0,0,0,0.1)] rounded-r-xl rounded-l-sm group-hover:-translate-y-2 group-hover:shadow-[15px_15px_20px_rgba(0,0,0,0.2),-3px_0_5px_rgba(0,0,0,0.1)] transition-all duration-500">
                   <div className="absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-white/40 via-white/10 to-transparent z-10 rounded-l-sm"></div>
                   <img src={ebook.coverImage} alt={ebook.title} className="w-full h-full object-cover rounded-r-xl rounded-l-sm" />
@@ -169,9 +172,9 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
 
                 <div className="mt-auto pt-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
                   <div className="flex flex-wrap gap-2">
-                    {ebook.pdfUrl ? (
+                    {ebook.pdfUrl && signedPdfUrls.get(ebook.id) ? (
                       <a
-                        href={ebook.pdfUrl}
+                        href={signedPdfUrls.get(ebook.id)!}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center justify-center bg-slate-800 dark:bg-slate-700 text-white font-bold py-2 px-4 rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors shadow-sm text-sm gap-2"
@@ -187,7 +190,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
                   </div>
 
                   <div className="flex gap-2">
-                    <EditEbookModal ebook={ebook} action={editEbook} usedBytes={usage.usedBytes} filesUsedBytes={filesUsage.usedBytes} />
+                    <EditEbookModal ebook={ebook} action={editEbook} />
                     <SubmitWithConfirm
                       id={ebook.id}
                       action={deleteEbook}

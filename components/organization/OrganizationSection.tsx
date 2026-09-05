@@ -206,7 +206,7 @@ export function OrganizationSection({ members }: { members: Member[] }) {
       : sortedMembers.filter((m) => m.department === activeDeptTab);
 
   return (
-    <section id="kepengurusan" className="space-y-10 w-full">
+    <section id="struktur" className="scroll-mt-28 space-y-10 w-full">
       {/* Header & Pilihan Tab */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-200/80 dark:border-white/10">
         <div>

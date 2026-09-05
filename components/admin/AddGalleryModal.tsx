@@ -1,40 +1,58 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, ImagePlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, ImagePlus, Loader2 } from "lucide-react";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 
 interface AddGalleryModalProps {
-  action: (formData: FormData) => void;
-  usedBytes: number;
+  action: (formData: FormData) => Promise<void>;
 }
 
-export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
+export function AddGalleryModal({ action }: AddGalleryModalProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setIsRendered(true), 0);
       setTimeout(() => setIsVisible(true), 10);
-      document.body.style.overflow = "hidden";
+      setError(null);
     } else {
       setIsVisible(false);
-      const timer = setTimeout(() => {
-        setIsRendered(false);
-        document.body.style.overflow = "unset";
-      }, 300);
+      const timer = setTimeout(() => setIsRendered(false), 300);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    action(formData);
-    setIsOpen(false);
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      await action(formData);
+      router.refresh();
+      setIsOpen(false);
+      (e.target as HTMLFormElement).reset();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal menyimpan";
+      setError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -55,7 +73,7 @@ export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
 
             {/* Modal Card */}
             <div
-              className={`relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-8 transform transition-all duration-300 border border-slate-100 dark:border-white/5 ${
+              className={`relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-8 transform transition-all duration-300 border border-slate-200 dark:border-white/10 ${
                 isVisible ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-4"
               }`}
             >
@@ -75,6 +93,14 @@ export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-xl border border-red-100 dark:border-red-900/30 flex items-center justify-between">
+                    <span>{error}</span>
+                    <button type="button" onClick={() => setError(null)} className="text-red-400 hover:text-red-600 dark:hover:text-red-300 font-bold ml-2">
+                      &times;
+                    </button>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Judul Foto</label>
@@ -82,7 +108,7 @@ export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
                       type="text"
                       name="title"
                       required
-                      className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
+                      className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                       placeholder="Masukkan judul..."
                     />
                   </div>
@@ -91,20 +117,20 @@ export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
                     <input
                       type="date"
                       name="createdAt"
-                      className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
+                      className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     />
                     <p className="text-[10px] text-slate-500 mt-1">Jika dikosongkan, akan menggunakan tanggal hari ini.</p>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Foto Galeri</label>
-                  <ImagePicker bucket="gallery-photos" usedBytes={usedBytes} />
+                  <ImagePicker bucket="gallery-photos" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Deskripsi Singkat (Opsional)</label>
                   <textarea
                     name="description"
-                    className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     rows={3}
                     placeholder="Tuliskan deskripsi..."
                   ></textarea>
@@ -118,8 +144,13 @@ export function AddGalleryModal({ action, usedBytes }: AddGalleryModalProps) {
                   >
                     Batal
                   </button>
-                  <button type="submit" className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm">
-                    Upload Foto
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                    <span>{isSubmitting ? "Mengunggah..." : "Upload Foto"}</span>
                   </button>
                 </div>
               </form>

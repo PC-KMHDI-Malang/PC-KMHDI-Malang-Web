@@ -3,10 +3,12 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { STORAGE_BUCKETS, uploadToBucket, deleteFromBucketByUrl, getBucketUsage } from "@/lib/storage";
+import { STORAGE_BUCKETS, uploadToBucket, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml } from "@/lib/storage";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 
 import { CategorySelect } from "@/components/admin/CategorySelect";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 
 export default async function EditNewsPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -20,8 +22,6 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
   if (error || !news) {
     return <div className="p-8 text-center text-red-500">Artikel tidak ditemukan</div>;
   }
-
-  const usage = await getBucketUsage(STORAGE_BUCKETS.news);
 
   async function editNews(formData: FormData) {
     "use server";
@@ -75,6 +75,16 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
       throw new Error(`Failed to update: ${updateError.message}`);
     }
 
+    // Bersihkan file lama yang baru saja diganti/dihapus — cover lama (kalau diganti dengan
+    // yang baru) dan gambar sisipan yang tidak lagi muncul di isi artikel yang baru disimpan.
+    if (updateData.coverImage && news.coverImage) {
+      await deleteFromBucketByUrl(STORAGE_BUCKETS.news, news.coverImage);
+    }
+    const oldImages = extractBucketUrlsFromHtml(STORAGE_BUCKETS.articleImages, news.content);
+    const newImages = new Set(extractBucketUrlsFromHtml(STORAGE_BUCKETS.articleImages, content));
+    const removedImages = oldImages.filter((url) => !newImages.has(url));
+    await deleteManyFromBucketByUrls(STORAGE_BUCKETS.articleImages, removedImages);
+
     revalidatePath("/admin/news");
     revalidatePath("/");
     redirect("/admin/news");
@@ -92,7 +102,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
         </Link>
       </div>
 
-      <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-white/5 mb-10 transition-colors">
+      <div className="bg-white dark:bg-[#111114] p-8 rounded-3xl shadow-lg border border-slate-200/80 dark:border-white/10 mb-10 transition-colors">
         <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
           <span className="w-2 h-6 bg-blue-600 dark:bg-blue-500 rounded-full inline-block"></span>
           Form Edit Artikel
@@ -105,7 +115,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
               name="title"
               defaultValue={news.title}
               required
-              className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 rounded-xl p-3 outline-none transition-all text-lg font-semibold"
+              className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 rounded-xl p-3 outline-none transition-all text-lg font-semibold"
               placeholder="Masukkan judul menarik..."
             />
           </div>
@@ -115,25 +125,18 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
               name="excerpt"
               defaultValue={news.excerpt}
               required
-              className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 rounded-xl p-3 outline-none transition-all"
+              className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 rounded-xl p-3 outline-none transition-all"
               rows={2}
               placeholder="Satu atau dua kalimat untuk menarik minat pembaca..."
             ></textarea>
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Isi Artikel Lengkap</label>
-            <textarea
-              name="content"
-              defaultValue={news.content}
-              required
-              className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 rounded-xl p-4 outline-none transition-all leading-relaxed"
-              rows={12}
-              placeholder="Ketik isi lengkap artikel Anda di sini..."
-            ></textarea>
+            <RichTextEditor name="content" defaultValue={news.content || ""} />
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Gambar Cover</label>
-            <ImagePicker bucket={STORAGE_BUCKETS.news} defaultImageUrl={news.coverImage || ""} usedBytes={usage.usedBytes} />
+            <ImagePicker bucket={STORAGE_BUCKETS.news} defaultImageUrl={news.coverImage || ""} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <CategorySelect defaultCategoryName={news.Category?.name || "Umum"} />
@@ -143,18 +146,15 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
                 type="text"
                 name="authorName"
                 defaultValue={news.authorName ?? ""}
-                className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 rounded-xl p-3 outline-none transition-all"
+                className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-blue-500 dark:focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 rounded-xl p-3 outline-none transition-all"
                 placeholder="Kosongkan untuk memakai nama akun penulis asli"
               />
             </div>
           </div>
           <div className="pt-2 flex gap-4">
-            <button
-              type="submit"
-              className="bg-blue-600 dark:bg-blue-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-blue-700 dark:hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/30 dark:hover:shadow-blue-900/30 transition-all duration-300"
-            >
+            <SubmitButton variant="primary" className="px-8 py-3">
               Simpan Perubahan
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </div>

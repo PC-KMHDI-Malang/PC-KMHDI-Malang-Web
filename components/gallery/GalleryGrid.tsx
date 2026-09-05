@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { SafeImage as Image } from "@/components/ui/SafeImage";
 import { X, ChevronLeft, ChevronRight, Calendar, Maximize2 } from "lucide-react";
 
@@ -96,68 +97,71 @@ export function GalleryGrid({ items }: { items: GalleryItem[] }) {
         ))}
       </div>
 
-      {/* Lightbox Modal Pop-up */}
-      {selectedItem && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          {/* Overlay Click to Close */}
-          <div className="absolute inset-0" onClick={handleClose} />
+      {/* Lightbox Modal Pop-up — rendered via portal so it always sits above the Navbar, */}
+      {/* regardless of any stacking context created by ancestor sections on the page. */}
+      {selectedItem &&
+        createPortal(
+          <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
+            {/* Overlay Click to Close */}
+            <div className="absolute inset-0" onClick={handleClose} />
 
-          {/* Close Button */}
-          <button
-            type="button"
-            onClick={handleClose}
-            className="absolute top-5 right-5 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur transition cursor-pointer"
-            aria-label="Tutup foto"
-          >
-            <X size={22} />
-          </button>
-
-          {/* Navigation Prev Button */}
-          {items.length > 1 && (
+            {/* Close Button */}
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePrev();
-              }}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur transition cursor-pointer"
-              aria-label="Foto sebelumnya"
+              onClick={handleClose}
+              className="absolute top-5 right-5 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur transition cursor-pointer"
+              aria-label="Tutup foto"
             >
-              <ChevronLeft size={26} />
+              <X size={22} />
             </button>
-          )}
 
-          {/* Navigation Next Button */}
-          {items.length > 1 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNext();
-              }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur transition cursor-pointer"
-              aria-label="Foto selanjutnya"
-            >
-              <ChevronRight size={26} />
-            </button>
-          )}
+            {/* Navigation Prev Button */}
+            {items.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrev();
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur transition cursor-pointer"
+                aria-label="Foto sebelumnya"
+              >
+                <ChevronLeft size={26} />
+              </button>
+            )}
 
-          {/* Lightbox Content Container */}
-          <div onClick={(e) => e.stopPropagation()} className="relative z-10 max-w-4xl w-full max-h-[90vh] flex flex-col items-center animate-in zoom-in-95 duration-200">
-            <div className="relative w-full h-[55vh] sm:h-[65vh] rounded-3xl overflow-hidden shadow-2xl bg-black/40">
-              <Image src={selectedItem.coverImage} alt={selectedItem.title} fill sizes="(max-width: 768px) 100vw, 896px" className="object-contain" priority />
-            </div>
+            {/* Navigation Next Button */}
+            {items.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur transition cursor-pointer"
+                aria-label="Foto selanjutnya"
+              >
+                <ChevronRight size={26} />
+              </button>
+            )}
 
-            <div className="w-full bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-5 mt-4 text-white text-center sm:text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold">{selectedItem.title}</h2>
-                {selectedItem.description && <p className="text-sm text-slate-300 mt-1 max-w-xl">{selectedItem.description}</p>}
+            {/* Lightbox Content Container */}
+            <div onClick={(e) => e.stopPropagation()} className="relative z-10 max-w-4xl w-full max-h-[90vh] flex flex-col items-center animate-in zoom-in-95 duration-200">
+              <div className="relative w-full h-[55vh] sm:h-[65vh] rounded-3xl overflow-hidden shadow-2xl bg-black/40">
+                <Image src={selectedItem.coverImage} alt={selectedItem.title} fill sizes="(max-width: 768px) 100vw, 896px" className="object-contain" priority />
               </div>
-              <span className="text-xs text-red-200 shrink-0 font-medium">{formatDate(selectedItem.createdAt)}</span>
+
+              <div className="w-full bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-5 mt-4 text-white text-center sm:text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg sm:text-xl font-bold">{selectedItem.title}</h2>
+                  {selectedItem.description && <p className="text-sm text-slate-300 mt-1 max-w-xl">{selectedItem.description}</p>}
+                </div>
+                <span className="text-xs text-red-200 shrink-0 font-medium">{formatDate(selectedItem.createdAt)}</span>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

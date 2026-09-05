@@ -13,7 +13,7 @@ export default async function UsersPage() {
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold text-red-600 dark:text-rose-500">Akses Ditolak</h1>
-        <p className="mt-2 text-gray-700 dark:text-gray-300">Halaman ini hanya dapat diakses oleh Administrator.</p>
+        <p className="mt-2 text-slate-700 dark:text-slate-300">Halaman ini hanya dapat diakses oleh Administrator.</p>
       </div>
     );
   }
@@ -22,51 +22,76 @@ export default async function UsersPage() {
 
   async function addUser(formData: FormData) {
     "use server";
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const role = formData.get("role") as string;
-    const jabatan = (formData.get("jabatan") as string) || null;
-    const bidang = (formData.get("bidang") as string) || null;
+    try {
+      const name = formData.get("name") as string;
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
+      const role = formData.get("role") as string;
+      const jabatan = (formData.get("jabatan") as string) || null;
+      const bidang = (formData.get("bidang") as string) || null;
 
-    if (!name || !email || !password || !role) return;
+      if (!name || !email || !password || !role) {
+        return { error: "Semua kolom wajib diisi" };
+      }
 
-    // Hash the password before saving
-    const hashedPassword = await bcrypt.hash(password, 10);
+      if (password.trim().length < 6) {
+        return { error: "Password minimal 6 karakter" };
+      }
 
-    await supabaseAdmin.from("User").insert([{ name, email, password: hashedPassword, role, jabatan, bidang }]);
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const { error } = await supabaseAdmin.from("User").insert([{ name, email, password: hashedPassword, role, jabatan, bidang }]);
 
-    revalidatePath("/admin/users");
+      if (error) throw error;
+
+      revalidatePath("/admin/users");
+      return { success: true, message: "Pengguna berhasil ditambahkan!" };
+    } catch (err: any) {
+      return { error: err.message || "Gagal menambahkan pengguna" };
+    }
   }
 
   async function editUser(formData: FormData) {
     "use server";
-    const id = formData.get("id") as string;
-    const name = formData.get("name") as string;
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const role = formData.get("role") as string;
-    const jabatan = (formData.get("jabatan") as string) || null;
-    const bidang = (formData.get("bidang") as string) || null;
+    try {
+      const id = formData.get("id") as string;
+      const name = formData.get("name") as string;
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
+      const role = formData.get("role") as string;
+      const jabatan = (formData.get("jabatan") as string) || null;
+      const bidang = (formData.get("bidang") as string) || null;
 
-    if (!id || !name || !email || !role) return;
+      if (!id || !name || !email || !role) return { error: "Kolom wajib belum diisi" };
 
-    const updateData: any = { name, email, role, jabatan, bidang };
-    if (password && password.trim().length >= 6) {
-      updateData.password = await bcrypt.hash(password, 10);
+      const updateData: any = { name, email, role, jabatan, bidang };
+      if (password && password.trim().length >= 6) {
+        updateData.password = await bcrypt.hash(password, 10);
+      }
+
+      const { error } = await supabaseAdmin.from("User").update(updateData).eq("id", id);
+      if (error) throw error;
+
+      revalidatePath("/admin/users");
+      return { success: true, message: "Pengguna berhasil diperbarui!" };
+    } catch (err: any) {
+      return { error: err.message || "Gagal memperbarui pengguna" };
     }
-
-    await supabaseAdmin.from("User").update(updateData).eq("id", id);
-    revalidatePath("/admin/users");
   }
 
   async function deleteUser(formData: FormData) {
     "use server";
-    const id = formData.get("id") as string;
-    if (!id) return;
+    try {
+      const id = formData.get("id") as string;
+      if (!id) return { error: "ID tidak ditemukan" };
 
-    await supabaseAdmin.from("User").delete().eq("id", id);
-    revalidatePath("/admin/users");
+      const { error } = await supabaseAdmin.from("User").delete().eq("id", id);
+      if (error) throw error;
+
+      revalidatePath("/admin/users");
+      return { success: true, message: "Pengguna berhasil dihapus!" };
+    } catch (err: any) {
+      return { error: err.message || "Gagal menghapus pengguna" };
+    }
   }
 
   return (

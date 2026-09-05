@@ -1,46 +1,59 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, BookPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, BookPlus, Loader2 } from "lucide-react";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { FilePicker } from "@/components/ui/FilePicker";
 
 interface AddEbookModalProps {
-  action: (formData: FormData) => void;
-  usedBytes: number;
-  filesUsedBytes?: number;
+  action: (formData: FormData) => Promise<void>;
 }
 
-export function AddEbookModal({ action, usedBytes, filesUsedBytes = 0 }: AddEbookModalProps) {
+export function AddEbookModal({ action }: AddEbookModalProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setIsRendered(true), 0);
       setTimeout(() => setIsVisible(true), 10);
-      document.body.style.overflow = "hidden";
+      setError(null);
     } else {
       setIsVisible(false);
-      const timer = setTimeout(() => {
-        setIsRendered(false);
-        document.body.style.overflow = "unset";
-      }, 300);
+      const timer = setTimeout(() => setIsRendered(false), 300);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
-    startTransition(() => {
-      action(formData);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      await action(formData);
+      router.refresh();
       setIsOpen(false);
-    });
+      (e.target as HTMLFormElement).reset();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal menyimpan";
+      setError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -59,7 +72,7 @@ export function AddEbookModal({ action, usedBytes, filesUsedBytes = 0 }: AddEboo
             <div className={`absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`} onClick={() => setIsOpen(false)} />
 
             <div
-              className={`relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-8 transform transition-all duration-300 border border-slate-100 dark:border-white/5 ${
+              className={`relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-8 transform transition-all duration-300 border border-slate-200 dark:border-white/10 ${
                 isVisible ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-4"
               }`}
             >
@@ -79,13 +92,21 @@ export function AddEbookModal({ action, usedBytes, filesUsedBytes = 0 }: AddEboo
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
+                {error && (
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-xl border border-red-100 dark:border-red-900/30 flex items-center justify-between">
+                    <span>{error}</span>
+                    <button type="button" onClick={() => setError(null)} className="text-red-400 hover:text-red-600 dark:hover:text-red-300 font-bold ml-2">
+                      &times;
+                    </button>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Judul Ebook</label>
                   <input
                     type="text"
                     name="title"
                     required
-                    className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     placeholder="Masukkan judul..."
                   />
                 </div>
@@ -94,7 +115,7 @@ export function AddEbookModal({ action, usedBytes, filesUsedBytes = 0 }: AddEboo
                   <select
                     name="genre"
                     required
-                    className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                   >
                     <option value="Fiksi">Fiksi</option>
                     <option value="Non Fiksi">Non Fiksi</option>
@@ -112,7 +133,7 @@ export function AddEbookModal({ action, usedBytes, filesUsedBytes = 0 }: AddEboo
                       name="publishYear"
                       required
                       defaultValue={new Date().getFullYear()}
-                      className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
+                      className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                       placeholder="2026"
                     />
                   </div>
@@ -123,7 +144,7 @@ export function AddEbookModal({ action, usedBytes, filesUsedBytes = 0 }: AddEboo
                       name="publisher"
                       required
                       defaultValue="PP KMHDI"
-                      className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
+                      className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                       placeholder="PP KMHDI"
                     />
                   </div>
@@ -133,7 +154,7 @@ export function AddEbookModal({ action, usedBytes, filesUsedBytes = 0 }: AddEboo
                   <textarea
                     name="description"
                     maxLength={300}
-                    className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     rows={4}
                     placeholder="Tuliskan deskripsi singkat mengenai e-book ini (Maksimal 300 karakter)..."
                   ></textarea>
@@ -141,11 +162,11 @@ export function AddEbookModal({ action, usedBytes, filesUsedBytes = 0 }: AddEboo
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Gambar Cover E-Book</label>
-                  <ImagePicker bucket="ebook-covers" usedBytes={usedBytes} />
+                  <ImagePicker bucket="ebook-covers" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">File PDF E-Book</label>
-                  <FilePicker bucket="ebook-files" usedBytes={filesUsedBytes} />
+                  <FilePicker bucket="ebook-files" />
                 </div>
 
                 <div className="flex gap-3 justify-end pt-4">
@@ -156,8 +177,13 @@ export function AddEbookModal({ action, usedBytes, filesUsedBytes = 0 }: AddEboo
                   >
                     Batal
                   </button>
-                  <button type="submit" className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm">
-                    Simpan E-Book
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                    <span>{isSubmitting ? "Menyimpan..." : "Simpan E-Book"}</span>
                   </button>
                 </div>
               </form>

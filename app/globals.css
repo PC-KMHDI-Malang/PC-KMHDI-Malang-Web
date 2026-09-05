@@ -53,6 +53,13 @@ body {
   animation: marquee-reverse 35s linear infinite;
 }
 
+/* Dipakai bareng animate-marquee agar bisa dihentikan sementara saat kursor di atasnya (mis. strip
+   logo mitra) — sebagai selector terpisah ".marquee-pausable:hover" spesifisitasnya otomatis lebih
+   tinggi daripada ".animate-marquee" saja, jadi pasti menang di atas urutan Tailwind vs CSS custom. */
+.marquee-pausable:hover {
+  animation-play-state: paused;
+}
+
 /* Hero — rising embers */
 @keyframes ember-rise {
   0% {
@@ -161,4 +168,69 @@ body {
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+
+/* Isi artikel (RichTextEditor & tampilan publik berita) — proyek ini tidak memakai plugin
+   @tailwindcss/typography, jadi elemen HTML hasil rich text editor (p, ul/ol, img, dst.)
+   diberi gaya manual di sini agar tampil sama persis di editor admin maupun halaman publik. */
+.rich-content {
+  line-height: 1.8;
+}
+
+.rich-content p {
+  margin: 0 0 1em;
+}
+
+.rich-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-content ul,
+.rich-content ol {
+  margin: 0 0 1em;
+  padding-left: 1.5em;
+}
+
+.rich-content ul {
+  list-style: disc;
+}
+
+.rich-content ol {
+  list-style: decimal;
+}
+
+.rich-content li {
+  margin: 0.25em 0;
+}
+
+.rich-content b,
+.rich-content strong {
+  font-weight: 700;
+}
+
+.rich-content i,
+.rich-content em {
+  font-style: italic;
+}
+
+.rich-content u {
+  text-decoration: underline;
+}
+
+.rich-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.25rem auto;
+  border-radius: 0.75rem;
+}
+
+.rich-content a {
+  color: #dc2626;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.dark .rich-content a {
+  color: #fb7185;
 }

@@ -7,6 +7,7 @@ import { SafeImage } from "@/components/ui/SafeImage";
 import { NewsCategoryTabs } from "@/components/news/NewsCategoryTabs";
 import { NewsSortSelect } from "@/components/news/NewsSortSelect";
 import { FeaturedNewsSlider } from "@/components/news/FeaturedNewsSlider";
+import { stripHtml } from "@/lib/richText";
 
 export const dynamic = "force-dynamic";
 
@@ -163,7 +164,7 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
                   </div>
                   <div className="p-5 flex flex-col justify-center flex-1 min-w-0 bg-white dark:bg-[#1A1A1A]">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">{item.title}</h3>
-                    {item.content && <p className="mt-2 text-sm text-slate-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">{item.content}</p>}
+                    {item.content && <p className="mt-2 text-sm text-slate-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">{stripHtml(item.content)}</p>}
                     <div className="mt-3 flex items-center gap-4 text-xs text-slate-500 dark:text-neutral-500">
                       <span className="inline-flex items-center gap-1">
                         <UserIcon size={12} />
