@@ -75,6 +75,7 @@ export default function Navbar({ user }: NavbarProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mobileOpenMenus, setMobileOpenMenus] = useState<Record<string, boolean>>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = !!user;
   const isAdmin = user?.role === "ADMIN";
@@ -97,8 +98,15 @@ export default function Navbar({ user }: NavbarProps) {
       setScrolled(window.scrollY > 30);
     };
 
+    // Dipakai untuk menutup dropdown akun versi desktop saat tap/klik di luar dropdownRef.
+    // Drawer mobile sengaja dikecualikan (via mobileDrawerRef) — tanpa ini, tap pertama pada
+    // tombol "Ya, Keluar" di drawer mobile langsung dianggap "klik di luar dropdown" oleh
+    // listener "mousedown" ini (mousedown selalu lebih dulu dari "click"), me-reset
+    // showLogoutConfirm ke false dan membuat form logout-nya hilang sebelum sempat ter-submit.
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (mobileDrawerRef.current && mobileDrawerRef.current.contains(target)) return;
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setUserDropdownOpen(false);
         setShowLogoutConfirm(false);
       }
@@ -351,6 +359,7 @@ export default function Navbar({ user }: NavbarProps) {
               className="fixed inset-0 top-0 z-[60] bg-black/30 backdrop-blur-md lg:hidden animate-in fade-in duration-200 p-4 pt-20 overflow-y-auto"
             >
               <div
+                ref={mobileDrawerRef}
                 onClick={(e) => e.stopPropagation()}
                 className="w-full max-w-sm mx-auto rounded-3xl border border-white/20 bg-slate-900/80 p-5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-3xl backdrop-saturate-150 animate-in slide-in-from-top-4 duration-300 max-h-[85vh] overflow-y-auto flex flex-col justify-between"
               >
