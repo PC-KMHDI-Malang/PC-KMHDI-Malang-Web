@@ -85,7 +85,15 @@ function Tilt3DLogo() {
   // Yang digerakkan adalah motion value x/y yang sama dengan interaksi asli, jadi
   // kemiringannya tetap dihitung oleh spring yang sama — bukan animasi terpisah. Efek
   // "dilepas" muncul sendiri dari overshoot spring saat nilainya dikembalikan ke nol.
+  //
+  // Dilewati di perangkat sentuh (pointer: coarse): efek ini menganimasikan `background`
+  // (bukan transform/opacity) tiap frame lewat glowBackground di bawah, yang mahal di CPU
+  // dan kalau berjalan pas halaman baru dibuka, langsung menunda LCP — paling terasa di HP
+  // yang CPU-nya jauh lebih lambat dari desktop. Pengguna sentuh juga bisa drag sendiri
+  // plakatnya, jadi contoh gerakan otomatis ini bukan hal penting untuk mereka.
   useEffect(() => {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+
     const press = window.setTimeout(() => {
       x.set(0.32);
       y.set(0.4);
@@ -105,13 +113,14 @@ function Tilt3DLogo() {
   return (
     // Animasi masuk dipasang di wrapper, bukan di plakatnya: plakat sudah memakai motion value
     // rotateX/rotateY dari spring dan properti x/y dikendalikan drag, sehingga menganimasikan
-    // transform di elemen itu akan saling menimpa.
+    // transform di elemen itu akan saling menimpa. Opacity mulai dari 1 (bukan 0) karena wrapper
+    // ini membungkus gambar lambang — elemen LCP halaman; lihat catatan di dalam untuk detail.
     <motion.div
       className="relative"
       style={{ perspective: 1200 }}
-      initial={{ opacity: 0, scale: 0.88, y: 30 }}
+      initial={{ opacity: 1, scale: 0.88, y: 30 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.65, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.65, delay: 0, ease: [0.22, 1, 0.36, 1] }}
     >
       <motion.div
         role="img"
@@ -133,12 +142,15 @@ function Tilt3DLogo() {
 
         <div style={{ transform: "translateZ(70px)" }} className="relative flex aspect-square w-full items-center justify-center p-4 sm:p-6">
           {/* Pembungkus tersendiri supaya lambangnya bisa muncul menyusul tanpa mengganggu
-              translateZ milik elemen induk. */}
+              translateZ milik elemen induk. Opacity mulai dari 1 (bukan di-fade dari 0) karena
+              ini elemen LCP halaman — Google menghitung LCP dari kapan elemen itu benar-benar
+              terlihat, jadi menyembunyikannya lalu fade-in beberapa ratus milidetik langsung
+              menambah angka LCP. Efek "muncul" cukup dari scale saja (transform, murah/composited). */}
           <motion.div
             className="h-full w-full"
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 1, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
           >
             <Image
               src={heroData.image}
@@ -147,6 +159,10 @@ function Tilt3DLogo() {
               height={520}
               priority
               draggable={false}
+              // Kotak gambar ini mengikuti max-w-sm/md/lg (384/448/512px) pada wrapper di luar —
+              // tanpa "sizes", Next.js mengira gambar tampil sepenuh 520px di semua breakpoint
+              // dan mengirim varian jauh lebih besar dari yang sebenarnya dirender di HP.
+              sizes="(min-width: 1024px) 512px, (min-width: 640px) 448px, 384px"
               className="h-full w-full select-none object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.55)]"
             />
           </motion.div>

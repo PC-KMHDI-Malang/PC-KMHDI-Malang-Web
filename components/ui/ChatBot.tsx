@@ -95,7 +95,13 @@ export function ChatBot() {
                 </div>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="rounded-full p-2.5 text-slate-400 dark:text-neutral-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-600 dark:hover:text-white transition-colors">
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                setIsHovered(false);
+              }}
+              className="rounded-full p-2.5 text-slate-400 dark:text-neutral-400 hover:bg-slate-200 dark:hover:bg-white/10 hover:text-slate-600 dark:hover:text-white transition-colors"
+            >
               <X size={18} />
             </button>
           </div>
@@ -196,7 +202,14 @@ export function ChatBot() {
 
         {/* Button */}
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => {
+            // Perangkat sentuh memicu "mouseenter" sintetis saat tap tapi tidak pernah
+            // memicu "mouseleave" yang sepadan, jadi isHovered bisa nyangkut true — begitu
+            // chat ditutup, tooltip ini langsung nongol lagi tanpa disentuh. Reset di sini
+            // memastikan tooltip tidak pernah muncul sendiri setelah interaksi via tap.
+            setIsHovered(false);
+            setIsOpen(!isOpen);
+          }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           className={`relative flex h-[60px] w-[60px] items-center justify-center rounded-full shadow-[0_10px_25px_rgba(168,0,0,0.5)] transition-all duration-300 hover:scale-110 active:scale-95 z-10 ${
