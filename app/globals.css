@@ -214,7 +214,11 @@ body {
    @tailwindcss/typography, jadi elemen HTML hasil rich text editor (p, ul/ol, img, dst.)
    diberi gaya manual di sini agar tampil sama persis di editor admin maupun halaman publik. */
 .rich-content {
-  line-height: 1.8;
+  /* Disamakan persis dengan leading-8 (2rem) pada wrapper dateline "Malang, kmhdimalang.org —"
+     di halaman detail berita (float-left) — kalau beda, tinggi baris paragraf tidak pas jadi
+     kelipatan bulat tinggi kotak float, sehingga baris kedua ikut terpotong sebagian dan
+     muncul celah kosong sebelum teks kembali rata kiri penuh di baris berikutnya. */
+  line-height: 2rem;
 }
 
 .rich-content p {
