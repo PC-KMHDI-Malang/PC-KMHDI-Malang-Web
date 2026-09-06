@@ -134,7 +134,7 @@ export default function Footer() {
           <div className="flex flex-col items-center justify-between gap-4 text-left text-sm text-zinc-500 md:flex-row">
             <p>
               © {new Date().getFullYear()} PC KMHDI Malang. All Rights Reserved. <br />
-              Managed by{" "}
+              Created by{" "}
               <Link href="https://www.instagram.com/pujarajisthaa_aw" className="text-zinc-300 hover:underline">
                 Rajistha
               </Link>
