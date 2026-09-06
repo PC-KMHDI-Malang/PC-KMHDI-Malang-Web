@@ -30,12 +30,14 @@ const listButtons: ToolbarButton[] = [
   { command: "insertOrderedList", icon: ListOrdered, label: "Daftar Bernomor" },
 ];
 
-const alignButtons: ToolbarButton[] = [
-  { command: "justifyLeft", icon: AlignLeft, label: "Rata Kiri" },
-  { command: "justifyCenter", icon: AlignCenter, label: "Rata Tengah" },
-  { command: "justifyRight", icon: AlignRight, label: "Rata Kanan" },
-  { command: "justifyFull", icon: AlignJustify, label: "Rata Kiri-Kanan (Justify)" },
+const alignButtons: (ToolbarButton & { align: string })[] = [
+  { command: "justifyLeft", align: "left", icon: AlignLeft, label: "Rata Kiri" },
+  { command: "justifyCenter", align: "center", icon: AlignCenter, label: "Rata Tengah" },
+  { command: "justifyRight", align: "right", icon: AlignRight, label: "Rata Kanan" },
+  { command: "justifyFull", align: "justify", icon: AlignJustify, label: "Rata Kiri-Kanan (Justify)" },
 ];
+
+const BLOCK_SELECTOR = "p,div,li,h1,h2,h3,h4,h5,h6,blockquote";
 
 const historyButtons: ToolbarButton[] = [
   { command: "undo", icon: Undo2, label: "Urungkan" },
@@ -62,6 +64,11 @@ export function RichTextEditor({ name, defaultValue = "", bucket = "article-imag
   const [linkUrl, setLinkUrl] = useState("");
   const savedRangeRef = useRef<Range | null>(null);
 
+  // Status tombol aktif (bold/italic/underline/list/perataan) mengikuti posisi kursor saat ini,
+  // supaya admin tahu format apa yang sedang menyala tanpa harus menebak dari tampilan teks.
+  const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
+  const [activeAlign, setActiveAlign] = useState("left");
+
   // Isi editor sekali saat mount. Konten lama (teks polos) dikonversi jadi <br> agar baris
   // barunya tetap tampil, sedangkan konten baru (sudah HTML) dipakai apa adanya.
   useEffect(() => {
@@ -79,10 +86,96 @@ export function RichTextEditor({ name, defaultValue = "", bucket = "article-imag
     setIsEmpty(!editorRef.current.textContent?.trim() && !editorRef.current.querySelector("img"));
   };
 
+  // Membaca status format di posisi kursor sekarang supaya tombol toolbar bisa menyala/mati
+  // sesuai konteks (mis. kursor di teks tebal -> tombol Bold menyala).
+  const updateActiveStates = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0 || !editor.contains(selection.anchorNode)) return;
+
+    const formats = new Set<string>();
+    ["bold", "italic", "underline", "insertUnorderedList", "insertOrderedList"].forEach((command) => {
+      try {
+        if (document.queryCommandState(command)) formats.add(command);
+      } catch {
+        // queryCommandState bisa melempar di beberapa browser lama untuk command tertentu — abaikan saja.
+      }
+    });
+    setActiveFormats(formats);
+
+    // execCommand tidak punya cara baca "perataan saat ini" yang konsisten lintas browser,
+    // jadi telusuri elemen blok terdekat dari kursor dan baca text-align efektifnya.
+    let node: Node | null = selection.anchorNode;
+    let align = "left";
+    while (node && node !== editor) {
+      if (node instanceof HTMLElement) {
+        const textAlign = window.getComputedStyle(node).textAlign;
+        if (textAlign === "left" || textAlign === "center" || textAlign === "right" || textAlign === "justify") {
+          align = textAlign;
+          break;
+        }
+      }
+      node = node.parentNode;
+    }
+    setActiveAlign(align);
+  };
+
+  useEffect(() => {
+    document.addEventListener("selectionchange", updateActiveStates);
+    return () => document.removeEventListener("selectionchange", updateActiveStates);
+  }, []);
+
   const runCommand = (command: string, value?: string) => {
     editorRef.current?.focus();
     document.execCommand(command, false, value);
     syncFromEditor();
+    updateActiveStates();
+  };
+
+  // Perataan diterapkan manual (bukan lewat execCommand) karena browser sering menolak
+  // justifyLeft ketika teks belum terbungkus elemen blok (mis. konten lama berupa teks polos
+  // + <br>) — execCommand menganggap "sudah rata kiri" lalu tidak melakukan apa-apa, sehingga
+  // tombol Rata Kiri terasa "kadang gamau". Di sini text-align di-set langsung ke elemen blok
+  // pembungkus setiap baris yang tercakup seleksi.
+  const applyAlign = (align: string) => {
+    const editor = editorRef.current;
+    editor?.focus();
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0 || !editor.contains(selection.anchorNode)) return;
+
+    const range = selection.getRangeAt(0);
+    const blocks = new Set<HTMLElement>();
+
+    const collectBlock = (node: Node | null) => {
+      let el = node instanceof HTMLElement ? node : node?.parentElement ?? null;
+      while (el && el !== editor && !el.matches(BLOCK_SELECTOR)) {
+        el = el.parentElement;
+      }
+      blocks.add(el && el !== editor ? el : editor);
+    };
+
+    if (range.collapsed) {
+      collectBlock(range.startContainer);
+    } else {
+      const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, {
+        acceptNode: (n) => (range.intersectsNode(n) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP),
+      });
+      let found = false;
+      let current = walker.nextNode();
+      while (current) {
+        found = true;
+        collectBlock(current);
+        current = walker.nextNode();
+      }
+      if (!found) collectBlock(range.startContainer);
+    }
+
+    blocks.forEach((el) => {
+      el.style.textAlign = align;
+    });
+
+    syncFromEditor();
+    updateActiveStates();
   };
 
   const handleImageButtonClick = () => fileInputRef.current?.click();
@@ -156,16 +249,44 @@ export function RichTextEditor({ name, defaultValue = "", bucket = "article-imag
     }
   };
 
-  const renderButton = (btn: ToolbarButton) => {
+  // Tombol yang sedang aktif diberi warna merah terisi (bukan cuma abu-abu hover) supaya jelas
+  // beda dari tombol biasa — admin bisa langsung lihat format apa yang menyala di posisi kursor.
+  const toolbarButtonClass = (isActive: boolean) =>
+    `flex h-8 w-8 items-center justify-center rounded-lg transition-colors cursor-pointer ${
+      isActive
+        ? "bg-red-600 text-white dark:bg-rose-600 dark:text-white"
+        : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10"
+    }`;
+
+  const renderButton = (btn: ToolbarButton, isActive = false) => {
     const Icon = btn.icon;
     return (
       <button
         key={btn.command + (btn.value || "")}
         type="button"
         title={btn.label}
+        aria-pressed={isActive}
         onMouseDown={(e) => e.preventDefault()} // jaga seleksi teks agar tidak hilang saat klik toolbar
         onClick={() => runCommand(btn.command, btn.value)}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
+        className={toolbarButtonClass(isActive)}
+      >
+        <Icon size={16} />
+      </button>
+    );
+  };
+
+  const renderAlignButton = (btn: ToolbarButton & { align: string }) => {
+    const Icon = btn.icon;
+    const isActive = activeAlign === btn.align;
+    return (
+      <button
+        key={btn.command}
+        type="button"
+        title={btn.label}
+        aria-pressed={isActive}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => applyAlign(btn.align)}
+        className={toolbarButtonClass(isActive)}
       >
         <Icon size={16} />
       </button>
@@ -175,11 +296,11 @@ export function RichTextEditor({ name, defaultValue = "", bucket = "article-imag
   return (
     <div>
       <div className="flex flex-wrap items-center gap-1 rounded-t-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 p-1.5">
-        {formattingButtons.map(renderButton)}
+        {formattingButtons.map((btn) => renderButton(btn, activeFormats.has(btn.command)))}
         <span className="mx-1 h-5 w-px bg-slate-300 dark:bg-white/10" />
-        {listButtons.map(renderButton)}
+        {listButtons.map((btn) => renderButton(btn, activeFormats.has(btn.command)))}
         <span className="mx-1 h-5 w-px bg-slate-300 dark:bg-white/10" />
-        {alignButtons.map(renderButton)}
+        {alignButtons.map(renderAlignButton)}
         <span className="mx-1 h-5 w-px bg-slate-300 dark:bg-white/10" />
 
         <button
@@ -216,7 +337,7 @@ export function RichTextEditor({ name, defaultValue = "", bucket = "article-imag
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" />
 
         <span className="mx-1 h-5 w-px bg-slate-300 dark:bg-white/10" />
-        {historyButtons.map(renderButton)}
+        {historyButtons.map((btn) => renderButton(btn))}
       </div>
 
       {isLinkPopoverOpen && (
