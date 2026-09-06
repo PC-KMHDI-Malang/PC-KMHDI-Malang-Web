@@ -43,9 +43,12 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files" }: File
       return;
     }
 
-    // Bucket "ebook-files" di Supabase dikonfigurasi dengan batas 5 MB per file.
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Ukuran file maksimal 5 MB.");
+    // Batas diset di bawah 4.5 MB, bukan di batas bucket Supabase — Vercel membatasi ukuran
+    // body request ke Server Function sebesar 4.5 MB secara keras (di luar kendali kode/config
+    // Next.js), jadi file yang lolos cek 5 MB tapi lewat 4.5 MB akan gagal upload dengan pesan
+    // generik "An unexpected response was received from the server."
+    if (file.size > 4 * 1024 * 1024) {
+      setError("Ukuran file maksimal 4 MB.");
       e.target.value = "";
       return;
     }
@@ -61,7 +64,10 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files" }: File
       setSelectedUrl(newUrl);
       setIsModalOpen(false);
     } catch (err: any) {
-      setError("Gagal mengupload file: " + err.message);
+      const message = /unexpected response/i.test(err?.message || "")
+        ? "Koneksi terputus atau file terlalu besar untuk server. Coba lagi dengan file yang lebih kecil."
+        : err?.message || "Terjadi kesalahan yang tidak diketahui.";
+      setError("Gagal mengupload file: " + message);
     } finally {
       setIsUploading(false);
       e.target.value = "";
@@ -104,7 +110,7 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files" }: File
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                   </svg>
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">Klik untuk memilih file</span>
-                  <span className="text-slate-400 dark:text-slate-500 text-sm mt-1">Mendukung format PDF (Maks 5 MB)</span>
+                  <span className="text-slate-400 dark:text-slate-500 text-sm mt-1">Mendukung format PDF (Maks 4 MB)</span>
                 </>
               )}
             </div>
