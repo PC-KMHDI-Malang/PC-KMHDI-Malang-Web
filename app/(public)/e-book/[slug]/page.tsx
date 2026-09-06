@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Eye, Tag, Share2, Download } from "lucide-react";
@@ -29,7 +30,14 @@ function EbookLiteCard({ item }: { item: RelatedEbook }) {
       className="group rounded-2xl border border-neutral-200 dark:border-white/10 bg-white dark:bg-[#141417] overflow-hidden shadow-sm hover:shadow-xl hover:border-red-300 dark:hover:border-red-500/40 hover:-translate-y-1 transition-all duration-300"
     >
       <div className="relative h-40 bg-neutral-100 dark:bg-neutral-900 overflow-hidden">
-        <img src={item.coverImage} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <Image
+          src={item.coverImage}
+          alt={item.title}
+          fill
+          loading="lazy"
+          sizes="(min-width: 1024px) 25vw, 50vw"
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
+        />
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <span className="flex flex-col items-center gap-1.5" title="View">
             <span className="w-10 h-10 flex items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
@@ -194,7 +202,14 @@ export default async function EbookDetailPage({ params, searchParams }: { params
           <div className="rounded-3xl bg-neutral-50 dark:bg-[#1A1A1A] border border-neutral-200 dark:border-white/10 p-8 flex items-center justify-center shadow-sm">
             <div className="relative w-40 sm:w-48 aspect-[3/4] shadow-[10px_10px_20px_rgba(0,0,0,0.15),-3px_0_5px_rgba(0,0,0,0.08)] dark:shadow-[10px_10px_30px_rgba(0,0,0,0.5)] rounded-r-xl rounded-l-sm">
               <div className="absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-white/40 via-white/10 to-transparent z-10 rounded-l-sm"></div>
-              <img src={ebook.coverImage} alt={ebook.title} className="w-full h-full object-cover rounded-r-xl rounded-l-sm" />
+              <Image
+                src={ebook.coverImage}
+                alt={ebook.title}
+                fill
+                priority
+                sizes="(min-width: 640px) 192px, 160px"
+                className="object-cover rounded-r-xl rounded-l-sm"
+              />
             </div>
           </div>
 

@@ -36,9 +36,14 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
   const sortFilter = searchParams?.sort || "newest";
   const categoryFilter = searchParams?.category || "";
 
-  // Fetch all categories
-  const { data: allCategories } = await supabaseAdmin.from("Category").select("*").order("name");
+  // Ambil kategori & (kalau ada filter kategori) id kategori itu secara paralel, bukan berurutan,
+  // supaya round-trip ke Supabase tidak numpuk sebelum query berita utama bisa jalan.
+  const [{ data: allCategories }, matchingCatResult] = await Promise.all([
+    supabaseAdmin.from("Category").select("*").order("name"),
+    categoryFilter ? supabaseAdmin.from("Category").select("id").eq("name", categoryFilter).single() : Promise.resolve({ data: null }),
+  ]);
   const categories = (allCategories || []).map((c) => c.name);
+  const matchingCat = matchingCatResult.data;
 
   // Build query
   let dbQuery = supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)").eq("status", "PUBLISHED");
@@ -47,11 +52,8 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
     dbQuery = dbQuery.ilike("title", `%${query}%`);
   }
 
-  if (categoryFilter) {
-    const { data: matchingCat } = await supabaseAdmin.from("Category").select("id").eq("name", categoryFilter).single();
-    if (matchingCat) {
-      dbQuery = dbQuery.eq("categoryId", matchingCat.id);
-    }
+  if (matchingCat) {
+    dbQuery = dbQuery.eq("categoryId", matchingCat.id);
   }
 
   if (sortFilter === "oldest") {

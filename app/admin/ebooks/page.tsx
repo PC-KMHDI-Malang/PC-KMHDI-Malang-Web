@@ -1,5 +1,6 @@
 ﻿import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
+import Image from "next/image";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl, getSignedFileUrl } from "@/lib/storage";
 import { generateUniqueEbookSlug } from "@/lib/slug";
@@ -183,7 +184,14 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
               <div className="w-full md:w-56 p-6 flex items-center justify-center bg-slate-100 dark:bg-white/5">
                 <div className="relative w-32 h-44 md:w-full md:h-[220px] shadow-[10px_10px_15px_rgba(0,0,0,0.2),-3px_0_5px_rgba(0,0,0,0.1)] rounded-r-xl rounded-l-sm group-hover:-translate-y-2 group-hover:shadow-[15px_15px_20px_rgba(0,0,0,0.2),-3px_0_5px_rgba(0,0,0,0.1)] transition-all duration-500">
                   <div className="absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-white/40 via-white/10 to-transparent z-10 rounded-l-sm"></div>
-                  <img src={ebook.coverImage} alt={ebook.title} className="w-full h-full object-cover rounded-r-xl rounded-l-sm" />
+                  <Image
+                    src={ebook.coverImage}
+                    alt={ebook.title}
+                    fill
+                    loading="lazy"
+                    sizes="(min-width: 768px) 224px, 128px"
+                    className="object-cover rounded-r-xl rounded-l-sm"
+                  />
                 </div>
               </div>
               <div className="p-6 flex-1 flex flex-col justify-center">

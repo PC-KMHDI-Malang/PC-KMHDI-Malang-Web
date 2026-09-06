@@ -5,6 +5,8 @@ import { FaFacebook, FaInstagram, FaYoutube } from "react-icons/fa";
 
 import { Mail, MapPin, Phone } from "lucide-react";
 
+import { siteConfig } from "@/lib/site";
+
 export default function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-red-900/20 bg-[#0b0b0f] text-white">
@@ -29,13 +31,31 @@ export default function Footer() {
 
             {/* Social */}
             <div className="mt-8 flex gap-4">
-              <Link href="#" className="rounded-full bg-white/5 p-3 transition hover:bg-red-600">
+              <Link
+                href={siteConfig.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram PC KMHDI Malang"
+                className="rounded-full bg-white/5 p-3 transition hover:bg-red-600"
+              >
                 <FaInstagram size={18} />
               </Link>
-              <Link href="#" className="rounded-full bg-white/5 p-3 transition hover:bg-red-600">
+              <Link
+                href="https://web.facebook.com/kmhdi/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook KMHDI"
+                className="rounded-full bg-white/5 p-3 transition hover:bg-red-600"
+              >
                 <FaFacebook size={18} />
               </Link>
-              <Link href="#" className="rounded-full bg-white/5 p-3 transition hover:bg-red-600">
+              <Link
+                href="https://www.youtube.com/@KMHDIPusat"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube KMHDI"
+                className="rounded-full bg-white/5 p-3 transition hover:bg-red-600"
+              >
                 <FaYoutube size={18} />
               </Link>
             </div>
@@ -109,8 +129,10 @@ export default function Footer() {
           <div>
             <h3 className="mb-6 text-lg font-semibold">Hubungi Kami</h3>
             <div className="space-y-5 text-zinc-400">
-              <div className="flex gap-3">
-                <MapPin size={20} className="mt-1 text-red-500" />
+              <div className="flex items-start gap-3">
+                <span className="mt-1 flex w-5 shrink-0 justify-center">
+                  <MapPin size={18} className="text-red-500" />
+                </span>
                 <p>
                   Sekretariat PC KMHDI Malang
                   <br />
@@ -118,11 +140,15 @@ export default function Footer() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Mail size={18} className="text-red-500" />
+                <span className="flex w-5 shrink-0 justify-center">
+                  <Mail size={18} className="text-red-500" />
+                </span>
                 <p>info@kmhdimalang.org</p>
               </div>
               <div className="flex items-center gap-3">
-                <Phone size={18} className="text-red-500" />
+                <span className="flex w-5 shrink-0 justify-center">
+                  <Phone size={18} className="text-red-500" />
+                </span>
                 <p>+62 877-7423-0949</p>
               </div>
             </div>
