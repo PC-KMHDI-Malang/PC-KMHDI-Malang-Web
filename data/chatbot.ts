@@ -5,7 +5,7 @@ export const knowledgeBase = [
     answer: "KMHDI atau Kesatuan Mahasiswa Hindu Dharma Indonesia adalah satu-satunya organisasi kemahasiswaan tingkat nasional yang bernafaskan Hindu di Indonesia.",
   },
   {
-    keywords: ["sejarah", "kapan berdiri", "berdiri", "deklarasi"],
+    keywords: ["sejarah", "kapan berdiri", "berdiri", "deklarasi "],
     answer:
       "KMHDI dideklarasikan pada tanggal 3 September 1993 di Universitas Hindu Indonesia (UNHI), Denpasar, Bali. Mahasiswa Hindu dari berbagai daerah di Indonesia (Bali, Jawa, Sumatera, dll) berkumpul untuk menyatukan pergerakan mahasiswa Hindu berskala nasional.",
   },
