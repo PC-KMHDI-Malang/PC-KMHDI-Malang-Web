@@ -33,7 +33,7 @@ export function SidebarNav({ role }: SidebarNavProps) {
         ];
 
   return (
-    <nav className="flex-1 p-4 space-y-2">
+    <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
       {links.map((link) => {
         const isActive = pathname === link.href;
         const Icon = link.icon;

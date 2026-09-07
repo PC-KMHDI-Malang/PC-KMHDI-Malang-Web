@@ -11,8 +11,11 @@ interface LoginModalProps {
   onClose: () => void;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -30,9 +33,22 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const email = (formData.get("email") as string).trim();
     const password = formData.get("password") as string;
+
+    const nextFieldErrors: { email?: string; password?: string } = {};
+    if (!email) {
+      nextFieldErrors.email = "Email wajib diisi.";
+    } else if (!EMAIL_REGEX.test(email)) {
+      nextFieldErrors.email = "Format email tidak valid.";
+    }
+    if (!password) {
+      nextFieldErrors.password = "Kata sandi wajib diisi.";
+    }
+    setFieldErrors(nextFieldErrors);
+    if (nextFieldErrors.email || nextFieldErrors.password) return;
 
     startTransition(async () => {
       try {
@@ -95,7 +111,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
             <div className="relative">
@@ -105,11 +121,19 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
               <input
                 name="email"
                 type="email"
-                required
+                onChange={() => fieldErrors.email && setFieldErrors((prev) => ({ ...prev, email: undefined }))}
                 placeholder="nama@kmhdimalang.org"
-                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181c] pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-neutral-500 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition"
+                aria-invalid={!!fieldErrors.email}
+                className={`w-full rounded-xl border bg-slate-50 dark:bg-[#18181c] pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-neutral-500 outline-none focus:ring-2 transition ${
+                  fieldErrors.email
+                    ? "border-rose-400 dark:border-rose-500/60 focus:border-rose-500 focus:ring-rose-500/20"
+                    : "border-slate-200 dark:border-white/10 focus:border-red-500 focus:ring-red-500/20"
+                }`}
               />
             </div>
+            {fieldErrors.email && (
+              <p className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400">{fieldErrors.email}</p>
+            )}
           </div>
 
           <div>
@@ -121,14 +145,22 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
-                required
+                onChange={() => fieldErrors.password && setFieldErrors((prev) => ({ ...prev, password: undefined }))}
                 placeholder="Masukkan kata sandi"
-                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181c] pl-10 pr-11 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-neutral-500 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition"
+                aria-invalid={!!fieldErrors.password}
+                className={`w-full rounded-xl border bg-slate-50 dark:bg-[#18181c] pl-10 pr-11 py-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-neutral-500 outline-none focus:ring-2 transition ${
+                  fieldErrors.password
+                    ? "border-rose-400 dark:border-rose-500/60 focus:border-rose-500 focus:ring-rose-500/20"
+                    : "border-slate-200 dark:border-white/10 focus:border-red-500 focus:ring-red-500/20"
+                }`}
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            {fieldErrors.password && (
+              <p className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400">{fieldErrors.password}</p>
+            )}
           </div>
 
           <button
