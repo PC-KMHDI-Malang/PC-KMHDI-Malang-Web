@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
+import { getStatisticSection } from "@/lib/queries";
 import { statisticsData } from "@/data/statistics";
 import { getIcon } from "@/lib/iconMap";
 import { ScrollReveal, ScrollStagger, ScrollStaggerItem, CountUpOnScroll } from "@/components/ui/ScrollReveal";
@@ -29,8 +30,8 @@ function StatCard({ stat }: { stat: StatItem }) {
 export default async function Statistics() {
   // Ambil konten section & daftar kartu statistik dari Supabase (bisa dikelola admin di /admin/statistics).
   // Jika tabel belum dibuat atau masih kosong, gunakan data bawaan di data/statistics.ts sebagai fallback.
-  const [{ data: section }, { data: dbItems }] = await Promise.all([
-    supabaseAdmin.from("StatisticSection").select("*").eq("id", 1).maybeSingle(),
+  const [section, { data: dbItems }] = await Promise.all([
+    getStatisticSection(),
     supabaseAdmin.from("Statistic").select("*").order("orderIndex", { ascending: true }),
   ]);
 

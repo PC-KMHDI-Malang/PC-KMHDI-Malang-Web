@@ -24,18 +24,28 @@ export function CardCarousel({
 
   const scrollTo = useCallback((index: number) => emblaApi && emblaApi.scrollTo(index), [emblaApi]);
 
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setSelectedIndex(emblaApi.selectedScrollSnap());
-  }, [emblaApi]);
-
+  // Embla adalah sistem di luar React: state di sini cuma cerminan posisinya. Sinkronisasi
+  // pertama dijalankan lewat requestAnimationFrame, bukan langsung di badan efek, supaya tidak
+  // memicu render berantai. Listener-nya juga dilepas saat cleanup — sebelumnya tidak, sehingga
+  // setiap kali efek ini jalan ulang listener lama menumpuk.
   useEffect(() => {
     if (!emblaApi) return;
-    setScrollSnaps(emblaApi.scrollSnapList());
-    onSelect();
-    emblaApi.on("select", onSelect);
-    emblaApi.on("reInit", onSelect);
-  }, [emblaApi, onSelect]);
+
+    const sync = () => {
+      setScrollSnaps(emblaApi.scrollSnapList());
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+    };
+
+    emblaApi.on("select", sync);
+    emblaApi.on("reInit", sync);
+    const frame = requestAnimationFrame(sync);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      emblaApi.off("select", sync);
+      emblaApi.off("reInit", sync);
+    };
+  }, [emblaApi]);
 
   useEffect(() => {
     if (!emblaApi) return;

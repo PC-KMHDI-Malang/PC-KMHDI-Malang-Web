@@ -41,16 +41,15 @@ export function SpotifyShareModal({ isOpen, onClose, title, coverImage, category
   const [copied, setCopied] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<string>("");
 
+  // Pembersihan state kartu dipindah ke cleanup (jalan saat modal ditutup), bukan lagi cabang
+  // "if (!isOpen)" di badan efek yang memanggil setState secara sinkron. Object URL hasil
+  // createObjectURL juga dicabut di sini — sebelumnya tidak pernah, jadi blob-nya tertahan di
+  // memori selama tab terbuka setiap kali modal dibuka ulang.
   useEffect(() => {
-    if (!isOpen) {
-      setCardBlob(null);
-      setCardPreviewUrl("");
-      setShareFeedback("");
-      return;
-    }
+    if (!isOpen) return;
 
     let isMounted = true;
-    setIsGenerating(true);
+    let objectUrl = "";
 
     generateStoryCardBlob({
       title,
@@ -62,14 +61,21 @@ export function SpotifyShareModal({ isOpen, onClose, title, coverImage, category
     }).then((blob) => {
       if (!isMounted) return;
       if (blob) {
+        objectUrl = URL.createObjectURL(blob);
         setCardBlob(blob);
-        setCardPreviewUrl(URL.createObjectURL(blob));
+        setCardPreviewUrl(objectUrl);
       }
       setIsGenerating(false);
     });
 
     return () => {
       isMounted = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      setCardBlob(null);
+      setCardPreviewUrl("");
+      setShareFeedback("");
+      // Dikembalikan ke keadaan "sedang membuat kartu" supaya modal siap saat dibuka lagi.
+      setIsGenerating(true);
     };
   }, [isOpen, title, coverImage, categoryOrGenre, authorOrPublisher, date, description]);
 
@@ -118,8 +124,9 @@ export function SpotifyShareModal({ isOpen, onClose, title, coverImage, category
           title: title,
         });
         return;
-      } catch (err: any) {
-        if (err?.name === "AbortError") {
+      } catch (err: unknown) {
+        // Pengguna menutup lembar "bagikan" bawaan sistem — bukan kegagalan.
+        if (err instanceof Error && err.name === "AbortError") {
           setShareFeedback("");
           return;
         }
@@ -206,6 +213,7 @@ export function SpotifyShareModal({ isOpen, onClose, title, coverImage, category
             </div>
           ) : cardPreviewUrl ? (
             <div className="relative group">
+              {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL dari canvas, tidak bisa dioptimasi next/image */}
               <img src={cardPreviewUrl} alt="Card Preview" className="max-h-[300px] w-auto aspect-[9/16] object-contain rounded-2xl shadow-2xl ring-1 ring-white/10" />
               {/* Badge KMHDI floating */}
               <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-semibold text-white border border-white/10 flex items-center gap-1.5">

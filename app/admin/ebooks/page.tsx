@@ -1,14 +1,15 @@
-﻿import { supabaseAdmin } from "@/lib/supabase";
+import { requireAdminPanel } from "@/lib/guard";
+import { supabaseAdmin } from "@/lib/supabase";
+import { containsPattern } from "@/lib/search";
 import { revalidatePath } from "next/cache";
 import Image from "next/image";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl, getSignedFileUrl } from "@/lib/storage";
 import { generateUniqueEbookSlug } from "@/lib/slug";
-import { ImagePicker } from "@/components/ui/ImagePicker";
 
 import { AddEbookModal } from "@/components/admin/AddEbookModal";
 import { EditEbookModal } from "@/components/admin/EditEbookModal";
-import { AdminPagination } from "@/components/admin/AdminPagination";
+import { Pagination } from "@/components/ui/Pagination";
 
 const EBOOKS_PER_PAGE = 6;
 
@@ -24,8 +25,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
   let query = supabaseAdmin.from("Ebook").select("*", { count: "exact" });
 
   if (q) {
-    const escaped = q.replace(/[%,]/g, "\\$&");
-    query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
+    query = query.or(`title.ilike.${containsPattern(q)},description.ilike.${containsPattern(q)}`);
   }
 
   if (genreFilter !== "Semua") {
@@ -53,6 +53,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
 
   async function addEbook(formData: FormData) {
     "use server";
+    await requireAdminPanel();
     const title = formData.get("title") as string;
     const coverImageUrl = formData.get("coverImageUrl") as string;
     const pdfUrl = (formData.get("pdfUrl") as string) || null;
@@ -78,6 +79,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
 
   async function editEbook(formData: FormData) {
     "use server";
+    await requireAdminPanel();
     const id = formData.get("id") as string;
     const title = formData.get("title") as string;
     const coverImageUrl = formData.get("coverImageUrl") as string;
@@ -101,6 +103,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
 
   async function deleteEbook(formData: FormData) {
     "use server";
+    await requireAdminPanel();
     const id = formData.get("id") as string;
     if (!id) return;
 
@@ -253,7 +256,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
           )}
         </div>
 
-        <AdminPagination basePath="/admin/ebooks" currentPage={currentPage} totalPages={totalPages} searchParams={{ q, genre: genreFilter, sort: sortFilter }} />
+        <Pagination basePath="/admin/ebooks" currentPage={currentPage} totalPages={totalPages} searchParams={{ q, genre: genreFilter, sort: sortFilter }} />
       </div>
     </div>
   );

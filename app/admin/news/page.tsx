@@ -1,15 +1,19 @@
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { containsPattern } from "@/lib/search";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { revalidatePath } from "next/cache";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
-import { STORAGE_BUCKETS, uploadToBucket, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml, listBucketFiles } from "@/lib/storage";
+import { STORAGE_BUCKETS, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml } from "@/lib/storage";
 import { generateUniqueNewsSlug } from "@/lib/slug";
 import Link from "next/link";
-import { ImagePicker } from "@/components/ui/ImagePicker";
 import { AddNewsModal } from "@/components/admin/AddNewsModal";
 import { RedirectToast } from "@/components/admin/RedirectToast";
-import { AdminPagination } from "@/components/admin/AdminPagination";
+import { Pagination } from "@/components/ui/Pagination";
 import { isAdminPanelRole } from "@/lib/roles";
+import { requireAdminPanel } from "@/lib/guard";
+import { errorMessage } from "@/lib/errors";
+import { NEWS_CARD_COLUMNS, type NewsCard } from "@/lib/queries";
 
 const NEWS_PER_PAGE = 6;
 
@@ -42,11 +46,10 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
   const { data: categories } = await supabaseAdmin.from("Category").select("id, name").order("name");
   const matchingCategory = categoryFilter !== "Semua" ? categories?.find((c) => c.name === categoryFilter) : null;
 
-  let newsQuery = supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)", { count: "exact" });
+  let newsQuery = supabaseAdmin.from("News").select(NEWS_CARD_COLUMNS, { count: "exact" });
 
   if (query) {
-    const escaped = query.replace(/[%,]/g, "\\$&");
-    newsQuery = newsQuery.or(`title.ilike.%${escaped}%,excerpt.ilike.%${escaped}%`);
+    newsQuery = newsQuery.or(`title.ilike.${containsPattern(query)},excerpt.ilike.${containsPattern(query)}`);
   }
 
   if (matchingCategory) {
@@ -63,12 +66,16 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
     newsQuery = newsQuery.order("createdAt", { ascending: false });
   }
 
-  const { data: news, error, count } = await newsQuery.range(from, to);
+  const { data: news, error, count } = await newsQuery.range(from, to).returns<NewsCard[]>();
   const totalPages = Math.max(1, Math.ceil((count || 0) / NEWS_PER_PAGE));
 
   async function addNews(formData: FormData) {
     "use server";
     try {
+      // Dicek paling awal: sebelumnya pemeriksaan role baru dilakukan setelah blok pembuatan
+      // Category di bawah, jadi request tak berwenang masih bisa menyisipkan baris Category.
+      const authSession = await requireAdminPanel();
+
       const title = formData.get("title") as string;
       const excerpt = formData.get("excerpt") as string;
       const content = formData.get("content") as string;
@@ -87,7 +94,7 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
         .replace(/[^\w-]+/g, "");
 
       // Check if category exists
-      let { data: existingCat, error: findError } = await supabaseAdmin.from("Category").select("id").eq("slug", catSlug).maybeSingle();
+      const { data: existingCat, error: findError } = await supabaseAdmin.from("Category").select("id").eq("slug", catSlug).maybeSingle();
       let finalCategoryId;
 
       if (findError) console.error("Error finding category:", findError);
@@ -103,9 +110,6 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
         if (insertCatError) console.error("Error inserting category:", insertCatError);
         if (newCat) finalCategoryId = newCat.id;
       }
-
-      const authSession = await auth();
-      if (!authSession?.user || !isAdminPanelRole(authSession.user.role)) throw new Error("Unauthorized");
 
       const { error: insertNewsError } = await supabaseAdmin.from("News").insert([
         {
@@ -126,17 +130,15 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
       revalidatePath("/admin/news");
       revalidatePath("/");
       return { success: true, message: "Artikel berhasil diterbitkan!" };
-    } catch (err: any) {
-      return { error: err.message || "Gagal menerbitkan artikel." };
+    } catch (err: unknown) {
+      return { error: errorMessage(err, "Gagal menerbitkan artikel.") };
     }
   }
 
   async function deleteNews(formData: FormData) {
     "use server";
     try {
-      const authSession = await auth();
-      if (!isAdminPanelRole(authSession?.user?.role)) throw new Error("Unauthorized");
-
+      await requireAdminPanel();
       const id = formData.get("id") as string;
       if (!id) return { error: "ID tidak ditemukan" };
 
@@ -152,8 +154,8 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
       revalidatePath("/admin/news");
       revalidatePath("/");
       return { success: true, message: "Artikel berhasil dihapus!" };
-    } catch (err: any) {
-      return { error: err.message || "Gagal menghapus artikel." };
+    } catch (err: unknown) {
+      return { error: errorMessage(err, "Gagal menghapus artikel.") };
     }
   }
 
@@ -225,7 +227,7 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
               className="group border border-slate-100 dark:border-white/5 rounded-2xl overflow-hidden flex flex-col md:flex-row bg-white dark:bg-[#111114] hover:shadow-xl dark:hover:shadow-black/50 hover:-translate-y-1 transition-all duration-300"
             >
               <div className="w-full md:w-64 h-48 md:h-auto relative overflow-hidden bg-slate-100 dark:bg-white/5">
-                <img src={n.coverImage} alt={n.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <SafeImage src={n.coverImage} alt={n.title} fill sizes="(max-width: 768px) 100vw, 256px" className="object-cover group-hover:scale-105 transition-transform duration-500" />
               </div>
               <div className="p-4 sm:p-6 flex-1 flex flex-col justify-center">
                 <div className="flex items-center gap-3 mb-3">
@@ -278,7 +280,7 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
           )}
         </div>
 
-        <AdminPagination basePath="/admin/news" currentPage={currentPage} totalPages={totalPages} searchParams={{ q: query, sort: sortFilter, category: categoryFilter }} />
+        <Pagination basePath="/admin/news" currentPage={currentPage} totalPages={totalPages} searchParams={{ q: query, sort: sortFilter, category: categoryFilter }} />
       </div>
     </div>
   );

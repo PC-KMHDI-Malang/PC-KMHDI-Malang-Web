@@ -1,9 +1,10 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import { useModalTransition } from "@/components/ui/useModalTransition";
 import { toast } from "sonner";
-import { X, Edit2, Loader2 } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 import { FilePicker } from "@/components/ui/FilePicker";
 import { useRouter } from "next/navigation";
@@ -26,31 +27,17 @@ interface EditEbookModalProps {
 
 export function EditEbookModal({ ebook, action }: EditEbookModalProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isRendered, setIsRendered] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const { isRendered, isVisible } = useModalTransition(isOpen);
+
+  const openModal = () => {
+    setError(null);
+    setIsOpen(true);
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => setIsRendered(true), 0);
-      setTimeout(() => setIsVisible(true), 10);
-      setError(null);
-    } else {
-      setIsVisible(false);
-      const timer = setTimeout(() => setIsRendered(false), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -74,7 +61,7 @@ export function EditEbookModal({ ebook, action }: EditEbookModalProps) {
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={openModal}
         title="Edit E-Book"
         className="flex items-center gap-2 text-blue-500 dark:text-blue-400 font-bold hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/50 px-4 py-2 rounded-lg transition-colors text-sm"
       >

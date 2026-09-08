@@ -24,7 +24,6 @@ pusat informasi, publikasi, perpustakaan digital, dan dokumentasi kegiatan mahas
 - [Fitur](#fitur)
 - [Teknologi](#teknologi)
 - [Memulai](#memulai)
-- [Environment Variables](#environment-variables)
 - [Menyiapkan Database & Storage](#menyiapkan-database--storage)
 - [Struktur Proyek](#struktur-proyek)
 - [Daftar Halaman](#daftar-halaman)
@@ -49,12 +48,19 @@ pusat informasi, publikasi, perpustakaan digital, dan dokumentasi kegiatan mahas
 
 ### Untuk Pengurus (Admin)
 
-Panel admin terlindungi autentikasi dengan pembagian peran (`ADMIN` / `USER`):
+Panel admin terlindungi autentikasi dengan tiga peran:
+
+| Peran          | Akses                                                                             |
+| -------------- | --------------------------------------------------------------------------------- |
+| `ADMIN`        | Seluruh panel admin                                                               |
+| `KONTRIBUTOR`  | Hanya Beranda admin, Artikel, dan e-Book                                          |
+| `USER`         | Tidak masuk panel admin — hanya halaman profil kader                              |
 
 - **Manajemen Artikel** — tulis, edit, publikasikan, atau simpan sebagai draf
 - **Manajemen e-Book** — unggah sampul dan berkas PDF, atur genre, penerbit, tahun terbit
 - **Manajemen Galeri** — unggah dan kelola dokumentasi kegiatan
 - **Manajemen Pengurus** — susun struktur organisasi beserta foto dan urutan jabatan
+- **Manajemen Mitra & Statistik** — logo mitra kolaborasi dan angka-angka di beranda
 - **Manajemen User** — kelola akun kader dan peran aksesnya
 - Sesi otomatis berakhir setelah 120 menit tidak aktif
 
@@ -62,7 +68,7 @@ Panel admin terlindungi autentikasi dengan pembagian peran (`ADMIN` / `USER`):
 
 - `sitemap.xml` otomatis mencakup seluruh artikel dan e-Book, disegarkan tiap jam
 - `robots.txt` dengan aturan yang memblokir halaman admin dan akun
-- Structured data JSON-LD: `Organization`, `WebSite`, `NewsArticle`, `BreadcrumbList`
+- Structured data JSON-LD: `Organization`, `WebSite`, `NewsArticle`, `Book`, `BreadcrumbList`
 - Banner Open Graph 1200×630 yang dihasilkan otomatis untuk preview saat tautan dibagikan
 - Canonical URL di setiap halaman publik
 
@@ -86,11 +92,44 @@ Panel admin terlindungi autentikasi dengan pembagian peran (`ADMIN` / `USER`):
 
 ## Memulai
 
-### Prasyarat
+Butuh **Node.js 20+** (disyaratkan Next.js 16) dan satu proyek [Supabase](https://supabase.com)
+— paket gratis sudah cukup.
 
-- **Node.js 20 atau lebih baru** (disyaratkan oleh Next.js 16)
-- Akun [Supabase](https://supabase.com) (paket gratis sudah cukup)
-- npm (sudah termasuk dalam Node.js)
+```bash
+npm install
+cp .env.example .env   # isi kredensial Supabase & AUTH_SECRET
+npm run dev
+```
+
+Databasenya perlu disiapkan lebih dulu; lihat bagian berikutnya.
+
+| Perintah                 | Kegunaan                                                   |
+| ------------------------ | ---------------------------------------------------------- |
+| `npm run dev`            | Server pengembangan                                        |
+| `npm run build`          | Build produksi                                             |
+| `npm run lint`           | ESLint                                                     |
+| `npm test`               | Tes unit                                                   |
+| `npm run test:blackbox`  | Tes HTTP terhadap server yang sedang berjalan (`BASE_URL`) |
+
+---
+
+## Menyiapkan Database & Storage
+
+Skema awal ada di `supabase/schema.sql`, dan setiap perubahan sesudahnya ada di
+`supabase/migrations/` dengan nomor urut. Jalankan lewat **SQL Editor** di dashboard Supabase,
+berurutan dari nomor terkecil, lalu buat bucket Storage lewat `/api/setup-buckets` (butuh login
+sebagai ADMIN).
+
+> [!IMPORTANT]
+> Dua migrasi berikut menopang pengamanan yang sudah ada di kode. Selama belum dijalankan,
+> aplikasinya tetap berjalan normal — tapi pengamanannya belum aktif sepenuhnya:
+>
+> | Migrasi | Tanpa migrasi ini |
+> | --- | --- |
+> | `022_create_like_table.sql` | Menyukai tetap wajib login, tapi satu akun masih bisa menyukai artikel yang sama berkali-kali. |
+> | `023_create_login_attempt_table.sql` | **Tidak ada pembatas percobaan login sama sekali** — tebakan password bisa dikirim tanpa batas. Log server memuat peringatan `Pembatas login tidak aktif` setiap percobaan login. |
+
+---
 
 ## Struktur Proyek
 
@@ -119,10 +158,15 @@ Panel admin terlindungi autentikasi dengan pembagian peran (`ADMIN` / `USER`):
 ├── data/                    # Konten statis & knowledge base chatbot
 ├── lib/
 │   ├── auth.ts              # Konfigurasi NextAuth
+│   ├── roles.ts             # Peran mana boleh membuka halaman admin mana
+│   ├── guard.ts             # Penjaga sesi untuk Server Actions
+│   ├── loginRateLimit.ts    # Pembatas percobaan login
+│   ├── search.ts            # Escaping teks pencarian untuk filter PostgREST
 │   ├── supabase.ts          # Klien Supabase
 │   ├── storage.ts           # Utilitas unggah/hapus berkas
 │   └── site.ts              # Konfigurasi metadata situs
 │
+├── tests/                   # Tes unit & tes blackbox HTTP
 ├── supabase/                # schema.sql & migrasi
 ├── public/image/            # Logo dan aset gambar
 └── middleware.ts            # Proteksi rute /admin dan /profile
@@ -134,23 +178,33 @@ Panel admin terlindungi autentikasi dengan pembagian peran (`ADMIN` / `USER`):
 
 ### Publik
 
-| Rute             | Halaman                        |
-| ---------------- | ------------------------------ |
-| `/`              | Beranda                        |
-| `/profil`        | Profil & struktur kepengurusan |
-| `/berita`        | Daftar publikasi & berita      |
-| `/berita/[slug]` | Detail artikel                 |
-| `/buku`          | Perpustakaan e-Book            |
-| `/buku/[id]`     | Detail e-Book                  |
-| `/galeri`        | Galeri dokumentasi             |
+| Rute             | Halaman                                            |
+| ---------------- | -------------------------------------------------- |
+| `/`              | Beranda                                            |
+| `/profil`        | Profil & struktur kepengurusan                     |
+| `/program`       | Program kerja                                      |
+| `/berita`        | Daftar publikasi & berita                          |
+| `/[slug]`        | Detail artikel — langsung di akar, bukan di bawah `/berita` |
+| `/e-book`        | Perpustakaan e-Book                                |
+| `/e-book/[slug]` | Detail e-Book                                      |
+| `/galeri`        | Galeri dokumentasi                                 |
+| `/mitra`         | Mitra kolaborasi                                   |
 
 ### Terproteksi
 
-| Rute                    | Akses                     |
-| ----------------------- | ------------------------- |
-| `/login`                | Publik                    |
-| `/profile`              | Pengguna yang sudah masuk |
-| `/admin` dan turunannya | `ADMIN` saja              |
+Middleware mengalihkan tamu ke `/login` untuk `/profile` dan `/admin`.
+
+| Rute                           | Akses                     |
+| ------------------------------ | ------------------------- |
+| `/login`                       | Publik                    |
+| `/profile`                     | Pengguna yang sudah masuk |
+| `/admin`                       | `ADMIN` dan `KONTRIBUTOR` |
+| `/admin/news`, `/admin/ebooks` | `ADMIN` dan `KONTRIBUTOR` |
+| `/admin` lainnya               | `ADMIN` saja              |
+
+`/informasi-akun` (direktori email kader) bekerja berbeda: URL-nya terbuka, tapi datanya baru
+diambil setelah sesi terverifikasi — tamu hanya menerima gerbang login, tanpa satu pun email
+kader ikut terkirim di HTML-nya.
 
 ---
 

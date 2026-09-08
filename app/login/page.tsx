@@ -3,6 +3,7 @@
 import { Suspense, useState, useTransition } from "react";
 import { loginAction } from "./actions";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 
@@ -67,7 +68,7 @@ function LoginForm() {
         <div className="rounded-[2rem] bg-white dark:bg-[#111111] p-6 sm:p-10 shadow-2xl dark:shadow-none border border-slate-100 dark:border-white/10">
           <div className="flex items-center gap-5 mb-8">
             <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-slate-50 border border-slate-100 shadow-sm rounded-2xl flex items-center justify-center p-2">
-              <img src="/image/Logo.webp" alt="Logo" className="w-full h-full object-contain" />
+              <Image src="/image/Logo.webp" alt="Logo" width={80} height={80} priority className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">Login</h1>

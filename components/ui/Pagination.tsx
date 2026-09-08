@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-interface AdminPaginationProps {
+interface PaginationProps {
   basePath: string;
   currentPage: number;
   totalPages: number;
@@ -11,8 +11,9 @@ interface AdminPaginationProps {
 
 // Server Component murni (cuma <Link>, tidak butuh state client) — dipakai di daftar yang
 // memang dipaginasi beneran lewat query database (bukan filter di client seperti UserTable),
-// supaya jumlah data yang di-fetch & dirender tiap halaman tetap terbatas.
-export function AdminPagination({ basePath, currentPage, totalPages, searchParams }: AdminPaginationProps) {
+// supaya jumlah data yang di-fetch & dirender tiap halaman tetap terbatas. Dipakai panel admin
+// maupun halaman publik /berita.
+export function Pagination({ basePath, currentPage, totalPages, searchParams }: PaginationProps) {
   if (totalPages <= 1) return null;
 
   const buildHref = (page: number) => {

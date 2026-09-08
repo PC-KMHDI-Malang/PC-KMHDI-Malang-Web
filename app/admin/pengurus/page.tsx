@@ -1,4 +1,5 @@
-﻿import { supabaseAdmin } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/guard";
+import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import Image from "next/image";
@@ -41,6 +42,7 @@ export default async function AdminPengurusPage() {
   // Server Action: Tambah Pengurus
   async function addPengurusAction(formData: FormData) {
     "use server";
+    await requireAdmin();
     const name = formData.get("name") as string;
     const role = formData.get("role") as string;
     const department = formData.get("department") as string;
@@ -84,6 +86,7 @@ export default async function AdminPengurusPage() {
   // Server Action: Edit Pengurus
   async function editPengurusAction(formData: FormData) {
     "use server";
+    await requireAdmin();
     const id = formData.get("id") as string;
     const name = formData.get("name") as string;
     const role = formData.get("role") as string;
@@ -130,6 +133,7 @@ export default async function AdminPengurusPage() {
   // Server Action: Hapus Pengurus
   async function deletePengurusAction(formData: FormData) {
     "use server";
+    await requireAdmin();
     const id = formData.get("id") as string;
     if (!id) return;
 
@@ -147,6 +151,7 @@ export default async function AdminPengurusPage() {
   // Server Action: Impor Data Awal Otomatis (Seed) jika masih kosong
   async function seedInitialDataAction() {
     "use server";
+    await requireAdmin();
     const payload = allMembers.map((m) => ({
       name: m.name,
       role: m.role,

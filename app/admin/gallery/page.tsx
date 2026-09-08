@@ -1,4 +1,6 @@
-﻿import { supabaseAdmin } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/guard";
+import { supabaseAdmin } from "@/lib/supabase";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { revalidatePath } from "next/cache";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl } from "@/lib/storage";
@@ -10,6 +12,7 @@ export default async function GalleryPage() {
 
   async function addGallery(formData: FormData) {
     "use server";
+    await requireAdmin();
     const title = formData.get("title") as string;
     const coverImageUrl = formData.get("coverImageUrl") as string;
     const description = formData.get("description") as string;
@@ -20,7 +23,7 @@ export default async function GalleryPage() {
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now();
     const coverImage = coverImageUrl;
 
-    const payload: any = { title, coverImage, description, slug };
+    const payload: Record<string, unknown> = { title, coverImage, description, slug };
     if (createdAt) {
       payload.createdAt = new Date(createdAt).toISOString();
     }
@@ -34,6 +37,7 @@ export default async function GalleryPage() {
 
   async function editGallery(formData: FormData) {
     "use server";
+    await requireAdmin();
     const id = formData.get("id") as string;
     const title = formData.get("title") as string;
     const coverImageUrl = formData.get("coverImageUrl") as string;
@@ -42,7 +46,7 @@ export default async function GalleryPage() {
 
     if (!id || !title || !coverImageUrl) throw new Error("Judul dan gambar foto wajib diisi.");
 
-    const payload: any = { title, coverImage: coverImageUrl, description };
+    const payload: Record<string, unknown> = { title, coverImage: coverImageUrl, description };
     if (createdAt) {
       payload.createdAt = new Date(createdAt).toISOString();
     }
@@ -56,6 +60,7 @@ export default async function GalleryPage() {
 
   async function deleteGallery(formData: FormData) {
     "use server";
+    await requireAdmin();
     const id = formData.get("id") as string;
     if (!id) return;
 
@@ -93,7 +98,7 @@ export default async function GalleryPage() {
               className="group relative rounded-2xl overflow-hidden bg-slate-50 dark:bg-[#111114] border border-slate-100 dark:border-white/5 shadow-sm hover:shadow-2xl dark:hover:shadow-black/50 transition-all duration-500 hover:-translate-y-1"
             >
               <div className="relative aspect-square overflow-hidden bg-slate-200 dark:bg-white/5">
-                <img src={item.coverImage} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <SafeImage src={item.coverImage} alt={item.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300"></div>
               </div>
 

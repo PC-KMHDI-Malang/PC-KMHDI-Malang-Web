@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, ArrowRight } from "lucide-react";
 
-import { supabaseAdmin } from "@/lib/supabase";
+import { getStatisticSection } from "@/lib/queries";
 import { aboutData } from "@/data/about";
 import { ScrollReveal, ScrollStagger, ScrollStaggerItem, CountUpOnScroll } from "@/components/ui/ScrollReveal";
 
@@ -10,7 +10,7 @@ import { ScrollReveal, ScrollStagger, ScrollStaggerItem, CountUpOnScroll } from 
 // "StatisticSection" di Supabase, bisa dikelola admin di /admin/statistics — sama seperti
 // caption Hero. Jatuh ke data/about.ts kalau baris/kolomnya belum ada (migrasi 020 belum jalan).
 export default async function About() {
-  const { data: section } = await supabaseAdmin.from("StatisticSection").select("*").eq("id", 1).maybeSingle();
+  const section = await getStatisticSection();
 
   const stats = [1, 2, 3, 4].map((n) => ({
     value: section?.[`aboutStatValue${n}`] || aboutData.statistics[n - 1].value,

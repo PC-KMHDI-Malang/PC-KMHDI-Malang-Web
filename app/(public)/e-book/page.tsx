@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Search, BookOpen } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
+import { containsPattern } from "@/lib/search";
 import { EbookCard } from "@/components/ebooks/EbookCard";
 import { EbookFilters } from "@/components/ebooks/EbookFilters";
 
@@ -39,8 +40,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
   let dbQuery = supabaseAdmin.from("Ebook").select("*");
 
   if (query) {
-    const escaped = query.replace(/[%,]/g, "\\$&");
-    dbQuery = dbQuery.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
+    dbQuery = dbQuery.or(`title.ilike.${containsPattern(query)},description.ilike.${containsPattern(query)}`);
   }
 
   if (genreFilter.length > 0) {
@@ -105,7 +105,7 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
             {ebooks && ebooks.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
                 {ebooks.map((ebook) => (
-                  <EbookCard key={ebook.id} id={ebook.id} title={ebook.title} genre={ebook.genre} coverImage={ebook.coverImage} pdfUrl={ebook.pdfUrl} createdAt={ebook.createdAt} href={`/e-book/${ebook.slug}`} />
+                  <EbookCard key={ebook.id} id={ebook.id} title={ebook.title} genre={ebook.genre} coverImage={ebook.coverImage} createdAt={ebook.createdAt} href={`/e-book/${ebook.slug}`} />
                 ))}
               </div>
             ) : (

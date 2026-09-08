@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useHydrated } from "@/components/ui/useHydrated";
 import { Moon, Sun } from "lucide-react";
 
 interface ThemeToggleProps {
@@ -10,13 +10,9 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ iconOnly = false, className = "" }: ThemeToggleProps) {
-  const [mounted, setMounted] = useState(false);
+  // Mencegah ketidakcocokan hidrasi: tema pilihan pengguna baru diketahui di sisi klien.
+  const mounted = useHydrated();
   const { theme, setTheme, resolvedTheme } = useTheme();
-
-  // Prevent hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) {
     if (iconOnly) {

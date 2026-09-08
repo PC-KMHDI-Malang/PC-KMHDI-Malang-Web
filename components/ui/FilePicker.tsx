@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import { useBodyScrollLock } from "@/components/ui/useModalTransition";
+import { useHydrated } from "@/components/ui/useHydrated";
 import { uploadFileAction } from "@/lib/actions";
+import { errorMessage } from "@/lib/errors";
 
 interface FilePickerProps {
   defaultFileUrl?: string;
@@ -13,24 +16,16 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files" }: File
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState(defaultFileUrl);
   const [isUploading, setIsUploading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useBodyScrollLock(isModalOpen);
 
-  useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = "hidden";
-      setError(null);
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isModalOpen]);
+  // Pesan error dari percobaan sebelumnya dibersihkan saat modal dibuka.
+  const openModal = () => {
+    setError(null);
+    setIsModalOpen(true);
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -63,10 +58,11 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files" }: File
 
       setSelectedUrl(newUrl);
       setIsModalOpen(false);
-    } catch (err: any) {
-      const message = /unexpected response/i.test(err?.message || "")
+    } catch (err: unknown) {
+      const raw = errorMessage(err, "Terjadi kesalahan yang tidak diketahui.");
+      const message = /unexpected response/i.test(raw)
         ? "Koneksi terputus atau file terlalu besar untuk server. Coba lagi dengan file yang lebih kecil."
-        : err?.message || "Terjadi kesalahan yang tidak diketahui.";
+        : raw;
       setError("Gagal mengupload file: " + message);
     } finally {
       setIsUploading(false);
@@ -134,7 +130,7 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files" }: File
               <span className="text-xs font-bold truncate px-4 w-full text-center">PDF Dipilih</span>
             </div>
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl">
-              <button type="button" onClick={() => setIsModalOpen(true)} className="text-white text-sm font-semibold bg-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
+              <button type="button" onClick={openModal} className="text-white text-sm font-semibold bg-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
                 Ganti File
               </button>
             </div>
@@ -149,7 +145,7 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files" }: File
         ) : (
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={openModal}
             className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold px-5 py-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 transition-all flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

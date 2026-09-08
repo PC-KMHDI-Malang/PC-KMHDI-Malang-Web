@@ -6,7 +6,7 @@ import { unstable_rethrow } from "next/navigation";
 import { ConfirmModal } from "./ConfirmModal";
 
 interface SubmitWithConfirmProps {
-  action: (formData: FormData) => Promise<any> | void;
+  action: (formData: FormData) => Promise<{ error?: string; success?: boolean; message?: string } | void> | void;
   id?: string;
   buttonElement: React.ReactNode;
   modalTitle: string;
@@ -43,7 +43,7 @@ export function SubmitWithConfirm({ action, id, buttonElement, modalTitle, modal
           // jadi senyap, tidak ada status apa pun yang muncul di pojok kanan atas.
           toast.success(result?.message || "Berhasil dilakukan.");
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         // redirect()/signOut({ redirectTo }) inside a server action work by throwing a special
         // control-flow error — swallowing it here as a generic failure (e.g. on logout) blocks
         // the navigation and shows a false "Terjadi kesalahan" toast even though the action

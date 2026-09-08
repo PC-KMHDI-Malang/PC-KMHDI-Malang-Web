@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useBodyScrollLock } from "@/components/ui/useModalTransition";
 import { toast } from "sonner";
 import { X, UserPlus, Upload, Loader2, Image as ImageIcon, Instagram } from "lucide-react";
 import { uploadFileAction } from "@/lib/actions";
@@ -22,17 +23,13 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      setError(null);
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+  useBodyScrollLock(isOpen);
+
+  // Pesan error dari percobaan sebelumnya dibersihkan saat modal dibuka.
+  const openModal = () => {
+    setError(null);
+    setIsOpen(true);
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -94,7 +91,7 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
     <>
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={openModal}
         className="bg-red-600 dark:bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-red-700 dark:hover:bg-rose-700 shadow-sm transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
       >
         <UserPlus size={16} />

@@ -21,7 +21,10 @@ export const BUCKET_QUOTA_BYTES = 1024 * 1024 * 1024; // 1 GB
 export async function uploadToBucket(bucket: string, file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
-  const ext = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
+  // Ekstensi datang dari nama file kiriman pengguna, jadi tidak dipakai apa adanya: dibatasi
+  // huruf/angka dan panjangnya supaya tidak ada nama objek aneh (mis. ".html", "..%2f") di bucket publik.
+  const rawExt = file.name.includes(".") ? file.name.split(".").pop() : "";
+  const ext = /^[a-zA-Z0-9]{1,5}$/.test(rawExt || "") ? rawExt!.toLowerCase() : "bin";
   const path = `${randomUUID()}.${ext}`;
 
   const { error } = await supabaseAdmin.storage.from(bucket).upload(path, buffer, {

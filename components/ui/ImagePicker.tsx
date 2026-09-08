@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import { useBodyScrollLock } from "@/components/ui/useModalTransition";
+import { useHydrated } from "@/components/ui/useHydrated";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { uploadFileAction } from "@/lib/actions";
+import { errorMessage } from "@/lib/errors";
 
 function getImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
   return new Promise((resolve) => {
@@ -31,24 +35,16 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState(defaultImageUrl);
   const [isUploading, setIsUploading] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useBodyScrollLock(isModalOpen);
 
-  useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = "hidden";
-      setError(null);
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isModalOpen]);
+  // Pesan error dari percobaan sebelumnya dibersihkan saat modal dibuka.
+  const openModal = () => {
+    setError(null);
+    setIsModalOpen(true);
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -91,8 +87,8 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name
 
       setSelectedUrl(newUrl);
       setIsModalOpen(false);
-    } catch (err: any) {
-      setError("Gagal mengupload gambar: " + err.message);
+    } catch (err: unknown) {
+      setError("Gagal mengupload gambar: " + errorMessage(err, "Terjadi kesalahan yang tidak diketahui."));
     } finally {
       setIsUploading(false);
       e.target.value = "";
@@ -154,9 +150,9 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name
       <div className="flex flex-wrap gap-4 items-center">
         {selectedUrl ? (
           <div className="relative inline-block group">
-            <img src={selectedUrl} alt="Selected cover" className="w-48 h-32 object-cover rounded-xl border border-slate-200 dark:border-white/10" />
+            <SafeImage src={selectedUrl} alt="Selected cover" width={192} height={128} className="w-48 h-32 object-cover rounded-xl border border-slate-200 dark:border-white/10" />
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl">
-              <button type="button" onClick={() => setIsModalOpen(true)} className="text-white text-sm font-semibold bg-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
+              <button type="button" onClick={openModal} className="text-white text-sm font-semibold bg-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">
                 Ganti Gambar
               </button>
             </div>
@@ -171,7 +167,7 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name
         ) : (
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={openModal}
             className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold px-5 py-4 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 transition-all flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

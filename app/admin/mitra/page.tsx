@@ -1,4 +1,6 @@
-﻿import { supabaseAdmin } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/guard";
+import { supabaseAdmin } from "@/lib/supabase";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl } from "@/lib/storage";
@@ -34,6 +36,7 @@ export default async function AdminMitraPage() {
   // Server Action: Tambah Mitra
   async function addPartnerAction(formData: FormData) {
     "use server";
+    await requireAdmin();
     const name = formData.get("name") as string;
     const logoUrl = formData.get("logoUrl") as string;
     const websiteUrlRaw = (formData.get("websiteUrl") as string)?.trim() || "";
@@ -63,6 +66,7 @@ export default async function AdminMitraPage() {
   // Server Action: Edit Mitra
   async function editPartnerAction(formData: FormData) {
     "use server";
+    await requireAdmin();
     const id = formData.get("id") as string;
     const name = formData.get("name") as string;
     const logoUrl = formData.get("logoUrl") as string;
@@ -93,6 +97,7 @@ export default async function AdminMitraPage() {
   // Server Action: Hapus Mitra
   async function deletePartnerAction(formData: FormData) {
     "use server";
+    await requireAdmin();
     const id = formData.get("id") as string;
     if (!id) return;
 
@@ -163,8 +168,7 @@ export default async function AdminMitraPage() {
                 <div key={partner.id} className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-slate-50/50 dark:bg-white/2 p-4 shadow-xs space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white dark:bg-[#1c1c22] border border-slate-200 dark:border-white/10 shrink-0 flex items-center justify-center p-2">
-                      {/* Logo mitra ukuran kecil & bervariasi bentuknya — img biasa lebih sederhana daripada next/image di sini */}
-                      <img src={partner.logoUrl} alt={partner.name} className="max-w-full max-h-full object-contain" />
+<SafeImage src={partner.logoUrl} alt={partner.name} fill sizes="64px" className="object-contain p-1" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-snug truncate">{partner.name}</h4>

@@ -10,6 +10,9 @@ export function NewsSortSelect() {
   const handleChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("sort", value);
+    // Ganti kategori/urutan selalu kembali ke halaman 1: nomor halaman lama belum tentu ada
+    // di daftar yang baru, dan pengguna akan mendarat di halaman kosong.
+    params.delete("page");
     router.push(`/berita?${params.toString()}`);
   };
 

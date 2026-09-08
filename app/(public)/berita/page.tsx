@@ -8,6 +8,8 @@ import { NewsCategoryTabs } from "@/components/news/NewsCategoryTabs";
 import { NewsSortSelect } from "@/components/news/NewsSortSelect";
 import { FeaturedNewsSlider } from "@/components/news/FeaturedNewsSlider";
 import { stripHtml } from "@/lib/richText";
+import { NEWS_CARD_COLUMNS, type NewsCard } from "@/lib/queries";
+import { Pagination } from "@/components/ui/Pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -27,63 +29,78 @@ export const metadata: Metadata = {
 };
 
 interface BeritaPageProps {
-  searchParams: Promise<{ q?: string; sort?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string; category?: string; page?: string }>;
 }
+
+// Tanpa batas ini, halaman mengambil SELURUH artikel terbit dalam satu query setiap request —
+// makin lama makin berat seiring arsip bertambah, padahal pembaca cuma melihat layar pertama.
+const NEWS_PER_PAGE = 8;
+const FEATURED_COUNT = 3;
 
 export default async function BeritaPage({ searchParams: searchParamsPromise }: BeritaPageProps) {
   const searchParams = await searchParamsPromise;
   const query = searchParams?.q || "";
   const sortFilter = searchParams?.sort || "newest";
   const categoryFilter = searchParams?.category || "";
+  const currentPage = Math.max(1, parseInt(searchParams?.page || "1", 10) || 1);
 
   // Ambil kategori & (kalau ada filter kategori) id kategori itu secara paralel, bukan berurutan,
   // supaya round-trip ke Supabase tidak numpuk sebelum query berita utama bisa jalan.
   const [{ data: allCategories }, matchingCatResult] = await Promise.all([
-    supabaseAdmin.from("Category").select("*").order("name"),
-    categoryFilter ? supabaseAdmin.from("Category").select("id").eq("name", categoryFilter).single() : Promise.resolve({ data: null }),
+    supabaseAdmin.from("Category").select("id, name").order("name"),
+    categoryFilter ? supabaseAdmin.from("Category").select("id").eq("name", categoryFilter).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const categories = (allCategories || []).map((c) => c.name);
   const matchingCat = matchingCatResult.data;
 
-  // Build query
-  let dbQuery = supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)").eq("status", "PUBLISHED");
+  // Slider hanya di halaman pertama dan saat tidak sedang mencari; artikel yang sudah tampil di
+  // slider dilewati oleh grid, jadi offset-nya ikut diperhitungkan di semua halaman berikutnya.
+  const showSlider = !query && currentPage === 1;
+  const sliderOffset = query ? 0 : FEATURED_COUNT;
 
-  if (query) {
-    dbQuery = dbQuery.ilike("title", `%${query}%`);
+  const buildQuery = () => {
+    let q = supabaseAdmin.from("News").select(NEWS_CARD_COLUMNS, { count: "exact" }).eq("status", "PUBLISHED");
+    if (query) q = q.ilike("title", `%${query}%`);
+    if (matchingCat) q = q.eq("categoryId", matchingCat.id);
+    return q.order("createdAt", { ascending: sortFilter === "oldest" });
+  };
+
+  const gridFrom = sliderOffset + (currentPage - 1) * NEWS_PER_PAGE;
+  const [featuredResult, gridResult] = await Promise.all([
+    showSlider ? buildQuery().range(0, FEATURED_COUNT - 1).returns<NewsCard[]>() : Promise.resolve({ data: [] as NewsCard[] }),
+    buildQuery().range(gridFrom, gridFrom + NEWS_PER_PAGE - 1).returns<NewsCard[]>(),
+  ]);
+
+  const featuredItems = featuredResult.data || [];
+  const totalMatching = gridResult.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(Math.max(0, totalMatching - sliderOffset) / NEWS_PER_PAGE));
+
+  // Hanya 3 kartu slider yang menampilkan cuplikan dari isi artikel, jadi kolom "content"
+  // (HTML penuh, bisa puluhan KB per artikel) diambil terpisah cuma untuk ketiganya —
+  // bukan ikut terbawa di query daftar.
+  const featuredContent = new Map<string, string>();
+  if (featuredItems.length > 0) {
+    const { data: contents } = await supabaseAdmin
+      .from("News")
+      .select("id, content")
+      .in("id", featuredItems.map((i) => i.id));
+    for (const row of contents || []) featuredContent.set(row.id, row.content || "");
   }
+  const featuredWithContent = featuredItems.map((i) => ({ ...i, content: featuredContent.get(i.id) || "" }));
 
-  if (matchingCat) {
-    dbQuery = dbQuery.eq("categoryId", matchingCat.id);
-  }
-
-  if (sortFilter === "oldest") {
-    dbQuery = dbQuery.order("createdAt", { ascending: true });
-  } else {
-    dbQuery = dbQuery.order("createdAt", { ascending: false });
-  }
-
-  const { data: news } = await dbQuery;
-
-  // Selalu tampilkan slider di semua tab kategori, KECUALI jika sedang melakukan pencarian (query)
-  const showSlider = !query;
-
-  // Ambil 3 teratas untuk slider jika showSlider true
-  const featuredItems = showSlider && news && news.length > 0 ? news.slice(0, 3) : [];
-
-  // Sisanya untuk grid. Jika sedang pencarian, tampilkan semua di grid.
-  let displayGridNews = showSlider ? (news && news.length > 3 ? news.slice(3) : []) : news || [];
+  let displayGridNews = gridResult.data || [];
   let fallbackUsed = false;
 
-  // Jika grid kosong (karena kategori ini hanya punya sedikit berita), ambil berita terbaru secara acak agar bagian "Berita Lainnya" tetap terisi
-  if (displayGridNews.length === 0 && !query) {
-    let fallbackQuery = supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)").eq("status", "PUBLISHED");
+  // Kategori yang isinya cuma sedikit (semuanya terpakai di slider) akan menyisakan bagian
+  // "Berita Lainnya" kosong — diisi artikel terbaru dari kategori mana pun. Hanya di halaman
+  // pertama: di halaman berikutnya, daftar kosong memang berarti sudah habis.
+  if (displayGridNews.length === 0 && !query && currentPage === 1) {
+    let fallbackQuery = supabaseAdmin.from("News").select(NEWS_CARD_COLUMNS).eq("status", "PUBLISHED");
     if (featuredItems.length > 0) {
-      const ids = featuredItems.map((i) => i.id);
-      fallbackQuery = fallbackQuery.not("id", "in", `(${ids.join(",")})`);
+      fallbackQuery = fallbackQuery.not("id", "in", `(${featuredItems.map((i) => i.id).join(",")})`);
     }
-    fallbackQuery = fallbackQuery.order("createdAt", { ascending: false }).limit(6);
 
-    const { data: fallbackNews } = await fallbackQuery;
+    const { data: fallbackNews } = await fallbackQuery.order("createdAt", { ascending: false }).limit(6).returns<NewsCard[]>();
     if (fallbackNews && fallbackNews.length > 0) {
       displayGridNews = fallbackNews;
       fallbackUsed = true;
@@ -127,7 +144,7 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
 
       <div className={`relative z-10 mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 ${showSlider ? "-mt-16" : "mt-8"}`}>
         {/* Featured Article Slider */}
-        {showSlider && <FeaturedNewsSlider items={featuredItems} />}
+        {showSlider && <FeaturedNewsSlider items={featuredWithContent} />}
 
         {/* Articles Grid */}
         {displayGridNews.length > 0 ? (
@@ -151,7 +168,7 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
               </Suspense>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {displayGridNews.map((item) => (
                 <Link
                   key={item.id}
@@ -166,7 +183,7 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
                   </div>
                   <div className="p-5 flex flex-col justify-center flex-1 min-w-0 bg-white dark:bg-[#1A1A1A]">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug line-clamp-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">{item.title}</h3>
-                    {item.content && <p className="mt-2 text-sm text-slate-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">{stripHtml(item.content)}</p>}
+                    {item.excerpt && <p className="mt-2 text-sm text-slate-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">{stripHtml(item.excerpt)}</p>}
                     <div className="mt-3 flex items-center gap-4 text-xs text-slate-500 dark:text-neutral-500">
                       <span className="inline-flex items-center gap-1">
                         <UserIcon size={12} />
@@ -181,11 +198,28 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
                 </Link>
               ))}
             </div>
+
+            <div className="pb-20">
+              {/* Daftar cadangan (fallbackUsed) bukan hasil paginasi kategori ini, jadi tidak
+                  diberi navigasi halaman — nomor halamannya tidak akan cocok dengan isinya. */}
+              {!fallbackUsed && (
+                <Pagination basePath="/berita" currentPage={currentPage} totalPages={totalPages} searchParams={{ q: query, sort: sortFilter, category: categoryFilter }} />
+              )}
+            </div>
           </>
         ) : (!showSlider && displayGridNews.length === 0) || (showSlider && featuredItems.length === 0 && displayGridNews.length === 0) ? (
           <div className="py-24 flex flex-col items-center justify-center text-slate-500 dark:text-neutral-500 bg-white dark:bg-[#1A1A1A] border border-slate-200/80 dark:border-white/5 rounded-3xl shadow-sm mb-16 px-5 text-center">
             <Newspaper size={40} className="mb-4 text-slate-400 dark:text-neutral-600 opacity-60" />
-            <p className="text-lg font-medium text-slate-700 dark:text-neutral-300 mb-4">{query ? `Tidak ada berita yang cocok dengan kata kunci "${query}".` : "Belum ada berita untuk kategori ini."}</p>
+            <p className="text-lg font-medium text-slate-700 dark:text-neutral-300 mb-4">
+              {query ? `Tidak ada berita yang cocok dengan kata kunci "${query}".` : currentPage > 1 ? "Tidak ada berita lagi di halaman ini." : "Belum ada berita untuk kategori ini."}
+            </p>
+            {/* Nomor halaman di luar jangkauan (mis. ?page=999) tetap diberi navigasi, supaya
+                pembaca tidak terjebak di halaman kosong tanpa jalan kembali. */}
+            {!query && currentPage > 1 && (
+              <Link href="/berita" className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow-sm">
+                Kembali ke Halaman Pertama
+              </Link>
+            )}
             {query && (
               <Link
                 href={`/berita${categoryFilter ? `?category=${categoryFilter}` : ""}`}

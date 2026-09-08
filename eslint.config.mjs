@@ -6,6 +6,12 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   // Override default ignores of eslint-config-next.
+  {
+    // Route opengraph-image di-render oleh next/og (Satori), bukan browser: di sana <img>
+    // memang satu-satunya cara menampilkan gambar — next/image tidak berlaku.
+    files: ["app/**/opengraph-image.tsx"],
+    rules: { "@next/next/no-img-element": "off" },
+  },
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",

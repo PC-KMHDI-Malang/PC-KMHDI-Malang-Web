@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useBodyScrollLock } from "@/components/ui/useModalTransition";
 import { toast } from "sonner";
 import { X, Edit2, Upload, Loader2, Image as ImageIcon, Instagram } from "lucide-react";
 import { uploadFileAction } from "@/lib/actions";
@@ -23,17 +24,13 @@ export function EditPengurusModal({ member, action }: EditPengurusModalProps) {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      setError(null);
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+  useBodyScrollLock(isOpen);
+
+  // Pesan error dari percobaan sebelumnya dibersihkan saat modal dibuka.
+  const openModal = () => {
+    setError(null);
+    setIsOpen(true);
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -97,7 +94,7 @@ export function EditPengurusModal({ member, action }: EditPengurusModalProps) {
         type="button"
         onClick={() => {
           setPreviewUrl(member.imageUrl || "");
-          setIsOpen(true);
+          openModal();
         }}
         className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white transition cursor-pointer"
         title="Edit Data Pengurus"

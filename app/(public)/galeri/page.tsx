@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { supabaseAdmin } from "@/lib/supabase";
 import { galleryData } from "@/data/gallery";
 import { GalleryGrid, GalleryItem } from "@/components/gallery/GalleryGrid";
-import { Camera, Sparkles } from "lucide-react";
+import { Camera } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 

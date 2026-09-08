@@ -3,6 +3,7 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { auth, update } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { isPasswordLongEnough, PASSWORD_RULE_TEXT } from "@/lib/password";
 import { revalidatePath } from "next/cache";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
 
@@ -52,8 +53,8 @@ export async function updatePasswordAction(prevState: unknown, formData: FormDat
     const currentPassword = formData.get("currentPassword") as string;
     const newPassword = formData.get("newPassword") as string;
 
-    if (!currentPassword || !newPassword || newPassword.length < 6) {
-      return { error: "Data tidak valid atau password kurang dari 6 karakter.", success: false };
+    if (!currentPassword || !newPassword || !isPasswordLongEnough(newPassword)) {
+      return { error: `Data tidak valid atau password terlalu pendek. ${PASSWORD_RULE_TEXT}`, success: false };
     }
 
     const { data: user } = await supabaseAdmin.from("User").select("email, password").eq("id", session.user.id).single();

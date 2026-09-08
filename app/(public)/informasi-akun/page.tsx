@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Search, Mail, KeyRound, LogIn, ShieldAlert, Users } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { containsPattern } from "@/lib/search";
 import { LoginGate } from "@/components/auth/LoginGate";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
 
@@ -50,7 +51,7 @@ export default async function InformasiAkunPage({ searchParams: searchParamsProm
       .order("name", { ascending: true });
 
     if (query) {
-      dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%`);
+      dbQuery = dbQuery.or(`name.ilike.${containsPattern(query)},email.ilike.${containsPattern(query)}`);
     }
 
     const { data } = await dbQuery;

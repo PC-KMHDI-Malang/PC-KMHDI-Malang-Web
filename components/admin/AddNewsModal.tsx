@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import { useModalTransition } from "@/components/ui/useModalTransition";
 import { X, PenTool } from "lucide-react";
 import { toast } from "sonner";
 import { ImagePicker } from "@/components/ui/ImagePicker";
@@ -15,27 +16,9 @@ interface AddNewsModalProps {
 
 export function AddNewsModal({ action }: AddNewsModalProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isRendered, setIsRendered] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const { isRendered, isVisible } = useModalTransition(isOpen);
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => setIsRendered(true), 0);
-      setTimeout(() => setIsVisible(true), 10);
-    } else {
-      setIsVisible(false);
-      const timer = setTimeout(() => setIsRendered(false), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
 
   const handleFormAction = async (formData: FormData) => {
     const result = await action(formData);

@@ -18,6 +18,9 @@ export function NewsCategoryTabs({ categories }: NewsCategoryTabsProps) {
     } else {
       params.set("category", category);
     }
+    // Ganti kategori/urutan selalu kembali ke halaman 1: nomor halaman lama belum tentu ada
+    // di daftar yang baru, dan pengguna akan mendarat di halaman kosong.
+    params.delete("page");
     router.push(`/berita?${params.toString()}`);
   };
 

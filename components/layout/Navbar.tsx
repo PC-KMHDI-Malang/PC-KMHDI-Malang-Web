@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText, Handshake, ClipboardList, Loader2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useFormStatus } from "react-dom";
 import { logoutAction } from "@/app/actions/auth";
 import { isAdminPanelRole } from "@/lib/roles";
@@ -27,14 +28,14 @@ import { LoginModal } from "@/components/auth/LoginModal";
 type SubMenu = {
   title: string;
   href: string;
-  icon?: any;
+  icon?: LucideIcon;
   description?: string;
 };
 
 type NavMenu = {
   title: string;
   href: string;
-  icon: any;
+  icon: LucideIcon;
   submenus?: SubMenu[];
 };
 
@@ -107,11 +108,15 @@ export default function Navbar({ user }: NavbarProps) {
   // survive the round trip. Without this, logging back in (e.g. via the LoginModal, with no
   // full page reload) makes the dropdown reappear exactly as it was left: still open, with the
   // "Yakin ingin keluar?" confirm panel already showing.
-  useEffect(() => {
+  // Pola resmi React untuk mereset state saat prop berubah: dilakukan saat render, bukan lewat
+  // useEffect — dengan useEffect, satu frame sempat terlihat memakai state lama sebelum reset.
+  const [prevIsLoggedIn, setPrevIsLoggedIn] = useState(isLoggedIn);
+  if (prevIsLoggedIn !== isLoggedIn) {
+    setPrevIsLoggedIn(isLoggedIn);
     setUserDropdownOpen(false);
     setShowLogoutConfirm(false);
     setMobileOpen(false);
-  }, [isLoggedIn]);
+  }
 
   useEffect(() => {
     const handleScroll = () => {

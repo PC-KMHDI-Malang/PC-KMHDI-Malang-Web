@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 
 import { supabaseAdmin } from "@/lib/supabase";
 import { canAccessAdminPath, isAdminPanelRole } from "@/lib/roles";
+import { checkLock, clearAttempts, clientIpFrom, emailKey, ipKey, recordFailure } from "@/lib/loginRateLimit";
 
 export const {
   handlers,
@@ -41,7 +42,7 @@ export const {
         },
       },
 
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
@@ -49,18 +50,32 @@ export const {
         const email = String(credentials.email);
         const password = String(credentials.password);
 
+        // Dihitung per alamat email DAN per IP: yang pertama menahan serangan yang membidik
+        // satu akun, yang kedua menahan penyapuan banyak akun dari satu sumber.
+        const ip = clientIpFrom(request.headers);
+        const keys = [emailKey(email), ...(ip ? [ipKey(ip)] : [])];
+
+        // Diperiksa sebelum query & bcrypt: percobaan yang sedang terkunci tidak boleh
+        // menghabiskan waktu CPU server sama sekali.
+        const { locked } = await checkLock(keys);
+        if (locked) return null;
+
         // Gunakan supabaseAdmin (Service Role) karena RLS mencegah Anon Key membaca tabel User
         const { data: user, error } = await supabaseAdmin.from("User").select("*").eq("email", email).single();
 
         if (error || !user) {
+          await recordFailure(keys);
           return null;
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
+          await recordFailure(keys);
           return null;
         }
+
+        await clearAttempts(keys);
 
         return {
           id: user.id,
@@ -75,7 +90,7 @@ export const {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const role = (auth?.user as any)?.role;
+      const role = auth?.user?.role;
       const isOnAdmin = nextUrl.pathname.startsWith("/admin");
       const isOnProfile = nextUrl.pathname.startsWith("/profile");
 

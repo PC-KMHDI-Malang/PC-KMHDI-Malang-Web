@@ -9,6 +9,7 @@ import { EbookShareBar } from "@/components/ui/EbookShareBar";
 import { LoginPromptModal } from "@/components/ui/LoginPromptModal";
 import { incrementViewCount, formatViewCount } from "@/lib/views";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
+import { hasLiked } from "@/lib/likes";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl } from "@/lib/site";
 
@@ -319,6 +320,8 @@ export default async function EbookDetailPage({ params, searchParams }: { params
               authorOrPublisher={ebook.publisher || "PP KMHDI"}
               date={new Date(ebook.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
               description={ebook.description}
+              isLoggedIn={!!session?.user?.id}
+              initiallyLiked={await hasLiked(session?.user?.id, "ebook", ebook.id)}
             />
           </div>
         </div>

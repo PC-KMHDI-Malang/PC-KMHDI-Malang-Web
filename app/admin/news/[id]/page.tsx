@@ -1,9 +1,10 @@
 import { auth } from "@/lib/auth";
+import { requireAdminPanel } from "@/lib/guard";
 import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { STORAGE_BUCKETS, uploadToBucket, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml } from "@/lib/storage";
+import { STORAGE_BUCKETS, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml } from "@/lib/storage";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 
 import { CategorySelect } from "@/components/admin/CategorySelect";
@@ -32,8 +33,9 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
     const authorName = (formData.get("authorName") as string)?.trim() || null;
     const categoryName = (formData.get("categoryName") as string)?.trim();
 
-    const authSession = await auth();
-    if (!authSession?.user?.id) throw new Error("Unauthorized");
+    // Sebelumnya cuma memeriksa "ada user yang login" — artinya kader biasa (role ANGGOTA)
+    // pun bisa menyunting artikel mana pun lewat action ini.
+    await requireAdminPanel();
 
     let finalCategoryId;
 
@@ -42,7 +44,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
         .toLowerCase()
         .replace(/ /g, "-")
         .replace(/[^\w-]+/g, "");
-      let { data: existingCat, error: findError } = await supabaseAdmin.from("Category").select("id").eq("slug", catSlug).maybeSingle();
+      const { data: existingCat, error: findError } = await supabaseAdmin.from("Category").select("id").eq("slug", catSlug).maybeSingle();
 
       if (findError) console.error("Error finding category:", findError);
 

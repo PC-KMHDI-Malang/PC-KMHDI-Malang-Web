@@ -1,4 +1,5 @@
-﻿import { supabaseAdmin } from "@/lib/supabase";
+import { requireAdmin } from "@/lib/guard";
+import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getIcon } from "@/lib/iconMap";
@@ -38,6 +39,7 @@ export default async function AdminStatisticsPage() {
   // Server Action: Update caption Hero / strip statistik "Tentang" (satu field per submit)
   async function updateSectionAction(formData: FormData) {
     "use server";
+    await requireAdmin();
     const updatePayload: Record<string, unknown> = { id: 1, updatedAt: new Date().toISOString() };
     for (const field of SECTION_TEXT_FIELDS) {
       const value = formData.get(field) as string | null;
@@ -63,6 +65,7 @@ export default async function AdminStatisticsPage() {
   // Server Action: Edit kartu statistik
   async function editStatAction(formData: FormData) {
     "use server";
+    await requireAdmin();
     const id = formData.get("id") as string;
     const value = formData.get("value") as string;
     const label = formData.get("label") as string;

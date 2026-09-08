@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowLeft, CalendarDays, User as UserIcon, Tag, Share2, Eye } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
+import { auth } from "@/lib/auth";
+import { hasLiked } from "@/lib/likes";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
 import { SafeImage } from "@/components/ui/SafeImage";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -10,10 +12,11 @@ import { absoluteUrl } from "@/lib/site";
 import { looksLikeHtml, stripHtml } from "@/lib/richText";
 import { incrementViewCount, formatViewCount } from "@/lib/views";
 import { legacyNewsSlugs } from "@/lib/legacyNewsSlugs";
+import { getPublishedNewsBySlug, NEWS_CARD_COLUMNS, type NewsCard } from "@/lib/queries";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const { data: news } = await supabaseAdmin.from("News").select("title, excerpt, coverImage, authorName, Category(name)").eq("slug", slug).eq("status", "PUBLISHED").single();
+  const news = await getPublishedNewsBySlug(slug);
 
   if (!news) {
     return { title: "Berita Tidak Ditemukan" };
@@ -50,7 +53,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function NewsDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  const { data: news } = await supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)").eq("slug", slug).eq("status", "PUBLISHED").single();
+  // Query yang sama juga dijalankan generateMetadata di atas; getPublishedNewsBySlug memakai
+  // React cache() sehingga keduanya berbagi satu panggilan database per request.
+  const news = await getPublishedNewsBySlug(slug);
 
   if (!news) {
     // Slug lama (sebelum akhiran timestamp-nya dibersihkan) diarahkan permanen ke slug barunya —
@@ -59,6 +64,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
     if (newSlug) permanentRedirect(`/${newSlug}`);
     notFound();
   }
+
+  const session = await auth();
+  const likedByUser = await hasLiked(session?.user?.id, "news", news.id);
 
   // Tambah hitungan "dilihat" setiap kali halaman artikel diakses.
   const updatedViews = await incrementViewCount("News", news.id);
@@ -71,9 +79,19 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
   });
 
   // Fetch related news (same category, different article)
-  let related: (typeof news)[] = [];
+  let related: NewsCard[] = [];
   if (news.categoryId) {
-    const { data } = await supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)").eq("status", "PUBLISHED").eq("categoryId", news.categoryId).neq("id", news.id).order("createdAt", { ascending: false }).limit(3);
+    // Kartu "Berita Terkait" cuma menampilkan cover, judul, dan penulis — tidak perlu ikut
+    // menarik kolom "content" (HTML penuh) dari tiga artikel sekaligus.
+    const { data } = await supabaseAdmin
+      .from("News")
+      .select(NEWS_CARD_COLUMNS)
+      .eq("status", "PUBLISHED")
+      .eq("categoryId", news.categoryId)
+      .neq("id", news.id)
+      .order("createdAt", { ascending: false })
+      .limit(3)
+      .returns<NewsCard[]>();
     related = data || [];
   }
 
@@ -205,6 +223,8 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               authorOrPublisher={authorName}
               date={publishedDate}
               description={news.excerpt || stripHtml(news.content).slice(0, 180)}
+              isLoggedIn={!!session?.user?.id}
+              initiallyLiked={likedByUser}
             />
           </div>
         </div>

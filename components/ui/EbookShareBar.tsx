@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useHydrated } from "@/components/ui/useHydrated";
 import { Link2, Heart, Check, Share2 } from "lucide-react";
 import { SpotifyShareModal } from "./SpotifyShareModal";
+import { LoginModal } from "@/components/auth/LoginModal";
 
 interface EbookShareBarProps {
   title: string;
@@ -14,24 +16,23 @@ interface EbookShareBarProps {
   authorOrPublisher?: string;
   date?: string;
   description?: string;
+  isLoggedIn?: boolean;
+  /** Dibaca server dari tabel Like, bukan dari localStorage browser. */
+  initiallyLiked?: boolean;
 }
 
-export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, categoryOrGenre, authorOrPublisher, date, description }: EbookShareBarProps) {
+export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, categoryOrGenre, authorOrPublisher, date, description, isLoggedIn = false, initiallyLiked = false }: EbookShareBarProps) {
   const [copied, setCopied] = useState(false);
-  const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(initialLikes);
   const [isPending, setIsPending] = useState(false);
-  const [shareUrl, setShareUrl] = useState("");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  useEffect(() => {
-    setShareUrl(window.location.href);
-    if (type && id) {
-      const storageKey = `${type}_liked_${id}`;
-      const isAlreadyLiked = localStorage.getItem(storageKey) === "true";
-      setLiked(isAlreadyLiked);
-    }
-  }, [type, id]);
+  // window cuma ada di klien, jadi URL-nya dibaca setelah hidrasi.
+  const hydrated = useHydrated();
+  const shareUrl = hydrated ? window.location.href : "";
+
+  const [liked, setLiked] = useState(initiallyLiked);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -46,35 +47,41 @@ export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, c
   const handleLike = async () => {
     if (isPending) return;
 
+    // Menyukai sekarang tercatat per akun (lihat migrasi 022), jadi butuh sesi. Tamu diarahkan
+    // ke popup login di tempat — tidak dipindahkan keluar dari artikel yang sedang dibaca.
+    if (!isLoggedIn) {
+      setIsLoginOpen(true);
+      return;
+    }
+    if (!type || !id) return;
+
     const nextLiked = !liked;
-    const newCount = nextLiked ? likesCount + 1 : Math.max(0, likesCount - 1);
+    const previousCount = likesCount;
 
     // Optimistic UI update
     setLiked(nextLiked);
-    setLikesCount(newCount);
+    setLikesCount(nextLiked ? likesCount + 1 : Math.max(0, likesCount - 1));
 
-    if (type && id) {
-      const storageKey = `${type}_liked_${id}`;
-      if (nextLiked) {
-        localStorage.setItem(storageKey, "true");
+    setIsPending(true);
+    try {
+      const { toggleLikeAction } = await import("@/app/actions/like");
+      const res = await toggleLikeAction(type, id, nextLiked);
+      if (!res.success) {
+        // Kembalikan tampilan ke keadaan semula supaya tidak menampilkan angka yang tidak
+        // pernah tersimpan di server.
+        setLiked(!nextLiked);
+        setLikesCount(previousCount);
+        if (res.requiresLogin) setIsLoginOpen(true);
       } else {
-        localStorage.removeItem(storageKey);
+        if (typeof res.likes === "number") setLikesCount(res.likes);
+        if (typeof res.liked === "boolean") setLiked(res.liked);
       }
-
-      setIsPending(true);
-      try {
-        const { toggleLikeAction } = await import("@/app/actions/like");
-        const res = await toggleLikeAction(type, id, nextLiked);
-        if (!res.success) {
-          console.warn("Gagal update like di database, kembali ke nilai semula.");
-        } else if (typeof res.likes === "number") {
-          setLikesCount(res.likes);
-        }
-      } catch (err) {
-        console.error("Error like:", err);
-      } finally {
-        setIsPending(false);
-      }
+    } catch (err) {
+      console.error("Error like:", err);
+      setLiked(!nextLiked);
+      setLikesCount(previousCount);
+    } finally {
+      setIsPending(false);
     }
   };
 
@@ -131,6 +138,10 @@ export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, c
         description={description}
         url={currentUrl}
       />
+
+      {/* Login di tempat: setelah berhasil, LoginModal memanggil router.refresh() sehingga
+          halaman dirender ulang dengan sesi baru dan tombol suka langsung bisa dipakai. */}
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </div>
   );
 }

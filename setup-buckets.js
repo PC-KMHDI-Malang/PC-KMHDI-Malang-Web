@@ -13,7 +13,7 @@ async function setupBuckets() {
 
     if (error && error.message.includes("not found")) {
       console.log(`Creating bucket: ${bucket}...`);
-      const { data: createData, error: createError } = await supabase.storage.createBucket(bucket, {
+      const { error: createError } = await supabase.storage.createBucket(bucket, {
         public: true,
         fileSizeLimit: 52428800, // 50MB
       });

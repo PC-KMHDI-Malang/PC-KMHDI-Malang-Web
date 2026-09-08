@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import { MIN_PASSWORD_LENGTH, PASSWORD_RULE_TEXT } from "@/lib/password";
+import { useModalTransition } from "@/components/ui/useModalTransition";
 import { X, UserPlus, Eye, EyeOff } from "lucide-react";
 
 import { toast } from "sonner";
@@ -13,29 +15,10 @@ interface AddUserModalProps {
 
 export function AddUserModal({ action }: AddUserModalProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isRendered, setIsRendered] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const { isRendered, isVisible } = useModalTransition(isOpen);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => setIsRendered(true), 0);
-      setTimeout(() => setIsVisible(true), 10);
-    } else {
-      setIsVisible(false);
-      const timer = setTimeout(() => setIsRendered(false), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
 
   const handleFormAction = async (formData: FormData) => {
     const result = await action(formData);
@@ -115,13 +98,13 @@ export function AddUserModal({ action }: AddUserModalProps) {
                       name="password"
                       required
                       className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 pr-12 outline-none transition-all"
-                      minLength={6}
+                      minLength={MIN_PASSWORD_LENGTH}
                       placeholder="Minimal 6 karakter"
                       // Tanpa ini, bubble validasi bawaan browser tampil dalam bahasa browsernya
                       // sendiri (bisa Inggris) — pesannya tidak ikut lang="id" di halaman.
                       onInvalid={(e) => {
                         const el = e.currentTarget;
-                        el.setCustomValidity(el.validity.tooShort ? "Kata sandi minimal 6 karakter." : "Kata sandi wajib diisi.");
+                        el.setCustomValidity(el.validity.tooShort ? PASSWORD_RULE_TEXT : "Kata sandi wajib diisi.");
                       }}
                       onInput={(e) => e.currentTarget.setCustomValidity("")}
                     />

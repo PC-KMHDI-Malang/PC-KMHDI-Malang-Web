@@ -3,7 +3,9 @@
 import { useState, useMemo } from "react";
 import { EditUserModal } from "@/components/admin/EditUserModal";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
-import { Mail, Calendar, Briefcase, Shield, Trash2 } from "lucide-react";
+import { Mail, Calendar, Trash2 } from "lucide-react";
+
+type SortKey = "createdAt" | "name" | "jabatan" | "bidang";
 
 interface User {
   id: string;
@@ -23,7 +25,7 @@ interface UserTableProps {
 }
 
 export function UserTable({ users, editAction, deleteAction, currentUserEmail }: UserTableProps) {
-  const [sortBy, setSortBy] = useState<"createdAt" | "name" | "jabatan" | "bidang">("createdAt");
+  const [sortBy, setSortBy] = useState<SortKey>("createdAt");
   const [filterJabatan, setFilterJabatan] = useState<string>("");
   const [filterBidang, setFilterBidang] = useState<string>("");
 
@@ -110,7 +112,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
           <select
             value={sortBy}
             onChange={(e) => {
-              setSortBy(e.target.value as any);
+              setSortBy(e.target.value as SortKey);
             }}
             className="w-full sm:w-auto bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs sm:text-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all font-medium cursor-pointer"
           >

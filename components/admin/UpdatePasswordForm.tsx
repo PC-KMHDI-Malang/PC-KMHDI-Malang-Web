@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useActionState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { updatePasswordAction } from "@/app/actions/profile";
+import { MIN_PASSWORD_LENGTH, PASSWORD_RULE_TEXT } from "@/lib/password";
 
 export function UpdatePasswordForm() {
   const [state, formAction, isPending] = useActionState(updatePasswordAction, null);
@@ -51,11 +52,11 @@ export function UpdatePasswordForm() {
           type="password"
           name="newPassword"
           required
-          minLength={6}
+          minLength={MIN_PASSWORD_LENGTH}
           className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all font-medium"
           onInvalid={(e) => {
             const el = e.currentTarget;
-            el.setCustomValidity(el.validity.tooShort ? "Password baru minimal 6 karakter." : "Password baru wajib diisi.");
+            el.setCustomValidity(el.validity.tooShort ? PASSWORD_RULE_TEXT : "Password baru wajib diisi.");
           }}
           onInput={(e) => e.currentTarget.setCustomValidity("")}
         />

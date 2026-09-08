@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import { useModalTransition } from "@/components/ui/useModalTransition";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { X, ImagePlus, Loader2 } from "lucide-react";
@@ -14,30 +15,16 @@ interface AddGalleryModalProps {
 export function AddGalleryModal({ action }: AddGalleryModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [isRendered, setIsRendered] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const { isRendered, isVisible } = useModalTransition(isOpen);
+
+  const openModal = () => {
+    setError(null);
+    setIsOpen(true);
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => setIsRendered(true), 0);
-      setTimeout(() => setIsVisible(true), 10);
-      setError(null);
-    } else {
-      setIsVisible(false);
-      const timer = setTimeout(() => setIsRendered(false), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,7 +48,7 @@ export function AddGalleryModal({ action }: AddGalleryModalProps) {
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={openModal}
         className="bg-red-600 dark:bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-red-700 dark:hover:bg-rose-700 shadow-sm transition-all text-sm flex items-center justify-center gap-2 w-full md:w-auto"
       >
         <ImagePlus size={16} />

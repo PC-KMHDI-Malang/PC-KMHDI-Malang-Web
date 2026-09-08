@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useModalTransition } from "@/components/ui/useModalTransition";
 import { X } from "lucide-react";
 
 interface ConfirmModalProps {
@@ -27,28 +27,8 @@ export function ConfirmModal({
   isDestructive = true,
   isLoading = false,
 }: ConfirmModalProps) {
-  const [isRendered, setIsRendered] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const { isRendered, isVisible } = useModalTransition(isOpen);
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => setIsRendered(true), 0);
-      // Small delay to allow initial render before triggering animation
-      setTimeout(() => setIsVisible(true), 10);
-    } else {
-      setIsVisible(false);
-      const timer = setTimeout(() => setIsRendered(false), 300); // matches transition duration
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
 
   if (!isRendered) return null;
 

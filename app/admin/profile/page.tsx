@@ -1,5 +1,3 @@
-import { supabaseAdmin } from "@/lib/supabase";
-import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { UpdatePasswordForm } from "@/components/admin/UpdatePasswordForm";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";

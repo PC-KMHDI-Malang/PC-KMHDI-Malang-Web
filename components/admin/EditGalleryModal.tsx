@@ -1,7 +1,8 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import { useModalTransition } from "@/components/ui/useModalTransition";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Edit2, X, Loader2 } from "lucide-react";
@@ -23,30 +24,16 @@ interface EditGalleryModalProps {
 export function EditGalleryModal({ item, action }: EditGalleryModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [isRendered, setIsRendered] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const { isRendered, isVisible } = useModalTransition(isOpen);
+
+  const openModal = () => {
+    setError(null);
+    setIsOpen(true);
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => setIsRendered(true), 0);
-      setTimeout(() => setIsVisible(true), 10);
-      setError(null);
-    } else {
-      setIsVisible(false);
-      const timer = setTimeout(() => setIsRendered(false), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -75,7 +62,7 @@ export function EditGalleryModal({ item, action }: EditGalleryModalProps) {
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={openModal}
         className="w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 hover:scale-110 transition-transform shadow-sm backdrop-blur-sm mr-2"
         title="Edit Foto"
       >

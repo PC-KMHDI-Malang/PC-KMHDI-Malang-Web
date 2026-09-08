@@ -13,10 +13,11 @@ export default async function News() {
   // buat teaser di beranda; daftar lengkap tetap ada di /berita.
   const { data: latestNews } = await supabaseAdmin
     .from("News")
-    .select("*, Category(name)")
+    .select("id, title, slug, coverImage, createdAt, Category(name)")
     .eq("status", "PUBLISHED")
     .order("createdAt", { ascending: false })
-    .limit(9);
+    .limit(9)
+    .returns<{ id: string; title: string; slug: string; coverImage: string; createdAt: string; Category: { name: string } | null }[]>();
 
   const displayNews = latestNews && latestNews.length > 0 ? latestNews.map(n => ({
     id: n.id,
@@ -25,7 +26,7 @@ export default async function News() {
     category: n.Category?.name || "UMUM",
     date: new Date(n.createdAt).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }),
     href: `/${n.slug}`,
-  })) : fallbackData.news;
+  })) : fallbackData.news.map((n) => ({ ...n, id: String(n.id) }));
 
   return (
     <section id="berita" className="relative overflow-hidden bg-white dark:bg-[#0c0c0e] py-20 md:py-28 transition-colors duration-300">

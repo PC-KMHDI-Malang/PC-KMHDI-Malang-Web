@@ -9,12 +9,11 @@ interface EbookCardProps {
   title: string;
   genre: string;
   coverImage: string;
-  pdfUrl?: string | null;
   createdAt: string;
   href: string;
 }
 
-export function EbookCard({ title, genre, coverImage, pdfUrl, createdAt, href }: EbookCardProps) {
+export function EbookCard({ title, genre, coverImage, createdAt, href }: EbookCardProps) {
   const date = new Date(createdAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
   const year = new Date(createdAt).getFullYear();
 

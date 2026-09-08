@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { useBodyScrollLock } from "@/components/ui/useModalTransition";
 import { toast } from "sonner";
 import { X, Edit2, Loader2 } from "lucide-react";
 
@@ -25,17 +26,13 @@ export function EditStatModal({ stat, action }: EditStatModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      setError(null);
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
+  useBodyScrollLock(isOpen);
+
+  // Pesan error dari percobaan sebelumnya dibersihkan saat modal dibuka.
+  const openModal = () => {
+    setError(null);
+    setIsOpen(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -60,7 +57,7 @@ export function EditStatModal({ stat, action }: EditStatModalProps) {
     <>
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={openModal}
         className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white transition cursor-pointer"
         title="Edit Statistik"
       >

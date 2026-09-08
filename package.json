@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --env-file-if-exists=.env --import ./tests/alias-loader-register.mjs --test tests/unit.test.ts",
+    "test:blackbox": "node --env-file-if-exists=.env --import ./tests/alias-loader-register.mjs --test tests/blackbox.test.ts tests/like.blackbox.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
