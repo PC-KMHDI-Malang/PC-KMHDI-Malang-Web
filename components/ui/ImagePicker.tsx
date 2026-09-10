@@ -29,9 +29,13 @@ interface ImagePickerProps {
   bucket?: string;
   /** Nama field hidden input yang menampung URL terpilih. Default "coverImageUrl" agar kompatibel dengan pemakaian yang sudah ada. */
   name?: string;
+  /** Batas ukuran file, dalam MB. Harus disamakan dengan fileSizeLimit bucket-nya di
+   * app/api/setup-buckets/route.ts — kalau beda, upload bisa lolos di sini tapi ditolak Supabase
+   * (atau sebaliknya, ditolak di sini padahal bucket-nya sebenarnya boleh lebih besar). */
+  maxSizeMB?: number;
 }
 
-export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name = "coverImageUrl" }: ImagePickerProps) {
+export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name = "coverImageUrl", maxSizeMB = 1 }: ImagePickerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState(defaultImageUrl);
   const [isUploading, setIsUploading] = useState(false);
@@ -57,8 +61,8 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name
       return;
     }
 
-    if (file.size > 1024 * 1024) {
-      setError("Ukuran gambar maksimal 1 MB.");
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      setError(`Ukuran gambar maksimal ${maxSizeMB} MB.`);
       e.target.value = "";
       return;
     }
@@ -132,7 +136,7 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name
                   </svg>
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">Klik untuk memilih file</span>
                   <span className="text-slate-400 dark:text-slate-500 text-sm mt-1">
-                    Mendukung format JPG, PNG (Maks 1 MB)
+                    Mendukung format JPG, PNG (Maks {maxSizeMB} MB)
                   </span>
                 </>
               )}

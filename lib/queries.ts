@@ -15,6 +15,14 @@ export const getStatisticSection = cache(async () => {
   return data;
 });
 
+// Dibaca di app/(public)/layout.tsx — dipakai di SEMUA halaman publik, jadi tabelnya belum
+// dibuat (migrasi 024 belum dijalankan) tidak boleh membuat layout gagal render; kembalikan
+// null (pop-up tidak tampil) daripada melempar error.
+export const getPopupAd = cache(async () => {
+  const { data } = await supabaseAdmin.from("PopupAd").select("*").eq("id", 1).maybeSingle();
+  return data;
+});
+
 // Kolom untuk tampilan daftar/kartu artikel: sengaja tanpa "content", karena kartu cuma
 // butuh judul, cover, dan ringkasan — menarik isi HTML penuh tiap artikel di daftar
 // membuat payload query membengkak berkali lipat tanpa satu pun dipakai.

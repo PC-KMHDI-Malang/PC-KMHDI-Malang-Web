@@ -9,7 +9,24 @@ export const STORAGE_BUCKETS = {
   articleImages: "article-images",
   partnerLogos: "partner-logos",
   organizationPhotos: "organization-photos",
+  popupAds: "popup-ads",
 } as const;
+
+// Satu-satunya sumber batas ukuran per bucket, dipakai oleh app/api/setup-buckets/route.ts
+// (konfigurasi bucket-nya sendiri di Supabase) DAN lib/actions.ts (gerbang validasi sebenarnya
+// saat upload — ImagePicker/FilePicker cuma menampilkan pesan lebih awal di browser, bukan
+// penegaknya). Sebelum disatukan di sini, kedua tempat itu masing-masing punya angka sendiri
+// yang gampang lupa disamakan — persis yang terjadi saat batas popup-ads dinaikkan ke 2 MB.
+export const BUCKET_FILE_SIZE_LIMITS: Record<string, number> = {
+  [STORAGE_BUCKETS.news]: 1 * 1024 * 1024,
+  [STORAGE_BUCKETS.ebook]: 1 * 1024 * 1024,
+  [STORAGE_BUCKETS.gallery]: 1 * 1024 * 1024,
+  [STORAGE_BUCKETS.partnerLogos]: 1 * 1024 * 1024,
+  [STORAGE_BUCKETS.articleImages]: 1 * 1024 * 1024,
+  [STORAGE_BUCKETS.organizationPhotos]: 1 * 1024 * 1024,
+  [STORAGE_BUCKETS.ebookFiles]: 5 * 1024 * 1024,
+  [STORAGE_BUCKETS.popupAds]: 2 * 1024 * 1024,
+};
 
 // Kuota tampilan storage. Supabase tidak memberi kuota per-bucket — 1 GB ini adalah jatah asli
 // akun (lihat Project Settings > Billing di Supabase Dashboard) yang dipakai BERSAMA oleh semua

@@ -1,25 +1,17 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { BUCKET_FILE_SIZE_LIMITS } from "@/lib/storage";
 
 // Bucket ini sengaja privat (lihat migrations/016_make_ebook_files_bucket_private.sql) —
 // file PDF cuma boleh diakses lewat signed URL yang diverifikasi server (lib/storage.ts).
 // Jangan pernah dipaksa public:true dari sini, apa pun yang terjadi ke bucket lain.
 const PRIVATE_BUCKETS = new Set(["ebook-files"]);
 
-// Batas ukuran per file, disamakan persis dengan konfigurasi asli tiap bucket di Supabase
-// Dashboard — kalau angka di sini beda dari dashboard, validasi ukuran file di sisi client
-// (ImagePicker/FilePicker/RichTextEditor/PengurusModal) juga harus disesuaikan biar tidak ada
-// upload yang lolos validasi client tapi ditolak Supabase.
-const FILE_SIZE_LIMITS: Record<string, number> = {
-  "news-covers": 1 * 1024 * 1024,
-  "ebook-covers": 1 * 1024 * 1024,
-  "gallery-photos": 1 * 1024 * 1024,
-  "partner-logos": 1 * 1024 * 1024,
-  "article-images": 1 * 1024 * 1024,
-  "organization-photos": 1 * 1024 * 1024,
-  "ebook-files": 5 * 1024 * 1024,
-};
+// Batas ukuran per file dibaca dari BUCKET_FILE_SIZE_LIMITS (lib/storage.ts) — satu-satunya
+// sumber, dipakai juga oleh gerbang validasi upload sebenarnya di lib/actions.ts. Dulu daftar
+// ini punya angkanya sendiri secara terpisah, dan gampang lupa disamakan saat salah satu diubah.
+const FILE_SIZE_LIMITS = BUCKET_FILE_SIZE_LIMITS;
 
 export async function GET() {
   const session = await auth();

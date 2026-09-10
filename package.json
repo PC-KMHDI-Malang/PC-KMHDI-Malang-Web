@@ -29,6 +29,13 @@
     "react-icons": "^5.7.0",
     "sonner": "^2.0.8"
   },
+  "browserslist": [
+    "chrome >= 91",
+    "edge >= 91",
+    "firefox >= 90",
+    "safari >= 15",
+    "ios_saf >= 15"
+  ],
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
