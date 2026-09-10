@@ -3,13 +3,18 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { containsPattern } from "@/lib/search";
 import { revalidatePath } from "next/cache";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl, getSignedFileUrl } from "@/lib/storage";
 import { generateUniqueEbookSlug } from "@/lib/slug";
 
-import { AddEbookModal } from "@/components/admin/AddEbookModal";
-import { EditEbookModal } from "@/components/admin/EditEbookModal";
 import { Pagination } from "@/components/ui/Pagination";
+
+// Dipisah ke chunk sendiri lewat next/dynamic: EditEbookModal dirender sekali per baris (bisa
+// enam sekaligus di satu halaman), jadi JS-nya tidak perlu ikut memblokir parse/hydrasi bundle
+// utama halaman daftar ini — baru diambil browser begitu chunk-nya benar-benar dibutuhkan.
+const AddEbookModal = dynamic(() => import("@/components/admin/AddEbookModal").then((mod) => mod.AddEbookModal));
+const EditEbookModal = dynamic(() => import("@/components/admin/EditEbookModal").then((mod) => mod.EditEbookModal));
 
 const EBOOKS_PER_PAGE = 6;
 
@@ -91,7 +96,12 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
 
     if (!id || !title || !coverImageUrl || !pdfUrl) throw new Error("Judul, cover, dan file PDF wajib diisi.");
 
-    const { error } = await supabaseAdmin.from("Ebook").update({ title, coverImage: coverImageUrl, pdfUrl, description, genre, publishYear, publisher }).eq("id", id);
+    const { data: updated, error } = await supabaseAdmin
+      .from("Ebook")
+      .update({ title, coverImage: coverImageUrl, pdfUrl, description, genre, publishYear, publisher })
+      .eq("id", id)
+      .select("slug")
+      .single();
     if (error) {
       console.error("SUPABASE UPDATE ERROR:", error);
       throw new Error(error.message);
@@ -99,6 +109,9 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
 
     revalidatePath("/admin/ebooks");
     revalidatePath("/e-book");
+    // Halaman detail e-book di-cache statis (lihat app/(public)/e-book/[slug]/page.tsx) —
+    // tanpa ini, perubahan baru terlihat setelah jaring pengaman revalidate 1 jam.
+    if (updated?.slug) revalidatePath(`/e-book/${updated.slug}`);
   }
 
   async function deleteEbook(formData: FormData) {
@@ -107,10 +120,11 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     const id = formData.get("id") as string;
     if (!id) return;
 
-    const { data: ebook } = await supabaseAdmin.from("Ebook").select("coverImage, pdfUrl").eq("id", id).maybeSingle();
+    const { data: ebook } = await supabaseAdmin.from("Ebook").select("slug, coverImage, pdfUrl").eq("id", id).maybeSingle();
     await supabaseAdmin.from("Ebook").delete().eq("id", id);
     if (ebook?.coverImage) await deleteFromBucketByUrl(STORAGE_BUCKETS.ebook, ebook.coverImage);
     if (ebook?.pdfUrl) await deleteFromBucketByUrl(STORAGE_BUCKETS.ebookFiles, ebook.pdfUrl);
+    if (ebook?.slug) revalidatePath(`/e-book/${ebook.slug}`);
     revalidatePath("/admin/ebooks");
     revalidatePath("/e-book");
   }

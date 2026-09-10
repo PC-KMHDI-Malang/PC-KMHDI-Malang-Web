@@ -3,25 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText, Handshake, ClipboardList, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useFormStatus } from "react-dom";
-import { logoutAction } from "@/app/actions/auth";
 import { isAdminPanelRole } from "@/lib/roles";
-
-// useFormStatus hanya baca status <form> terdekat, jadi harus jadi komponen sendiri di dalam
-// <form action={logoutAction}> — kalau tombolnya ditulis langsung di Navbar, pending selalu
-// false karena Navbar bukan child form itu sendiri. Ini yang bikin tap "Ya, Keluar" terasa
-// tanpa reaksi/animasi apa pun sebelum redirect-nya kelar.
-function LogoutSubmitButton({ className }: { className: string }) {
-  const { pending } = useFormStatus();
-  return (
-    <button type="submit" disabled={pending} className={`${className} ${pending ? "opacity-70 cursor-wait" : ""}`}>
-      {pending ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Ya, Keluar"}
-    </button>
-  );
-}
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
 
@@ -73,16 +59,17 @@ const menus: NavMenu[] = [
   },
 ];
 
-interface NavbarProps {
-  user?: {
-    name?: string | null;
-    email?: string | null;
-    role?: string | null;
-    image?: string | null;
-  } | null;
-}
-
-export default function Navbar({ user }: NavbarProps) {
+export default function Navbar() {
+  // Dibaca di client (bukan lagi lewat prop dari server) supaya layout publik yang membungkus
+  // Navbar ini tidak perlu memanggil auth() sendiri — auth() membaca cookie, dan itu otomatis
+  // membuat Next.js menganggap SELURUH halaman di bawahnya dinamis, walau isi halamannya sendiri
+  // sama untuk semua orang (lihat force-dynamic yang dilepas di galeri/mitra/profil).
+  const { data: session, status: sessionStatus } = useSession();
+  const user = session?.user;
+  // Selama fetch sesi pertama kali belum selesai, jangan tampilkan tombol "Login" — kalau
+  // ditampilkan lalu tahu-tahu berganti jadi "Halo, Nama" begitu sesi datang, pengunjung yang
+  // sebenarnya sudah login akan sempat melihat kedipan status "belum login" yang salah.
+  const isSessionLoading = sessionStatus === "loading";
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -90,8 +77,28 @@ export default function Navbar({ user }: NavbarProps) {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mobileOpenMenus, setMobileOpenMenus] = useState<Record<string, boolean>>({});
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileDrawerRef = useRef<HTMLDivElement>(null);
+
+  // signOut() dari next-auth/react (bukan server action logoutAction) supaya useSession() di
+  // atas ikut ter-update — logoutAction masih dipakai panel admin, lihat catatan di
+  // app/actions/auth.ts. Reload penuh sesudahnya untuk alasan yang sama seperti di
+  // LoginModal.tsx: halaman lain yang sempat di-prefetch sebelum logout bisa masih menyimpan
+  // versi lama yang mengira masih login.
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await signOut({ redirect: false });
+    } catch (err) {
+      // Tetap lanjut ke reload di bawah walau gagal (mis. koneksi terputus saat logout) —
+      // tanpa ini, tombol "Ya, Keluar" macet di posisi loading selamanya karena
+      // window.location.href tidak pernah tercapai dan isLoggingOut tidak pernah direset.
+      console.error("Gagal logout:", err);
+    } finally {
+      window.location.href = "/";
+    }
+  };
 
   const isLoggedIn = !!user;
   const isAdmin = user?.role === "ADMIN";
@@ -103,11 +110,11 @@ export default function Navbar({ user }: NavbarProps) {
   const firstName = user?.name ? user.name.split(" ")[0] : "Akun";
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
-  // logoutAction redirects to "/", which stays inside the same (public) layout that renders
-  // this Navbar — so the component never unmounts, and userDropdownOpen/showLogoutConfirm
-  // survive the round trip. Without this, logging back in (e.g. via the LoginModal, with no
-  // full page reload) makes the dropdown reappear exactly as it was left: still open, with the
-  // "Yakin ingin keluar?" confirm panel already showing.
+  // Login (LoginModal) dan logout (handleLogout di atas) sama-sama hard reload, jadi Navbar
+  // selalu remount bersih untuk kedua kasus itu. Reset ini menjaga skenario lain: sesi yang
+  // kedaluwarsa sendiri (JWT expired) atau logout di tab lain — keduanya mengubah isLoggedIn
+  // lewat useSession() tanpa remount, dan tanpa ini dropdown/konfirmasi logout bisa tetap
+  // terbuka padahal sesinya sudah tidak ada.
   // Pola resmi React untuk mereset state saat prop berubah: dilakukan saat render, bukan lewat
   // useEffect — dengan useEffect, satu frame sempat terlihat memakai state lama sebelum reset.
   const [prevIsLoggedIn, setPrevIsLoggedIn] = useState(isLoggedIn);
@@ -270,7 +277,11 @@ export default function Navbar({ user }: NavbarProps) {
               {/* Sakelar Mode Gelap / Terang */}
               <ThemeToggle iconOnly />
 
-              {isLoggedIn ? (
+              {isSessionLoading ? (
+                // Placeholder netral seukuran tombol asli — belum memastikan status login apa
+                // pun, jadi tidak ada apa-apa yang bisa "salah kedip" begitu sesi datang.
+                <div className="h-10 w-32 rounded-full bg-white/10 animate-pulse" />
+              ) : isLoggedIn ? (
                 <div className="relative" ref={dropdownRef}>
                   <button
                     type="button"
@@ -327,9 +338,14 @@ export default function Navbar({ user }: NavbarProps) {
                               >
                                 Batal
                               </button>
-                              <form action={logoutAction} className="flex-1">
-                                <LogoutSubmitButton className="w-full py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold transition shadow-sm" />
-                              </form>
+                              <button
+                                type="button"
+                                onClick={handleLogout}
+                                disabled={isLoggingOut}
+                                className={`flex-1 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold transition shadow-sm ${isLoggingOut ? "opacity-70 cursor-wait" : ""}`}
+                              >
+                                {isLoggingOut ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Ya, Keluar"}
+                              </button>
                             </div>
                           </div>
                         ) : (
@@ -497,15 +513,17 @@ export default function Navbar({ user }: NavbarProps) {
                             >
                               Batal
                             </button>
-                            {/* Sengaja tidak ada onClick di sini yang memanggil setMobileOpen(false).
-                                Itu akan langsung meng-unmount drawer ini (dan <form> di dalamnya)
-                                pada render yang sama dengan klik, sebelum browser sempat mengirim
-                                submit form-nya — hasilnya logout tidak pernah benar-benar terjadi.
-                                Drawer ditutup otomatis lewat efek isLoggedIn di atas begitu sesi
-                                berubah setelah logoutAction redirect. */}
-                            <form action={logoutAction} className="flex-1">
-                              <LogoutSubmitButton className="w-full py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition shadow-md" />
-                            </form>
+                            {/* Sengaja tidak ada onClick di sini yang memanggil setMobileOpen(false)
+                                secara langsung — drawer ditutup otomatis lewat efek isLoggedIn di
+                                atas begitu handleLogout() selesai dan sesi berubah. */}
+                            <button
+                              type="button"
+                              onClick={handleLogout}
+                              disabled={isLoggingOut}
+                              className={`flex-1 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition shadow-md ${isLoggingOut ? "opacity-70 cursor-wait" : ""}`}
+                            >
+                              {isLoggingOut ? <Loader2 size={14} className="animate-spin mx-auto" /> : "Ya, Keluar"}
+                            </button>
                           </div>
                         </div>
                       ) : (

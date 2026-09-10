@@ -28,8 +28,8 @@ export default function Programs() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-red-900 via-red-800 to-red-950 py-24 sm:py-32">
       {/* Ambient Mesh Glows */}
-      <div className="absolute -left-20 top-20 h-[400px] w-[400px] rounded-full bg-white/5 blur-[100px] pointer-events-none" />
-      <div className="absolute -right-20 bottom-20 h-[400px] w-[400px] rounded-full bg-rose-500/10 blur-[100px] pointer-events-none" />
+      <div className="hidden lg:block absolute -left-20 top-20 h-[400px] w-[400px] rounded-full bg-white/5 blur-[100px] pointer-events-none" />
+      <div className="hidden lg:block absolute -right-20 bottom-20 h-[400px] w-[400px] rounded-full bg-rose-500/10 blur-[100px] pointer-events-none" />
 
       <div className="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
         <ScrollReveal direction="up" delay={0.1}>

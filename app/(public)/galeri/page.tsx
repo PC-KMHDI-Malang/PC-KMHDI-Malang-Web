@@ -4,7 +4,9 @@ import { galleryData } from "@/data/gallery";
 import { GalleryGrid, GalleryItem } from "@/components/gallery/GalleryGrid";
 import { Camera } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+// Di-cache: kontennya sama untuk semua pengunjung. Di-render ulang hanya saat admin
+// menambah/mengubah/menghapus foto — lihat revalidatePath("/galeri") di
+// app/admin/gallery/page.tsx — bukan lagi di setiap kunjungan.
 
 // The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
 export const metadata: Metadata = {
@@ -20,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export default async function GaleriPage() {
-  const { data: dbGallery } = await supabaseAdmin.from("Gallery").select("*").order("createdAt", { ascending: false });
+  const { data: dbGallery } = await supabaseAdmin.from("Gallery").select("id, title, coverImage, description, createdAt").order("createdAt", { ascending: false });
 
   // Siapkan data dari Supabase
   const itemsFromDb: GalleryItem[] = (dbGallery || []).map((item) => ({
@@ -35,17 +37,8 @@ export default async function GaleriPage() {
   const localItems: GalleryItem[] = galleryData.images.map((img, idx) => ({
     id: `local-${idx + 1}`,
     title:
-      [
-        "Pelatihan Kaderisasi Mahasiswa Hindu",
-        "Bakti Sosial & Pengabdian Masyarakat",
-        "Seminar Nasional Kepemudaan",
-        "Maha Sabha & Konferensi Cabang",
-        "Perayaan Hari Besar Keagamaan",
-        "Diskusi Publik Kebangsaan",
-        "Pentas Seni & Budaya Nusantara",
-        "Kunjungan Kerja Organisasi",
-        "Rapat Kerja Pengurus Cabang",
-      ][idx] || `Dokumentasi Kegiatan ${idx + 1}`,
+      ["Dharma Bhakti XXXVII", "Dharma Bhakti XXXVII", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang"][idx] ||
+      `Dokumentasi Kegiatan ${idx + 1}`,
     coverImage: img,
     description: "Momen kebersamaan dan dinamika perjuangan kader PC KMHDI Malang.",
     createdAt: new Date("2026-08-25T10:00:00.000Z").toISOString(),

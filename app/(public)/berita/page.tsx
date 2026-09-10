@@ -2,16 +2,19 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { Search, Newspaper, CalendarDays, User as UserIcon } from "lucide-react";
-import { supabaseAdmin } from "@/lib/supabase";
 import { SafeImage } from "@/components/ui/SafeImage";
 import { NewsCategoryTabs } from "@/components/news/NewsCategoryTabs";
 import { NewsSortSelect } from "@/components/news/NewsSortSelect";
 import { FeaturedNewsSlider } from "@/components/news/FeaturedNewsSlider";
 import { stripHtml } from "@/lib/richText";
-import { NEWS_CARD_COLUMNS, type NewsCard } from "@/lib/queries";
+import { getBeritaListData } from "@/lib/queries";
 import { Pagination } from "@/components/ui/Pagination";
 
-export const dynamic = "force-dynamic";
+// Halaman ini tetap render di server tiap kunjungan (searchParams membuat App Router selalu
+// menganggapnya dinamis), tapi query database beratnya (kategori, slider, grid, fallback) kini
+// diambil lewat getBeritaListData yang di-cache per kombinasi filter — lihat catatan di
+// lib/queries.ts. force-dynamic dilepas karena tidak lagi diperlukan: dinamis-nya sudah otomatis
+// dari searchParams, bukan dari deklarasi ini.
 
 export const metadata: Metadata = {
   title: "Berita & Informasi",
@@ -32,11 +35,6 @@ interface BeritaPageProps {
   searchParams: Promise<{ q?: string; sort?: string; category?: string; page?: string }>;
 }
 
-// Tanpa batas ini, halaman mengambil SELURUH artikel terbit dalam satu query setiap request —
-// makin lama makin berat seiring arsip bertambah, padahal pembaca cuma melihat layar pertama.
-const NEWS_PER_PAGE = 8;
-const FEATURED_COUNT = 3;
-
 export default async function BeritaPage({ searchParams: searchParamsPromise }: BeritaPageProps) {
   const searchParams = await searchParamsPromise;
   const query = searchParams?.q || "";
@@ -44,68 +42,12 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
   const categoryFilter = searchParams?.category || "";
   const currentPage = Math.max(1, parseInt(searchParams?.page || "1", 10) || 1);
 
-  // Ambil kategori & (kalau ada filter kategori) id kategori itu secara paralel, bukan berurutan,
-  // supaya round-trip ke Supabase tidak numpuk sebelum query berita utama bisa jalan.
-  const [{ data: allCategories }, matchingCatResult] = await Promise.all([
-    supabaseAdmin.from("Category").select("id, name").order("name"),
-    categoryFilter ? supabaseAdmin.from("Category").select("id").eq("name", categoryFilter).maybeSingle() : Promise.resolve({ data: null }),
-  ]);
-  const categories = (allCategories || []).map((c) => c.name);
-  const matchingCat = matchingCatResult.data;
-
-  // Slider hanya di halaman pertama dan saat tidak sedang mencari; artikel yang sudah tampil di
-  // slider dilewati oleh grid, jadi offset-nya ikut diperhitungkan di semua halaman berikutnya.
-  const showSlider = !query && currentPage === 1;
-  const sliderOffset = query ? 0 : FEATURED_COUNT;
-
-  const buildQuery = () => {
-    let q = supabaseAdmin.from("News").select(NEWS_CARD_COLUMNS, { count: "exact" }).eq("status", "PUBLISHED");
-    if (query) q = q.ilike("title", `%${query}%`);
-    if (matchingCat) q = q.eq("categoryId", matchingCat.id);
-    return q.order("createdAt", { ascending: sortFilter === "oldest" });
-  };
-
-  const gridFrom = sliderOffset + (currentPage - 1) * NEWS_PER_PAGE;
-  const [featuredResult, gridResult] = await Promise.all([
-    showSlider ? buildQuery().range(0, FEATURED_COUNT - 1).returns<NewsCard[]>() : Promise.resolve({ data: [] as NewsCard[] }),
-    buildQuery().range(gridFrom, gridFrom + NEWS_PER_PAGE - 1).returns<NewsCard[]>(),
-  ]);
-
-  const featuredItems = featuredResult.data || [];
-  const totalMatching = gridResult.count ?? 0;
-  const totalPages = Math.max(1, Math.ceil(Math.max(0, totalMatching - sliderOffset) / NEWS_PER_PAGE));
-
-  // Hanya 3 kartu slider yang menampilkan cuplikan dari isi artikel, jadi kolom "content"
-  // (HTML penuh, bisa puluhan KB per artikel) diambil terpisah cuma untuk ketiganya —
-  // bukan ikut terbawa di query daftar.
-  const featuredContent = new Map<string, string>();
-  if (featuredItems.length > 0) {
-    const { data: contents } = await supabaseAdmin
-      .from("News")
-      .select("id, content")
-      .in("id", featuredItems.map((i) => i.id));
-    for (const row of contents || []) featuredContent.set(row.id, row.content || "");
-  }
-  const featuredWithContent = featuredItems.map((i) => ({ ...i, content: featuredContent.get(i.id) || "" }));
-
-  let displayGridNews = gridResult.data || [];
-  let fallbackUsed = false;
-
-  // Kategori yang isinya cuma sedikit (semuanya terpakai di slider) akan menyisakan bagian
-  // "Berita Lainnya" kosong — diisi artikel terbaru dari kategori mana pun. Hanya di halaman
-  // pertama: di halaman berikutnya, daftar kosong memang berarti sudah habis.
-  if (displayGridNews.length === 0 && !query && currentPage === 1) {
-    let fallbackQuery = supabaseAdmin.from("News").select(NEWS_CARD_COLUMNS).eq("status", "PUBLISHED");
-    if (featuredItems.length > 0) {
-      fallbackQuery = fallbackQuery.not("id", "in", `(${featuredItems.map((i) => i.id).join(",")})`);
-    }
-
-    const { data: fallbackNews } = await fallbackQuery.order("createdAt", { ascending: false }).limit(6).returns<NewsCard[]>();
-    if (fallbackNews && fallbackNews.length > 0) {
-      displayGridNews = fallbackNews;
-      fallbackUsed = true;
-    }
-  }
+  const { categories, showSlider, featuredWithContent, displayGridNews, totalPages, fallbackUsed } = await getBeritaListData({
+    query,
+    sortFilter,
+    categoryFilter,
+    currentPage,
+  });
 
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
@@ -207,7 +149,7 @@ export default async function BeritaPage({ searchParams: searchParamsPromise }: 
               )}
             </div>
           </>
-        ) : (!showSlider && displayGridNews.length === 0) || (showSlider && featuredItems.length === 0 && displayGridNews.length === 0) ? (
+        ) : (!showSlider && displayGridNews.length === 0) || (showSlider && featuredWithContent.length === 0 && displayGridNews.length === 0) ? (
           <div className="py-24 flex flex-col items-center justify-center text-slate-500 dark:text-neutral-500 bg-white dark:bg-[#1A1A1A] border border-slate-200/80 dark:border-white/5 rounded-3xl shadow-sm mb-16 px-5 text-center">
             <Newspaper size={40} className="mb-4 text-slate-400 dark:text-neutral-600 opacity-60" />
             <p className="text-lg font-medium text-slate-700 dark:text-neutral-300 mb-4">

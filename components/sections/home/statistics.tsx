@@ -45,7 +45,7 @@ export default async function Statistics() {
   return (
     <section className="relative overflow-hidden bg-neutral-50/60 dark:bg-[#0f0f12] border-t border-b border-neutral-200/60 dark:border-white/10 py-20 sm:py-28 transition-colors duration-300">
       {/* Ambient Glow */}
-      <div className="absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-500/5 blur-[120px] pointer-events-none" />
+      <div className="hidden lg:block absolute left-1/2 top-1/2 h-[450px] w-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-500/5 blur-[120px] pointer-events-none" />
 
       <div className="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
         <ScrollReveal direction="up" delay={0.1}>

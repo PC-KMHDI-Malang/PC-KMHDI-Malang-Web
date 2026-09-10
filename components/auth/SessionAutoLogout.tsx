@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useSession } from "next-auth/react";
 import { logoutAction } from "@/app/actions/auth";
 
 interface SessionAutoLogoutProps {
-  isLoggedIn: boolean;
   timeoutMinutes?: number; // Default 120 minutes (2 jam)
 }
 
-export function SessionAutoLogout({ isLoggedIn, timeoutMinutes = 120 }: SessionAutoLogoutProps) {
+export function SessionAutoLogout({ timeoutMinutes = 120 }: SessionAutoLogoutProps) {
+  // Dibaca di client, bukan lewat prop dari server — lihat catatan yang sama di Navbar.tsx.
+  const { status } = useSession();
+  const isLoggedIn = status === "authenticated";
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {

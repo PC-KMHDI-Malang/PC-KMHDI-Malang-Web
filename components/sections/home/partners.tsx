@@ -29,7 +29,7 @@ export default async function Partners() {
   return (
     <section className="relative overflow-hidden bg-white dark:bg-[#0c0c0e] py-16 md:py-20 transition-colors duration-300">
       {/* Ambient Glow, konsisten dengan section lain */}
-      <div className="absolute left-1/2 top-1/2 h-[350px] w-[350px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-500/5 blur-[120px] pointer-events-none" />
+      <div className="hidden lg:block absolute left-1/2 top-1/2 h-[350px] w-[350px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-red-500/5 blur-[120px] pointer-events-none" />
 
       <ScrollReveal direction="up" delay={0.1}>
         <p className="relative text-center text-xs sm:text-sm font-bold uppercase tracking-[0.3em] text-red-600 dark:text-red-400">{partnersData.trustedByLabel}</p>

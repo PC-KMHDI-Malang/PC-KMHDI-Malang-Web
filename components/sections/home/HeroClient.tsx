@@ -183,10 +183,18 @@ export default function HeroClient({ captionYears, captionMembers }: HeroClientP
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
   const bgY = useTransform(scrollYProgress, [0, 1], [0, 140]);
 
+  // Parallax dimatikan di perangkat sentuh lewat style, bukan dengan membungkus bgY di
+  // useTransform kedua — versi awal percobaan ini malah MENAMBAH satu lapis komputasi yang tetap
+  // jalan tiap frame scroll (nilainya cuma dipaksa nol, bukan perhitungannya yang dihapus),
+  // jadi mobile-nya lebih berat dari sebelumnya, bukan lebih ringan. Dicek sekali per render
+  // (bukan reaktif ke resize) — cukup untuk kasus ini karena orientasi pointer jarang berubah
+  // di tengah sesi, sama seperti pengecekan di Tilt3DLogo.
+  const isCoarsePointer = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
   return (
     <section ref={sectionRef} className="relative -mt-32 overflow-hidden bg-gradient-to-b from-black via-red-950 to-black pt-36 pb-20 lg:pt-24">
       {/* Background layer — parallax: scrolls slower than the foreground content for cinematic depth */}
-      <motion.div style={{ y: bgY }} className="absolute inset-0 pointer-events-none">
+      <motion.div style={{ y: isCoarsePointer ? 0 : bgY }} className="absolute inset-0 pointer-events-none">
         {/* Ambient Glow — disembunyikan di HP: blur radius sebesar ini mahal untuk GPU mobile,
             dan cuma dekorasi tambahan, tidak mengubah keterbacaan konten. Tetap tampil di desktop
             (lg+) tempat efeknya lebih kelihatan dan perangkatnya lebih kuat. */}

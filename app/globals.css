@@ -143,6 +143,26 @@ body {
   animation: ray-sway 7s ease-in-out infinite;
 }
 
+/* Wave loading indicator — batang yang naik-turun lewat scaleY (composited, bukan height, jadi
+   tidak memicu reflow tiap frame). transform-origin di bawah supaya batangnya "tumbuh" dari
+   dasar, bukan dari tengah. */
+@keyframes wave-bar {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-wave-bar {
+  animation-name: wave-bar;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  transform-origin: bottom;
+}
+
 /* ChatBot — cincin denyut di belakang tombol mengambang. Dulu ini animasi box-shadow langsung
    di tombolnya (lihat git blame) — terlihat halus, tapi box-shadow bukan properti yang
    di-composite GPU, jadi browser mengulang paint tiap frame selama animasi berjalan (infinite,

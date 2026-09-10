@@ -6,8 +6,10 @@ import { auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { isPasswordLongEnough, PASSWORD_RULE_TEXT } from "@/lib/password";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
-import { AddUserModal } from "@/components/admin/AddUserModal";
+import dynamic from "next/dynamic";
 import { UserTable } from "@/components/admin/UserTable";
+
+const AddUserModal = dynamic(() => import("@/components/admin/AddUserModal").then((mod) => mod.AddUserModal));
 
 export default async function UsersPage() {
   const session = await auth();

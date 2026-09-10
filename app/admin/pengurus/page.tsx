@@ -3,9 +3,11 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import Image from "next/image";
-import { AddPengurusModal } from "@/components/admin/AddPengurusModal";
-import { EditPengurusModal } from "@/components/admin/EditPengurusModal";
+import dynamic from "next/dynamic";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
+
+const AddPengurusModal = dynamic(() => import("@/components/admin/AddPengurusModal").then((mod) => mod.AddPengurusModal));
+const EditPengurusModal = dynamic(() => import("@/components/admin/EditPengurusModal").then((mod) => mod.EditPengurusModal));
 import { deleteFromBucketByUrl } from "@/lib/storage";
 import { allMembers, Member } from "@/data/organization";
 import { Users, GraduationCap, Trash2, Sparkles, AlertCircle, Hash, Info } from "lucide-react";

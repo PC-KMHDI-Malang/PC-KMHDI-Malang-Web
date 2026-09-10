@@ -7,13 +7,18 @@ import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml } from "@/lib/storage";
 import { generateUniqueNewsSlug } from "@/lib/slug";
 import Link from "next/link";
-import { AddNewsModal } from "@/components/admin/AddNewsModal";
+import dynamic from "next/dynamic";
 import { RedirectToast } from "@/components/admin/RedirectToast";
 import { Pagination } from "@/components/ui/Pagination";
 import { isAdminPanelRole } from "@/lib/roles";
 import { requireAdminPanel } from "@/lib/guard";
 import { errorMessage } from "@/lib/errors";
 import { NEWS_CARD_COLUMNS, type NewsCard } from "@/lib/queries";
+
+// Dipisah ke chunk sendiri: AddNewsModal membawa RichTextEditor (toolbar + upload gambar
+// lengkap), jauh lebih berat dari tombol "Tambah Berita" yang memicunya — chunk itu baru
+// diambil browser saat komponennya benar-benar dirender, bukan ikut bundle awal halaman ini.
+const AddNewsModal = dynamic(() => import("@/components/admin/AddNewsModal").then((mod) => mod.AddNewsModal));
 
 const NEWS_PER_PAGE = 6;
 
@@ -142,7 +147,7 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
       const id = formData.get("id") as string;
       if (!id) return { error: "ID tidak ditemukan" };
 
-      const { data: article } = await supabaseAdmin.from("News").select("coverImage, content").eq("id", id).maybeSingle();
+      const { data: article } = await supabaseAdmin.from("News").select("slug, coverImage, content").eq("id", id).maybeSingle();
       const { error } = await supabaseAdmin.from("News").delete().eq("id", id);
       if (error) throw error;
 
@@ -153,6 +158,10 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
 
       revalidatePath("/admin/news");
       revalidatePath("/");
+      // Halaman artikel yang dihapus di-cache statis (lihat app/(public)/[slug]/page.tsx) —
+      // tanpa ini, pengunjung yang sempat membuka URL-nya tetap melihat versi cache lama
+      // (bukan notFound()) sampai jaring pengaman revalidate 1 jam berikutnya.
+      if (article?.slug) revalidatePath(`/${article.slug}`);
       return { success: true, message: "Artikel berhasil dihapus!" };
     } catch (err: unknown) {
       return { error: errorMessage(err, "Gagal menghapus artikel.") };

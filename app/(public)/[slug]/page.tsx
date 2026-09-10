@@ -3,16 +3,36 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { ArrowLeft, CalendarDays, User as UserIcon, Tag, Share2, Eye } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
-import { auth } from "@/lib/auth";
-import { hasLiked } from "@/lib/likes";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
+import { ReadingProgressBar } from "@/components/ui/ReadingProgressBar";
+import { ViewCounter } from "@/components/ui/ViewCounter";
 import { SafeImage } from "@/components/ui/SafeImage";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl } from "@/lib/site";
 import { looksLikeHtml, stripHtml } from "@/lib/richText";
-import { incrementViewCount, formatViewCount } from "@/lib/views";
 import { legacyNewsSlugs } from "@/lib/legacyNewsSlugs";
 import { getPublishedNewsBySlug, NEWS_CARD_COLUMNS, type NewsCard } from "@/lib/queries";
+
+// Di-cache: isi artikel sama untuk semua pengunjung. Hitungan "dilihat" (ViewCounter) dan status
+// suka (EbookShareBar) tidak lagi dihitung di server render ini — keduanya dipindah ke komponen
+// client yang mengambil datanya sendiri sesudah halaman termuat, supaya server component ini
+// tidak perlu memanggil auth()/menulis DB pada setiap kunjungan (lihat catatan yang sama di
+// app/(public)/layout.tsx). Berita baru tetap langsung terbit: revalidatePath("/[slug]") tidak
+// diperlukan karena setiap slug adalah URL baru yang belum pernah di-cache; berita yang diedit
+// di-invalidate lewat revalidatePath(`/${slug}`) di app/admin/news/[id]/page.tsx dan
+// app/admin/news/page.tsx (aksi hapus).
+
+// Array kosong: tidak ada slug yang di-generate saat build (jumlahnya terus bertambah), tapi
+// ini tetap memberi tahu Next.js bahwa segmen dinamis ini boleh dirender-lalu-di-cache per slug
+// begitu pertama diakses (dynamicParams bawaan sudah true) — tanpa fungsi ini sama sekali,
+// segmen dinamis selalu di-render ulang tiap request meski tidak ada API dinamis di dalamnya.
+export async function generateStaticParams() {
+  return [];
+}
+
+// Jaring pengaman: perubahan yang tidak eksplisit di-revalidatePath (mis. nama kategori yang
+// diubah dari halaman lain) tetap ikut terbawa dalam waktu paling lama 1 jam.
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -64,13 +84,6 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
     if (newSlug) permanentRedirect(`/${newSlug}`);
     notFound();
   }
-
-  const session = await auth();
-  const likedByUser = await hasLiked(session?.user?.id, "news", news.id);
-
-  // Tambah hitungan "dilihat" setiap kali halaman artikel diakses.
-  const updatedViews = await incrementViewCount("News", news.id);
-  const viewCount = updatedViews ?? news.views ?? 0;
 
   const publishedDate = new Date(news.publishedAt || news.createdAt).toLocaleDateString("id-ID", {
     day: "numeric",
@@ -129,9 +142,10 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
     <article className="-mt-32 bg-white dark:bg-[#121212] transition-colors min-h-screen">
       <JsonLd data={articleSchema} />
       <JsonLd data={breadcrumbSchema} />
+      <ReadingProgressBar />
       {/* Red header behind navbar */}
       <div className="bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 pb-10 relative overflow-hidden">
-        <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
+        <div className="hidden lg:block absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
         <div className="relative mx-auto max-w-4xl px-5 sm:px-6 lg:px-8">
           <Link href="/berita" className="inline-flex items-center gap-2 text-sm font-semibold text-red-100/80 hover:text-white transition-colors">
             <ArrowLeft size={16} />
@@ -165,7 +179,9 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
             <span className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-500 dark:text-neutral-400">
               <Eye size={14} />
             </span>
-            <span className="font-medium text-slate-700 dark:text-neutral-300">{formatViewCount(viewCount)} kali dilihat</span>
+            <span className="font-medium text-slate-700 dark:text-neutral-300">
+              <ViewCounter type="News" id={news.id} initialViews={news.views ?? 0} /> kali dilihat
+            </span>
           </span>
         </div>
 
@@ -223,8 +239,6 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               authorOrPublisher={authorName}
               date={publishedDate}
               description={news.excerpt || stripHtml(news.content).slice(0, 180)}
-              isLoggedIn={!!session?.user?.id}
-              initiallyLiked={likedByUser}
             />
           </div>
         </div>

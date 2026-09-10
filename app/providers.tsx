@@ -1,5 +1,6 @@
 "use client";
 
+import { SessionProvider } from "next-auth/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 // next-themes injects an inline <script> to prevent theme-flash before hydration.
@@ -20,8 +21,10 @@ if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <NextThemesProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      {children}
-    </NextThemesProvider>
+    <SessionProvider>
+      <NextThemesProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        {children}
+      </NextThemesProvider>
+    </SessionProvider>
   );
 }

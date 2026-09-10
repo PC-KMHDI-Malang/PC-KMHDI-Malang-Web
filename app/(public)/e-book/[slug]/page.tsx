@@ -2,16 +2,31 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Eye, Tag, Share2, Download } from "lucide-react";
+import { ArrowLeft, Eye, Tag, Share2 } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
-import { auth } from "@/lib/auth";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
-import { LoginPromptModal } from "@/components/ui/LoginPromptModal";
-import { incrementViewCount, formatViewCount } from "@/lib/views";
-import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
-import { hasLiked } from "@/lib/likes";
+import { EbookAccessButtons } from "@/components/ebooks/EbookAccessButtons";
+import { ViewCounter } from "@/components/ui/ViewCounter";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl } from "@/lib/site";
+
+// Di-cache: isi halaman sama untuk semua pengunjung. Status login (tombol baca/unduh vs
+// prompt login, status suka) tidak lagi ditentukan di server render ini — dipindah ke
+// komponen client (EbookAccessButtons, EbookShareBar) yang membaca sesinya sendiri, karena
+// akses file yang sebenarnya sudah diperiksa ulang secara independen di
+// app/api/ebook/[id]/file/[filename]/route.ts (lihat catatan yang sama di
+// app/(public)/layout.tsx). Slug baru langsung tampil tanpa perlu revalidate (belum pernah
+// di-cache); slug yang diedit/dihapus di-invalidate lewat revalidatePath di app/admin/ebooks/page.tsx.
+
+// Array kosong: tidak ada slug yang di-generate saat build, tapi ini memberi tahu Next.js
+// bahwa segmen dinamis ini boleh dirender-lalu-di-cache per slug (lihat catatan yang sama di
+// app/(public)/[slug]/page.tsx).
+export async function generateStaticParams() {
+  return [];
+}
+
+// Jaring pengaman waktu, sama seperti /[slug] — lihat catatan di sana.
+export const revalidate = 3600;
 
 interface RelatedEbook {
   id: string;
@@ -104,18 +119,11 @@ export default async function EbookDetailPage({ params, searchParams }: { params
   const { slug } = await params;
   const { fileError } = await searchParams;
 
-  const [{ data: ebook }, session] = await Promise.all([
-    supabaseAdmin.from("Ebook").select("*").eq("slug", slug).single(),
-    auth(),
-  ]);
+  const { data: ebook } = await supabaseAdmin.from("Ebook").select("*").eq("slug", slug).single();
 
   if (!ebook) {
     notFound();
   }
-
-  // Tambah hitungan "dilihat" setiap kali halaman e-book diakses.
-  const updatedViews = await incrementViewCount("Ebook", ebook.id);
-  const viewCount = updatedViews ?? ebook.views ?? 0;
 
   const { data: sameGenre } = await supabaseAdmin
     .from("Ebook")
@@ -137,10 +145,6 @@ export default async function EbookDetailPage({ params, searchParams }: { params
     .limit(4);
 
   const others = othersData || [];
-
-  // Akun bersama untuk /informasi-akun sengaja diperlakukan seperti belum login di sini —
-  // aksesnya dibatasi hanya untuk melihat halaman itu, tidak untuk baca/unduh e-book.
-  const isLoggedIn = !!session?.user && !isProtectedAccountEmail(session.user.email);
 
   // File PDF ada di bucket "ebook-files" yang privat. Tombol baca/unduh di bawah tidak
   // pernah menaut langsung ke signed URL Supabase (itu kedaluwarsa dan berujung ke JSON
@@ -186,7 +190,7 @@ export default async function EbookDetailPage({ params, searchParams }: { params
       <JsonLd data={breadcrumbSchema} />
       {/* Header behind navbar */}
       <div className="bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 pb-10 relative overflow-hidden">
-        <div className="absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
+        <div className="hidden lg:block absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
         <div className="relative mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <Link
             href="/e-book"
@@ -231,52 +235,14 @@ export default async function EbookDetailPage({ params, searchParams }: { params
                   <Eye size={13} />
                   Dilihat
                 </p>
-                <p className="text-base font-bold text-zinc-800 dark:text-zinc-200 mt-1">{formatViewCount(viewCount)}x</p>
+                <p className="text-base font-bold text-zinc-800 dark:text-zinc-200 mt-1">
+                  <ViewCounter type="Ebook" id={ebook.id} initialViews={ebook.views ?? 0} />x
+                </p>
               </div>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              {ebook.pdfUrl ? (
-                isLoggedIn ? (
-                  <>
-                    <a
-                      href={fileHref}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 bg-red-600 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-red-700 transition-colors shadow-sm text-sm"
-                    >
-                      <Eye size={16} />
-                      Baca Online
-                    </a>
-                    <a
-                      href={downloadHref}
-                      className="inline-flex items-center gap-2 bg-slate-800 dark:bg-slate-700 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors shadow-sm text-sm"
-                    >
-                      <Download size={16} />
-                      Download PDF
-                    </a>
-                  </>
-                ) : (
-                  <>
-                    <LoginPromptModal
-                      loginHref={readLoginHref}
-                      triggerLabel="Baca Online"
-                      triggerIcon={<Eye size={16} />}
-                      triggerClassName="inline-flex items-center gap-2 bg-red-600 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-red-700 transition-colors shadow-sm text-sm"
-                    />
-                    <LoginPromptModal
-                      loginHref={downloadLoginHref}
-                      triggerLabel="Download PDF"
-                      triggerIcon={<Download size={16} />}
-                      triggerClassName="inline-flex items-center gap-2 bg-slate-800 dark:bg-slate-700 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors shadow-sm text-sm"
-                    />
-                  </>
-                )
-              ) : (
-                <div className="inline-flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-bold py-2.5 px-5 rounded-xl text-sm border border-slate-200 dark:border-white/5">
-                  File PDF belum tersedia
-                </div>
-              )}
+              <EbookAccessButtons hasPdf={!!ebook.pdfUrl} fileHref={fileHref} downloadHref={downloadHref} readLoginHref={readLoginHref} downloadLoginHref={downloadLoginHref} />
             </div>
 
             {fileError && (
@@ -320,8 +286,6 @@ export default async function EbookDetailPage({ params, searchParams }: { params
               authorOrPublisher={ebook.publisher || "PP KMHDI"}
               date={new Date(ebook.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
               description={ebook.description}
-              isLoggedIn={!!session?.user?.id}
-              initiallyLiked={await hasLiked(session?.user?.id, "ebook", ebook.id)}
             />
           </div>
         </div>

@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { Search, BookOpen } from "lucide-react";
-import { supabaseAdmin } from "@/lib/supabase";
-import { containsPattern } from "@/lib/search";
+import { getEbookListData } from "@/lib/queries";
 import { EbookCard } from "@/components/ebooks/EbookCard";
 import { EbookFilters } from "@/components/ebooks/EbookFilters";
 
-export const dynamic = "force-dynamic";
+// Halaman ini tetap render di server tiap kunjungan (searchParams membuatnya dinamis), tapi
+// query database-nya diambil lewat getEbookListData yang di-cache per kombinasi filter — lihat
+// catatan di lib/queries.ts.
 
 export const metadata: Metadata = {
   title: "Perpustakaan Digital e-Book",
@@ -32,32 +33,11 @@ export default async function BukuPage({ searchParams: searchParamsPromise }: Bu
   const searchParams = await searchParamsPromise;
   const query = searchParams?.q || "";
   const sortFilter = searchParams?.sort || "newest";
-  const genreFilter = searchParams?.genre ? (Array.isArray(searchParams.genre) ? searchParams.genre : [searchParams.genre]) : [];
+  // Diurutkan supaya "genre=A&genre=B" dan "genre=B&genre=A" berbagi entri cache yang sama di
+  // getEbookListData, bukan dianggap dua kombinasi filter berbeda.
+  const genreFilter = (searchParams?.genre ? (Array.isArray(searchParams.genre) ? searchParams.genre : [searchParams.genre]) : []).sort();
 
-  const { data: allEbooks } = await supabaseAdmin.from("Ebook").select("genre");
-  const genres = Array.from(new Set((allEbooks || []).map((e) => e.genre))).sort();
-
-  let dbQuery = supabaseAdmin.from("Ebook").select("*");
-
-  if (query) {
-    dbQuery = dbQuery.or(`title.ilike.${containsPattern(query)},description.ilike.${containsPattern(query)}`);
-  }
-
-  if (genreFilter.length > 0) {
-    dbQuery = dbQuery.in("genre", genreFilter);
-  }
-
-  if (sortFilter === "oldest") {
-    dbQuery = dbQuery.order("createdAt", { ascending: true });
-  } else if (sortFilter === "az") {
-    dbQuery = dbQuery.order("title", { ascending: true });
-  } else if (sortFilter === "za") {
-    dbQuery = dbQuery.order("title", { ascending: false });
-  } else {
-    dbQuery = dbQuery.order("createdAt", { ascending: false });
-  }
-
-  const { data: ebooks } = await dbQuery;
+  const { genres, ebooks } = await getEbookListData({ query, sortFilter, genreFilter });
 
   return (
     <div className="-mt-32 bg-white dark:bg-[#0a0a0c] transition-colors min-h-screen">

@@ -1,9 +1,14 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { EditUserModal } from "@/components/admin/EditUserModal";
+import dynamic from "next/dynamic";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { Mail, Calendar, Trash2 } from "lucide-react";
+
+// Dirender sekali per baris pengguna — dipisah ke chunk sendiri dan tanpa SSR (murni UI
+// interaktif yang baru relevan setelah tabel selesai dimuat) supaya tidak ikut memblokir
+// hydrasi tabel yang bisa berisi banyak baris sekaligus.
+const EditUserModal = dynamic(() => import("@/components/admin/EditUserModal").then((mod) => mod.EditUserModal), { ssr: false });
 
 type SortKey = "createdAt" | "name" | "jabatan" | "bidang";
 

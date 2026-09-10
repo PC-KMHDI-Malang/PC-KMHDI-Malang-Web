@@ -4,11 +4,13 @@ import { SafeImage } from "@/components/ui/SafeImage";
 import { revalidatePath } from "next/cache";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl } from "@/lib/storage";
-import { AddGalleryModal } from "@/components/admin/AddGalleryModal";
-import { EditGalleryModal } from "@/components/admin/EditGalleryModal";
+import dynamic from "next/dynamic";
+
+const AddGalleryModal = dynamic(() => import("@/components/admin/AddGalleryModal").then((mod) => mod.AddGalleryModal));
+const EditGalleryModal = dynamic(() => import("@/components/admin/EditGalleryModal").then((mod) => mod.EditGalleryModal));
 
 export default async function GalleryPage() {
-  const { data: gallery, error } = await supabaseAdmin.from("Gallery").select("*").order("createdAt", { ascending: false });
+  const { data: gallery, error } = await supabaseAdmin.from("Gallery").select("id, title, coverImage, description, createdAt").order("createdAt", { ascending: false });
 
   async function addGallery(formData: FormData) {
     "use server";
@@ -33,6 +35,7 @@ export default async function GalleryPage() {
 
     revalidatePath("/admin/gallery");
     revalidatePath("/");
+    revalidatePath("/galeri");
   }
 
   async function editGallery(formData: FormData) {
@@ -56,6 +59,7 @@ export default async function GalleryPage() {
 
     revalidatePath("/admin/gallery");
     revalidatePath("/");
+    revalidatePath("/galeri");
   }
 
   async function deleteGallery(formData: FormData) {
@@ -69,6 +73,7 @@ export default async function GalleryPage() {
     if (gal?.coverImage) await deleteFromBucketByUrl(STORAGE_BUCKETS.gallery, gal.coverImage);
     revalidatePath("/admin/gallery");
     revalidatePath("/");
+    revalidatePath("/galeri");
   }
 
   return (

@@ -8,9 +8,9 @@ export default function CTA() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-red-950 to-slate-950 py-24 md:py-32 lg:py-40">
       {/* Background Glow */}
-      <div className="absolute -left-20 top-0 h-80 w-80 rounded-full bg-red-600/20 blur-[100px] pointer-events-none" />
-      <div className="absolute right-0 bottom-0 h-72 w-72 rounded-full bg-rose-500/15 blur-[100px] pointer-events-none" />
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full bg-red-500/10 blur-[120px] pointer-events-none" />
+      <div className="hidden lg:block absolute -left-20 top-0 h-80 w-80 rounded-full bg-red-600/20 blur-[100px] pointer-events-none" />
+      <div className="hidden lg:block absolute right-0 bottom-0 h-72 w-72 rounded-full bg-rose-500/15 blur-[100px] pointer-events-none" />
+      <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full bg-red-500/10 blur-[120px] pointer-events-none" />
 
       <div className="relative mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
         <ScrollReveal direction="up" delay={0.1} scale={0.96} duration={0.8}>

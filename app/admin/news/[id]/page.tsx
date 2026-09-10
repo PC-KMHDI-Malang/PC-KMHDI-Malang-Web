@@ -89,6 +89,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
 
     revalidatePath("/admin/news");
     revalidatePath("/");
+    revalidatePath(`/${news.slug}`);
     redirect("/admin/news?updated=1");
   }
 

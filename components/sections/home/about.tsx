@@ -20,7 +20,7 @@ export default async function About() {
   return (
     <section id="tentang" className="relative overflow-hidden bg-white dark:bg-[#0c0c0e] py-16 md:py-24 lg:py-32 transition-colors duration-300">
       {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-red-500/5 blur-[120px] pointer-events-none" />
+      <div className="hidden lg:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-red-500/5 blur-[120px] pointer-events-none" />
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         <div className="grid items-center gap-16 lg:grid-cols-2">

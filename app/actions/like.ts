@@ -2,9 +2,29 @@
 
 import { supabaseAdmin } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
+import { hasLiked } from "@/lib/likes";
 import { errorMessage } from "@/lib/errors";
 
 type LikeTarget = "news" | "ebook";
+
+// Dipanggil dari client (EbookShareBar.tsx) setelah halaman artikel di-cache statis — server
+// component halaman itu sendiri tidak lagi memanggil auth()/hasLiked() sendiri, karena begitu
+// sesi ikut dibaca di server, Next.js menganggap seluruh halaman dinamis (lihat catatan yang
+// sama di app/(public)/layout.tsx).
+export async function getLikeStatusAction(type: LikeTarget, id: string): Promise<boolean> {
+  try {
+    if (type !== "news" && type !== "ebook") return false;
+    if (!id || typeof id !== "string") return false;
+
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return false;
+
+    return await hasLiked(userId, type, id);
+  } catch {
+    return false;
+  }
+}
 
 const TABLE_FOR: Record<LikeTarget, "News" | "Ebook"> = { news: "News", ebook: "Ebook" };
 

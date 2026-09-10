@@ -11,8 +11,8 @@ export default function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-red-900/20 bg-[#0b0b0f] text-white">
       {/* Background Glow */}
-      <div className="absolute left-0 top-0 h-72 w-72 rounded-full bg-red-700/10 blur-[140px]" />
-      <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-red-600/10 blur-[140px]" />
+      <div className="hidden lg:block absolute left-0 top-0 h-72 w-72 rounded-full bg-red-700/10 blur-[140px]" />
+      <div className="hidden lg:block absolute bottom-0 right-0 h-72 w-72 rounded-full bg-red-600/10 blur-[140px]" />
 
       <div className="relative mx-auto max-w-7xl px-6 py-20">
         {/* Grid */}

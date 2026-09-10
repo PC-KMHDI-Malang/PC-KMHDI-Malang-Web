@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { useHydrated } from "@/components/ui/useHydrated";
 import { Link2, Heart, Check, Share2 } from "lucide-react";
 import { SpotifyShareModal } from "./SpotifyShareModal";
@@ -16,12 +17,15 @@ interface EbookShareBarProps {
   authorOrPublisher?: string;
   date?: string;
   description?: string;
-  isLoggedIn?: boolean;
-  /** Dibaca server dari tabel Like, bukan dari localStorage browser. */
-  initiallyLiked?: boolean;
 }
 
-export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, categoryOrGenre, authorOrPublisher, date, description, isLoggedIn = false, initiallyLiked = false }: EbookShareBarProps) {
+export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, categoryOrGenre, authorOrPublisher, date, description }: EbookShareBarProps) {
+  // Status login & status suka dibaca di client (bukan lagi lewat prop server auth()/hasLiked())
+  // supaya halaman artikel yang membungkus komponen ini bisa di-cache — lihat catatan yang sama
+  // di app/(public)/layout.tsx dan Navbar.tsx.
+  const { status: sessionStatus } = useSession();
+  const isLoggedIn = sessionStatus === "authenticated";
+
   const [copied, setCopied] = useState(false);
   const [likesCount, setLikesCount] = useState(initialLikes);
   const [isPending, setIsPending] = useState(false);
@@ -31,8 +35,26 @@ export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, c
   const hydrated = useHydrated();
   const shareUrl = hydrated ? window.location.href : "";
 
-  const [liked, setLiked] = useState(initiallyLiked);
+  const [liked, setLiked] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+
+  // Baru dicek begitu kita tahu pengguna ini login — sebelum itu heart tampil kosong, sama
+  // seperti pengunjung tamu, lalu berubah ke terisi kalau ternyata dia sudah pernah menyukainya.
+  useEffect(() => {
+    if (!isLoggedIn || !type || !id) {
+      setLiked(false);
+      return;
+    }
+    let cancelled = false;
+    import("@/app/actions/like").then(({ getLikeStatusAction }) =>
+      getLikeStatusAction(type, id).then((res) => {
+        if (!cancelled) setLiked(res);
+      }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, type, id]);
 
   const handleCopy = async () => {
     try {
@@ -139,8 +161,8 @@ export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, c
         url={currentUrl}
       />
 
-      {/* Login di tempat: setelah berhasil, LoginModal memanggil router.refresh() sehingga
-          halaman dirender ulang dengan sesi baru dan tombol suka langsung bisa dipakai. */}
+      {/* Login di tempat: setelah berhasil, LoginModal reload penuh halaman ini, jadi
+          useSession() & pengecekan status suka di atas otomatis jalan ulang dengan sesi baru. */}
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </div>
   );

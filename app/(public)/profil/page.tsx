@@ -22,7 +22,9 @@ import {
   Palette,
 } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+// Di-cache: kontennya sama untuk semua pengunjung. Di-render ulang hanya saat admin
+// menambah/mengubah/menghapus data pengurus — lihat revalidatePath("/profil") di
+// app/admin/pengurus/page.tsx — bukan lagi di setiap kunjungan.
 
 // The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
 export const metadata: Metadata = {

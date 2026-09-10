@@ -4,10 +4,12 @@ import { SafeImage } from "@/components/ui/SafeImage";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl } from "@/lib/storage";
-import { AddPartnerModal } from "@/components/admin/AddPartnerModal";
-import { EditPartnerModal } from "@/components/admin/EditPartnerModal";
+import dynamic from "next/dynamic";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { Trash2, AlertCircle, Handshake, Globe, Instagram } from "lucide-react";
+
+const AddPartnerModal = dynamic(() => import("@/components/admin/AddPartnerModal").then((mod) => mod.AddPartnerModal));
+const EditPartnerModal = dynamic(() => import("@/components/admin/EditPartnerModal").then((mod) => mod.EditPartnerModal));
 
 // Terima "@username", "username", atau link profil lengkap — selalu disimpan sebagai URL utuh.
 function normalizeInstagramUrl(raw: string | null): string | null {

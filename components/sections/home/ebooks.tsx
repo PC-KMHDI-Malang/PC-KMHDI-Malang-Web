@@ -15,7 +15,7 @@ export default async function Ebooks() {
       className="relative overflow-hidden bg-gradient-to-b from-rose-50/50 via-red-50/20 to-rose-50/50 dark:from-[#16080b] dark:via-[#100406] dark:to-[#16080b] border-t border-b border-red-100/80 dark:border-red-950/60 py-20 md:py-28 transition-colors duration-300"
     >
       {/* Subtle Ambient Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-red-500/5 blur-[140px] pointer-events-none" />
+      <div className="hidden lg:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full bg-red-500/5 blur-[140px] pointer-events-none" />
 
       <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         <ScrollReveal direction="up" delay={0.1}>

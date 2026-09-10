@@ -3,7 +3,9 @@ import { Handshake, Globe, Instagram } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
 import { SafeImage } from "@/components/ui/SafeImage";
 
-export const dynamic = "force-dynamic";
+// Di-cache: kontennya sama untuk semua pengunjung. Di-render ulang hanya saat admin
+// menambah/mengubah/menghapus mitra — lihat revalidatePath("/mitra") di
+// app/admin/mitra/page.tsx — bukan lagi di setiap kunjungan.
 
 // The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
 export const metadata: Metadata = {
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MitraPage() {
-  const { data: partners } = await supabaseAdmin.from("Partner").select("*").order("orderIndex", { ascending: true });
+  const { data: partners } = await supabaseAdmin.from("Partner").select("id, name, logoUrl, instagramUrl, websiteUrl, orderIndex").order("orderIndex", { ascending: true });
   const items = partners || [];
 
   return (

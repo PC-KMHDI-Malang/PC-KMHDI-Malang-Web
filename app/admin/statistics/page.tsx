@@ -3,9 +3,11 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getIcon } from "@/lib/iconMap";
-import { EditStatModal } from "@/components/admin/EditStatModal";
-import { EditHeroCaptionModal } from "@/components/admin/EditHeroCaptionModal";
+import dynamic from "next/dynamic";
 import { AlertCircle, BarChart3, CalendarDays, Users, Building2, ClipboardList, History } from "lucide-react";
+
+const EditStatModal = dynamic(() => import("@/components/admin/EditStatModal").then((mod) => mod.EditStatModal));
+const EditHeroCaptionModal = dynamic(() => import("@/components/admin/EditHeroCaptionModal").then((mod) => mod.EditHeroCaptionModal));
 
 // Field caption Hero & strip statistik "Tentang" cuma dikirim satu per submit (satu modal = satu
 // field), jadi cukup daftarkan semuanya di sini lalu ambil yang benar-benar ada di formData —
