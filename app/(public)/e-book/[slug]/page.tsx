@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ArrowLeft, Eye, Tag, Share2 } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
 import { EbookAccessButtons } from "@/components/ebooks/EbookAccessButtons";
+import { EbookFileErrorNotice } from "@/components/ebooks/EbookFileErrorNotice";
 import { ViewCounter } from "@/components/ui/ViewCounter";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl } from "@/lib/site";
@@ -115,9 +117,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function EbookDetailPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ fileError?: string }> }) {
+export default async function EbookDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { fileError } = await searchParams;
 
   const { data: ebook } = await supabaseAdmin.from("Ebook").select("*").eq("slug", slug).single();
 
@@ -245,11 +246,9 @@ export default async function EbookDetailPage({ params, searchParams }: { params
               <EbookAccessButtons hasPdf={!!ebook.pdfUrl} fileHref={fileHref} downloadHref={downloadHref} readLoginHref={readLoginHref} downloadLoginHref={downloadLoginHref} />
             </div>
 
-            {fileError && (
-              <p className="mt-3 text-sm font-semibold text-amber-600 dark:text-amber-400">
-                File PDF tidak bisa dibuka saat ini. Silakan coba lagi beberapa saat lagi.
-              </p>
-            )}
+            <Suspense fallback={null}>
+              <EbookFileErrorNotice />
+            </Suspense>
 
             <div className="mt-10">
               <div className="flex items-center gap-6 border-b border-neutral-200 dark:border-white/10">
