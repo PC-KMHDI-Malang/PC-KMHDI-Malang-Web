@@ -36,7 +36,9 @@ export default async function GaleriPage() {
   // Fallback / gabungan dari foto lokal jika galeri database masih sedikit
   const localItems: GalleryItem[] = galleryData.images.map((img, idx) => ({
     id: `local-${idx + 1}`,
-    title: ["Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Dharma Bhakti XXXVII", "Dharma Bhakti XXXVII"][idx] || `Dokumentasi Kegiatan ${idx + 1}`,
+    title:
+      ["Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Sabha PC KMHDI Malang", "Dharma Bhakti XXXVII", "Dharma Bhakti XXXVII"][idx] ||
+      `Dokumentasi Kegiatan ${idx + 1}`,
     coverImage: img,
     description: "Momen kebersamaan dan dinamika perjuangan kader PC KMHDI Malang.",
     createdAt: new Date("2026-08-25T10:00:00.000Z").toISOString(),
