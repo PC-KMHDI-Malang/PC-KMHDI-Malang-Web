@@ -31,31 +31,13 @@ export default function Footer() {
 
             {/* Social */}
             <div className="mt-8 flex gap-4">
-              <Link
-                href={siteConfig.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram PC KMHDI Malang"
-                className="rounded-full bg-white/5 p-3 transition hover:bg-red-600"
-              >
+              <Link href={siteConfig.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram PC KMHDI Malang" className="rounded-full bg-white/5 p-3 transition hover:bg-red-600">
                 <FaInstagram size={18} />
               </Link>
-              <Link
-                href="https://web.facebook.com/kmhdi/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook KMHDI"
-                className="rounded-full bg-white/5 p-3 transition hover:bg-red-600"
-              >
+              <Link href="https://web.facebook.com/kmhdi/" target="_blank" rel="noopener noreferrer" aria-label="Facebook KMHDI" className="rounded-full bg-white/5 p-3 transition hover:bg-red-600">
                 <FaFacebook size={18} />
               </Link>
-              <Link
-                href="https://www.youtube.com/@KMHDIPusat"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="YouTube KMHDI"
-                className="rounded-full bg-white/5 p-3 transition hover:bg-red-600"
-              >
+              <Link href="https://www.youtube.com/@KMHDIPusat" target="_blank" rel="noopener noreferrer" aria-label="YouTube KMHDI" className="rounded-full bg-white/5 p-3 transition hover:bg-red-600">
                 <FaYoutube size={18} />
               </Link>
             </div>
@@ -161,7 +143,7 @@ export default function Footer() {
             <p>
               © {new Date().getFullYear()} PC KMHDI Malang. All Rights Reserved. <br />
               Created by{" "}
-              <Link href="https://www.instagram.com/pujarajisthaa_aw" className="text-zinc-300 hover:underline">
+              <Link href="https://www.rajistha.my.id/" className="text-zinc-300 hover:underline">
                 Rajistha
               </Link>
             </p>

@@ -152,9 +152,11 @@ export function SpotifyShareModal({ isOpen, onClose, title, type, coverImage, ca
   const handleWhatsApp = () => {
     // Kartu preview WhatsApp (og:title) sering tidak muncul di semua device/klien, jadi
     // jenis kontennya ditulis eksplisit di baris paling atas dan judul selalu disertakan
-    // di teks pesan, bukan cuma mengandalkan preview link.
-    const label = type === "ebook" ? "📚 E-Book" : "📰 Berita";
-    const lines = [label, title];
+    // di teks pesan, bukan cuma mengandalkan preview link. Jenisnya memakai kategori/genre
+    // yang sebenarnya terpilih pada konten (bukan label generik "Berita"/"E-Book"), dan
+    // judul ditebalkan dengan sintaks WhatsApp (*teks*).
+    const label = categoryOrGenre ? `[${categoryOrGenre}]` : type === "ebook" ? "[E-Book]" : "[Berita]";
+    const lines = [label, `*${title}*`];
     if (description) lines.push(description);
     lines.push(`🔗 Baca Selengkapnya di:\n${url}`);
     const waText = encodeURIComponent(lines.join("\n\n"));
