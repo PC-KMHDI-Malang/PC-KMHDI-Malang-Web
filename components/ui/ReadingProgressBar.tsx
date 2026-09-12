@@ -4,13 +4,19 @@ import { useEffect, useState } from "react";
 
 // z-[80]: harus di atas <header> Navbar (z-[70]) supaya bar ini benar-benar terlihat
 // menempel di atas navbar, bukan ketiban olehnya, saat sama-sama fixed di top-0.
-export function ReadingProgressBar() {
+//
+// targetSelector: elemen yang jadi acuan akhir progress (mis. bungkus <article>).
+// Tanpa ini progress dihitung dari scrollHeight seluruh dokumen, sehingga bar baru
+// penuh setelah footer ikut ter-scroll lewat, bukan saat isi beritanya habis.
+export function ReadingProgressBar({ targetSelector }: { targetSelector?: string } = {}) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    const target = targetSelector ? document.querySelector(targetSelector) : null;
+
     const handleScroll = () => {
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const percent = scrollHeight > 0 ? (window.scrollY / scrollHeight) * 100 : 0;
+      const endY = target ? target.getBoundingClientRect().bottom + window.scrollY - window.innerHeight : document.documentElement.scrollHeight - window.innerHeight;
+      const percent = endY > 0 ? (window.scrollY / endY) * 100 : 0;
       setProgress(Math.min(100, Math.max(0, percent)));
     };
 
@@ -22,7 +28,7 @@ export function ReadingProgressBar() {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
     };
-  }, []);
+  }, [targetSelector]);
 
   return (
     <div className="fixed left-0 top-0 z-[80] h-1 w-full bg-transparent">

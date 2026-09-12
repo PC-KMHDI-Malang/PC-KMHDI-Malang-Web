@@ -142,7 +142,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
     <article className="-mt-32 bg-white dark:bg-[#121212] transition-colors min-h-screen">
       <JsonLd data={articleSchema} />
       <JsonLd data={breadcrumbSchema} />
-      <ReadingProgressBar />
+      <ReadingProgressBar targetSelector="#berita-content" />
       {/* Red header behind navbar */}
       <div className="bg-gradient-to-br from-red-800 via-red-900 to-red-950 pt-44 pb-10 relative overflow-hidden">
         <div className="hidden lg:block absolute left-0 top-0 h-50 w-50 rounded-full bg-red-500/20 blur-[180px]" />
@@ -215,7 +215,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
         </div>
 
         {/* Tag & Share Section */}
-        <div className="mt-12 pt-8 border-t border-slate-100 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div id="berita-content" className="mt-12 pt-8 border-t border-slate-100 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
             <p className="text-sm font-semibold text-slate-500 dark:text-neutral-400 mb-2">Kategori :</p>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300 rounded-full text-xs font-semibold">
