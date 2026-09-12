@@ -26,6 +26,7 @@ interface SpotifyShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
+  type?: "news" | "ebook";
   coverImage?: string;
   categoryOrGenre?: string;
   authorOrPublisher?: string;
@@ -34,7 +35,7 @@ interface SpotifyShareModalProps {
   url: string;
 }
 
-export function SpotifyShareModal({ isOpen, onClose, title, coverImage, categoryOrGenre = "KMHDI", authorOrPublisher = "PC KMHDI Malang", date, description, url }: SpotifyShareModalProps) {
+export function SpotifyShareModal({ isOpen, onClose, title, type, coverImage, categoryOrGenre = "KMHDI", authorOrPublisher = "PC KMHDI Malang", date, description, url }: SpotifyShareModalProps) {
   const [cardBlob, setCardBlob] = useState<Blob | null>(null);
   const [cardPreviewUrl, setCardPreviewUrl] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(true);
@@ -149,10 +150,14 @@ export function SpotifyShareModal({ isOpen, onClose, title, coverImage, category
 
   // 3. Action: WhatsApp
   const handleWhatsApp = () => {
-    // Judul tidak perlu diulang di teks pesan — begitu tautannya dikirim, WhatsApp otomatis
-    // menampilkan kartu preview dengan judul tebal (dari og:title) di atas pesan ini sendiri.
-    const message = description ? `${description}\n\n🔗 Baca Selengkapnya di:\n${url}` : `${title}\n\n${url}`;
-    const waText = encodeURIComponent(message);
+    // Kartu preview WhatsApp (og:title) sering tidak muncul di semua device/klien, jadi
+    // jenis kontennya ditulis eksplisit di baris paling atas dan judul selalu disertakan
+    // di teks pesan, bukan cuma mengandalkan preview link.
+    const label = type === "ebook" ? "📚 E-Book" : "📰 Berita";
+    const lines = [label, title];
+    if (description) lines.push(description);
+    lines.push(`🔗 Baca Selengkapnya di:\n${url}`);
+    const waText = encodeURIComponent(lines.join("\n\n"));
     window.open(`https://api.whatsapp.com/send?text=${waText}`, "_blank");
   };
 

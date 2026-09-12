@@ -153,6 +153,7 @@ export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, c
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         title={title}
+        type={type}
         coverImage={coverImage}
         categoryOrGenre={categoryOrGenre}
         authorOrPublisher={authorOrPublisher}
