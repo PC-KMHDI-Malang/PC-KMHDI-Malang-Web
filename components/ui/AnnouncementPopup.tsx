@@ -57,7 +57,7 @@ export function AnnouncementPopup({ imageUrl, linkUrl, isActive }: AnnouncementP
     <img
       src={imageUrl}
       alt="Pengumuman"
-      className="block w-full h-auto rounded-2xl shadow-2xl"
+      className="block max-w-full max-h-[85vh] w-auto h-auto mx-auto rounded-2xl shadow-2xl object-contain"
       decoding="async"
       // @ts-expect-error fetchPriority belum ada di tipe JSX.IntrinsicElements React versi ini,
       // tapi atributnya didukung browser modern — turunkan prioritasnya di bawah gambar-gambar

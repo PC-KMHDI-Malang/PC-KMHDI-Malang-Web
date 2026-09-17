@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { MIN_PASSWORD_LENGTH, PASSWORD_RULE_TEXT } from "@/lib/password";
@@ -10,14 +11,29 @@ import { toast } from "sonner";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
 interface AddUserModalProps {
+  action: (formData: FormData) => void;
   action: (formData: FormData) => Promise<{ error?: string; success?: boolean; message?: string }>;
 }
 
 export function AddUserModal({ action }: AddUserModalProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isRendered, setIsRendered] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const { isRendered, isVisible } = useModalTransition(isOpen);
   const [showPassword, setShowPassword] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => setIsRendered(true), 0);
+      setTimeout(() => setIsVisible(true), 10);
+      document.body.style.overflow = "hidden";
+    } else {
+      setIsVisible(false);
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+        document.body.style.overflow = "unset";
+      }, 300);
+      return () => clearTimeout(timer);
 
 
   const handleFormAction = async (formData: FormData) => {
@@ -28,6 +44,13 @@ export function AddUserModal({ action }: AddUserModalProps) {
       toast.success(result.message);
       setIsOpen(false);
     }
+  }, [isOpen]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    action(formData);
+    setIsOpen(false);
   };
 
   return (
@@ -48,6 +71,7 @@ export function AddUserModal({ action }: AddUserModalProps) {
 
             {/* Modal Card */}
             <div
+              className={`relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-8 transform transition-all duration-300 border border-slate-200 dark:border-white/10 ${
               className={`relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-8 transform transition-all duration-300 border border-slate-100 dark:border-white/5 ${
                 isVisible ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-4"
               }`}
@@ -67,6 +91,7 @@ export function AddUserModal({ action }: AddUserModalProps) {
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Daftarkan akun administrator atau anggota sistem.</p>
               </div>
 
+              <form onSubmit={handleSubmit} className="space-y-5">
               <form action={handleFormAction} className="space-y-5">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Nama Lengkap</label>
@@ -74,6 +99,7 @@ export function AddUserModal({ action }: AddUserModalProps) {
                     type="text"
                     name="name"
                     required
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     placeholder="John Doe"
                   />
@@ -85,6 +111,7 @@ export function AddUserModal({ action }: AddUserModalProps) {
                     type="email"
                     name="email"
                     required
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     placeholder="john@example.com"
                   />
@@ -97,6 +124,8 @@ export function AddUserModal({ action }: AddUserModalProps) {
                       type={showPassword ? "text" : "password"}
                       name="password"
                       required
+                      className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 pr-12 outline-none transition-all"
+                      minLength={6}
                       className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 pr-12 outline-none transition-all"
                       minLength={MIN_PASSWORD_LENGTH}
                       placeholder="Minimal 6 karakter"
@@ -118,6 +147,7 @@ export function AddUserModal({ action }: AddUserModalProps) {
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Role (Hak Akses)</label>
                   <select
                     name="role"
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                   >
                     <option value="USER">User Biasa</option>
@@ -130,6 +160,7 @@ export function AddUserModal({ action }: AddUserModalProps) {
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Jabatan (Opsional)</label>
                   <select
                     name="jabatan"
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                   >
                     <option value="">-- Pilih Jabatan --</option>
@@ -149,6 +180,7 @@ export function AddUserModal({ action }: AddUserModalProps) {
                   <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Bidang (Opsional)</label>
                   <select
                     name="bidang"
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                   >
                     <option value="">-- Pilih Bidang --</option>
@@ -156,6 +188,7 @@ export function AddUserModal({ action }: AddUserModalProps) {
                     <option value="Kaderisasi">Kaderisasi</option>
                     <option value="Data dan Informasi">Data dan Informasi</option>
                     <option value="Sosial Masyarakat">Sosial Masyarakat</option>
+                    <option value="Kajian dan Isu">Kajian dan Isu</option>
                     <option value="Litbang">Litbang</option>
                     <option value="Hubungan Masyarakat">Hubungan Masyarakat</option>
                     <option value="Tidak Ada">Tidak Ada</option>
@@ -170,8 +203,10 @@ export function AddUserModal({ action }: AddUserModalProps) {
                   >
                     Batal
                   </button>
+                  <button type="submit" className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm">
                   <SubmitButton variant="destructive" className="px-5 py-2.5">
                     Daftarkan Akun
+                  </button>
                   </SubmitButton>
                 </div>
               </form>

@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { STORAGE_BUCKETS, uploadToBucket, deleteFromBucketByUrl, getBucketUsage } from "@/lib/storage";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml } from "@/lib/storage";
 import { ImagePicker } from "@/components/ui/ImagePicker";
 
@@ -24,6 +25,9 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
     return <div className="p-8 text-center text-red-500">Artikel tidak ditemukan</div>;
   }
 
+  const usage = await getBucketUsage(STORAGE_BUCKETS.news);
+  const articleImagesUsage = await getBucketUsage(STORAGE_BUCKETS.articleImages);
+
   async function editNews(formData: FormData) {
     "use server";
     const title = formData.get("title") as string;
@@ -33,6 +37,8 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
     const authorName = (formData.get("authorName") as string)?.trim() || null;
     const categoryName = (formData.get("categoryName") as string)?.trim();
 
+    const authSession = await auth();
+    if (!authSession?.user?.id) throw new Error("Unauthorized");
     // Sebelumnya cuma memeriksa "ada user yang login" — artinya kader biasa (role ANGGOTA)
     // pun bisa menyunting artikel mana pun lewat action ini.
     await requireAdminPanel();
@@ -44,6 +50,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
         .toLowerCase()
         .replace(/ /g, "-")
         .replace(/[^\w-]+/g, "");
+      let { data: existingCat, error: findError } = await supabaseAdmin.from("Category").select("id").eq("slug", catSlug).maybeSingle();
       const { data: existingCat, error: findError } = await supabaseAdmin.from("Category").select("id").eq("slug", catSlug).maybeSingle();
 
       if (findError) console.error("Error finding category:", findError);
@@ -89,6 +96,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
 
     revalidatePath("/admin/news");
     revalidatePath("/");
+    redirect("/admin/news");
     revalidatePath(`/${news.slug}`);
     redirect("/admin/news?updated=1");
   }
@@ -135,10 +143,12 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Isi Artikel Lengkap</label>
+            <RichTextEditor name="content" defaultValue={news.content || ""} usedBytes={articleImagesUsage.usedBytes} />
             <RichTextEditor name="content" defaultValue={news.content || ""} />
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Gambar Cover</label>
+            <ImagePicker bucket={STORAGE_BUCKETS.news} defaultImageUrl={news.coverImage || ""} usedBytes={usage.usedBytes} />
             <ImagePicker bucket={STORAGE_BUCKETS.news} defaultImageUrl={news.coverImage || ""} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -155,8 +165,13 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
           <div className="pt-2 flex gap-4">
+            <button
+              type="submit"
+              className="bg-blue-600 dark:bg-blue-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-blue-700 dark:hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/30 dark:hover:shadow-blue-900/30 transition-all duration-300"
+            >
             <SubmitButton variant="primary" className="px-8 py-3">
               Simpan Perubahan
+            </button>
             </SubmitButton>
           </div>
         </form>

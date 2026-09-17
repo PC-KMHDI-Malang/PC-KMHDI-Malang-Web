@@ -3,7 +3,9 @@ import { errorMessage } from "@/lib/errors";
 import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
+import { AddUserModal } from "@/components/admin/AddUserModal";
 import { isPasswordLongEnough, PASSWORD_RULE_TEXT } from "@/lib/password";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
 import dynamic from "next/dynamic";
@@ -27,6 +29,12 @@ export default async function UsersPage() {
 
   async function addUser(formData: FormData) {
     "use server";
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const role = formData.get("role") as string;
+    const jabatan = (formData.get("jabatan") as string) || null;
+    const bidang = (formData.get("bidang") as string) || null;
     await requireAdmin();
     try {
       const name = formData.get("name") as string;
@@ -36,17 +44,22 @@ export default async function UsersPage() {
       const jabatan = (formData.get("jabatan") as string) || null;
       const bidang = (formData.get("bidang") as string) || null;
 
+    if (!name || !email || !password || !role) return;
       if (!name || !email || !password || !role) {
         return { error: "Semua kolom wajib diisi" };
       }
 
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
       if (!isPasswordLongEnough(password)) {
         return { error: PASSWORD_RULE_TEXT };
       }
 
+    await supabaseAdmin.from("User").insert([{ name, email, password: hashedPassword, role, jabatan, bidang }]);
       const hashedPassword = await bcrypt.hash(password, 10);
       const { error } = await supabaseAdmin.from("User").insert([{ name, email, password: hashedPassword, role, jabatan, bidang }]);
 
+    revalidatePath("/admin/users");
       if (error) throw error;
 
       revalidatePath("/admin/users");
@@ -58,6 +71,13 @@ export default async function UsersPage() {
 
   async function editUser(formData: FormData) {
     "use server";
+    const id = formData.get("id") as string;
+    const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const role = formData.get("role") as string;
+    const jabatan = (formData.get("jabatan") as string) || null;
+    const bidang = (formData.get("bidang") as string) || null;
     await requireAdmin();
     try {
       const id = formData.get("id") as string;
@@ -68,8 +88,12 @@ export default async function UsersPage() {
       const jabatan = (formData.get("jabatan") as string) || null;
       const bidang = (formData.get("bidang") as string) || null;
 
+    if (!id || !name || !email || !role) return;
       if (!id || !name || !email || !role) return { error: "Kolom wajib belum diisi" };
 
+    const updateData: any = { name, email, role, jabatan, bidang };
+    if (password && password.trim().length >= 6) {
+      updateData.password = await bcrypt.hash(password, 10);
       const { data: target } = await supabaseAdmin.from("User").select("email, role").eq("id", id).maybeSingle();
       if (!target) return { error: "Pengguna tidak ditemukan." };
 
@@ -98,15 +122,22 @@ export default async function UsersPage() {
     } catch (err: unknown) {
       return { error: errorMessage(err, "Gagal memperbarui pengguna") };
     }
+
+    await supabaseAdmin.from("User").update(updateData).eq("id", id);
+    revalidatePath("/admin/users");
   }
 
   async function deleteUser(formData: FormData) {
     "use server";
+    const id = formData.get("id") as string;
+    if (!id) return;
     const authSession = await requireAdmin();
     try {
       const id = formData.get("id") as string;
       if (!id) return { error: "ID tidak ditemukan" };
 
+    await supabaseAdmin.from("User").delete().eq("id", id);
+    revalidatePath("/admin/users");
       if (id === authSession.user.id) {
         return { error: "Anda tidak bisa menghapus akun Anda sendiri." };
       }

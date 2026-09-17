@@ -4,9 +4,13 @@ import { containsPattern } from "@/lib/search";
 import { SafeImage } from "@/components/ui/SafeImage";
 import { revalidatePath } from "next/cache";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
+import { StorageUsage } from "@/components/admin/StorageUsage";
+import { STORAGE_BUCKETS, BUCKET_QUOTA_BYTES, uploadToBucket, deleteFromBucketByUrl, getBucketUsage, listBucketFiles } from "@/lib/storage";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml } from "@/lib/storage";
 import { generateUniqueNewsSlug } from "@/lib/slug";
 import Link from "next/link";
+import { ImagePicker } from "@/components/ui/ImagePicker";
+import { AddNewsModal } from "@/components/admin/AddNewsModal";
 import dynamic from "next/dynamic";
 import { RedirectToast } from "@/components/admin/RedirectToast";
 import { Pagination } from "@/components/ui/Pagination";
@@ -15,6 +19,7 @@ import { requireAdminPanel } from "@/lib/guard";
 import { errorMessage } from "@/lib/errors";
 import { NEWS_CARD_COLUMNS, type NewsCard } from "@/lib/queries";
 
+export default async function NewsAdminPage() {
 // Dipisah ke chunk sendiri: AddNewsModal membawa RichTextEditor (toolbar + upload gambar
 // lengkap), jauh lebih berat dari tombol "Tambah Berita" yang memicunya — chunk itu baru
 // diambil browser saat komponennya benar-benar dirender, bukan ikut bundle awal halaman ini.
@@ -29,6 +34,7 @@ interface NewsAdminPageProps {
 export default async function NewsAdminPage({ searchParams: searchParamsPromise }: NewsAdminPageProps) {
   const session = await auth();
 
+  const { data: news, error } = await supabaseAdmin.from("News").select("*, Category(name), author:User!authorId(name)").order("createdAt", { ascending: false });
   if (!isAdminPanelRole(session?.user?.role)) {
     return (
       <div className="p-8">
@@ -51,6 +57,8 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
   const { data: categories } = await supabaseAdmin.from("Category").select("id, name").order("name");
   const matchingCategory = categoryFilter !== "Semua" ? categories?.find((c) => c.name === categoryFilter) : null;
 
+  const usage = await getBucketUsage(STORAGE_BUCKETS.news);
+  const articleImagesUsage = await getBucketUsage(STORAGE_BUCKETS.articleImages);
   let newsQuery = supabaseAdmin.from("News").select(NEWS_CARD_COLUMNS, { count: "exact" });
 
   if (query) {
@@ -76,11 +84,19 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
 
   async function addNews(formData: FormData) {
     "use server";
+    const title = formData.get("title") as string;
+    const excerpt = formData.get("excerpt") as string;
+    const content = formData.get("content") as string;
+    const coverImageUrl = formData.get("coverImageUrl") as string | null;
+    const authorName = (formData.get("authorName") as string)?.trim() || null;
+    const categoryName = (formData.get("categoryName") as string)?.trim() || "Umum";
     try {
       // Dicek paling awal: sebelumnya pemeriksaan role baru dilakukan setelah blok pembuatan
       // Category di bawah, jadi request tak berwenang masih bisa menyisipkan baris Category.
       const authSession = await requireAdminPanel();
 
+    if (!coverImageUrl) return; // Required cover image
+    const coverImage = coverImageUrl;
       const title = formData.get("title") as string;
       const excerpt = formData.get("excerpt") as string;
       const content = formData.get("content") as string;
@@ -88,6 +104,8 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
       const authorName = (formData.get("authorName") as string)?.trim() || null;
       const categoryName = (formData.get("categoryName") as string)?.trim() || "Umum";
 
+    const slug =
+      title
       if (!coverImageUrl) return { error: "Gambar cover wajib diisi." };
       const coverImage = coverImageUrl;
 
@@ -96,14 +114,25 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
       const catSlug = categoryName
         .toLowerCase()
         .replace(/ /g, "-")
+        .replace(/[^\w-]+/g, "") +
+      "-" +
+      Date.now();
         .replace(/[^\w-]+/g, "");
 
+    const catSlug = categoryName
+      .toLowerCase()
+      .replace(/ /g, "-")
+      .replace(/[^\w-]+/g, "");
       // Check if category exists
       const { data: existingCat, error: findError } = await supabaseAdmin.from("Category").select("id").eq("slug", catSlug).maybeSingle();
       let finalCategoryId;
 
+    // Check if category exists
+    let { data: existingCat, error: findError } = await supabaseAdmin.from("Category").select("id").eq("slug", catSlug).maybeSingle();
+    let finalCategoryId;
       if (findError) console.error("Error finding category:", findError);
 
+    if (findError) console.error("Error finding category:", findError);
       if (existingCat) {
         finalCategoryId = existingCat.id;
       } else {
@@ -116,6 +145,17 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
         if (newCat) finalCategoryId = newCat.id;
       }
 
+    if (existingCat) {
+      finalCategoryId = existingCat.id;
+    } else {
+      const { data: newCat, error: insertCatError } = await supabaseAdmin
+        .from("Category")
+        .insert([{ name: categoryName, slug: catSlug }])
+        .select()
+        .single();
+      if (insertCatError) console.error("Error inserting category:", insertCatError);
+      if (newCat) finalCategoryId = newCat.id;
+    }
       const { error: insertNewsError } = await supabaseAdmin.from("News").insert([
         {
           title,
@@ -130,23 +170,52 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
         },
       ]);
 
+    const authSession = await auth();
+    if (!authSession?.user?.id) throw new Error("Unauthorized");
       if (insertNewsError) throw insertNewsError;
 
+    const { error: insertNewsError } = await supabaseAdmin.from("News").insert([
+      {
+        title,
+        slug,
+        excerpt,
+        content,
+        coverImage,
+        status: "PUBLISHED",
+        authorId: authSession.user.id,
+        authorName: authorName || authSession.user.name || "Admin",
+        categoryId: finalCategoryId,
+      },
+    ]);
+
+    if (insertNewsError) {
+      console.error("Failed to add news:", insertNewsError);
+      throw new Error(`Failed to add news: ${insertNewsError.message}`);
       revalidatePath("/admin/news");
       revalidatePath("/");
       return { success: true, message: "Artikel berhasil diterbitkan!" };
     } catch (err: unknown) {
       return { error: errorMessage(err, "Gagal menerbitkan artikel.") };
     }
+
+    revalidatePath("/admin/news");
+    revalidatePath("/");
   }
 
   async function deleteNews(formData: FormData) {
     "use server";
+    const id = formData.get("id") as string;
+    if (!id) return;
     try {
       await requireAdminPanel();
       const id = formData.get("id") as string;
       if (!id) return { error: "ID tidak ditemukan" };
 
+    const { data: article } = await supabaseAdmin.from("News").select("coverImage").eq("id", id).single();
+    await supabaseAdmin.from("News").delete().eq("id", id);
+    if (article?.coverImage) await deleteFromBucketByUrl(STORAGE_BUCKETS.news, article.coverImage);
+    revalidatePath("/admin/news");
+    revalidatePath("/");
       const { data: article } = await supabaseAdmin.from("News").select("slug, coverImage, content").eq("id", id).maybeSingle();
       const { error } = await supabaseAdmin.from("News").delete().eq("id", id);
       if (error) throw error;
@@ -176,10 +245,17 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2 transition-colors">Manajemen Artikel</h1>
           <p className="text-slate-500 dark:text-slate-400 text-lg transition-colors">Kelola artikel dan berita yang akan ditampilkan di halaman utama.</p>
         </div>
+        <AddNewsModal action={addNews} usedBytes={usage.usedBytes} articleImagesUsedBytes={articleImagesUsage.usedBytes} />
         <AddNewsModal action={addNews} />
       </div>
 
       <div className="bg-white dark:bg-[#111114] p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl shadow-lg border border-slate-200/80 dark:border-white/10 transition-colors">
+        <div className="flex items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-slate-100 dark:border-white/5">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <span className="w-2 h-6 bg-slate-800 dark:bg-slate-300 rounded-full inline-block"></span>
+            Daftar Artikel
+          </h2>
+          <span className="px-3 py-1 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 rounded-full text-sm font-semibold">{news?.length || 0} Diterbitkan</span>
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 sm:mb-8 pb-4 border-b border-slate-100 dark:border-white/5 gap-4">
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -236,6 +312,7 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
               className="group border border-slate-100 dark:border-white/5 rounded-2xl overflow-hidden flex flex-col md:flex-row bg-white dark:bg-[#111114] hover:shadow-xl dark:hover:shadow-black/50 hover:-translate-y-1 transition-all duration-300"
             >
               <div className="w-full md:w-64 h-48 md:h-auto relative overflow-hidden bg-slate-100 dark:bg-white/5">
+                <img src={n.coverImage} alt={n.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <SafeImage src={n.coverImage} alt={n.title} fill sizes="(max-width: 768px) 100vw, 256px" className="object-cover group-hover:scale-105 transition-transform duration-500" />
               </div>
               <div className="p-4 sm:p-6 flex-1 flex flex-col justify-center">
@@ -284,6 +361,7 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
                   <path d="M19 20H5V4h14v16zM7 16h10v-2H7v2zm0-4h10v-2H7v2zm0-4h10V6H7v2z"></path>
                 </svg>
               </div>
+              <p className="text-lg">Belum ada artikel dipublikasikan.</p>
               <p className="text-lg">{query ? `Tidak ada artikel yang cocok dengan "${query}".` : "Belum ada artikel dipublikasikan."}</p>
             </div>
           )}

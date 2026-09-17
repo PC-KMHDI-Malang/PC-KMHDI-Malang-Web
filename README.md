@@ -13,7 +13,7 @@ pusat informasi, publikasi, perpustakaan digital, dan dokumentasi kegiatan mahas
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
 
-**[Lihat Website →](https://pc-kmhdi-malang-web.vercel.app)**
+**[Lihat Website →](https://www.kmhdimalang.org)**
 
 </div>
 
@@ -23,12 +23,8 @@ pusat informasi, publikasi, perpustakaan digital, dan dokumentasi kegiatan mahas
 
 - [Fitur](#fitur)
 - [Teknologi](#teknologi)
-- [Memulai](#memulai)
-- [Menyiapkan Database & Storage](#menyiapkan-database--storage)
 - [Struktur Proyek](#struktur-proyek)
 - [Daftar Halaman](#daftar-halaman)
-- [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -50,11 +46,11 @@ pusat informasi, publikasi, perpustakaan digital, dan dokumentasi kegiatan mahas
 
 Panel admin terlindungi autentikasi dengan tiga peran:
 
-| Peran          | Akses                                                                             |
-| -------------- | --------------------------------------------------------------------------------- |
-| `ADMIN`        | Seluruh panel admin                                                               |
-| `KONTRIBUTOR`  | Hanya Beranda admin, Artikel, dan e-Book                                          |
-| `USER`         | Tidak masuk panel admin — hanya halaman profil kader                              |
+| Peran         | Akses                                                |
+| ------------- | ---------------------------------------------------- |
+| `ADMIN`       | Seluruh panel admin                                  |
+| `KONTRIBUTOR` | Hanya Beranda admin, Artikel, dan e-Book             |
+| `USER`        | Tidak masuk panel admin — hanya halaman profil kader |
 
 - **Manajemen Artikel** — tulis, edit, publikasikan, atau simpan sebagai draf
 - **Manajemen e-Book** — unggah sampul dan berkas PDF, atur genre, penerbit, tahun terbit
@@ -87,47 +83,6 @@ Panel admin terlindungi autentikasi dengan tiga peran:
 | Autentikasi        | [NextAuth.js v5](https://authjs.dev) (Credentials + bcrypt)                                       |
 | Tema               | [next-themes](https://github.com/pacocoursey/next-themes)                                         |
 | Hosting            | [Vercel](https://vercel.com)                                                                      |
-
----
-
-## Memulai
-
-Butuh **Node.js 20+** (disyaratkan Next.js 16) dan satu proyek [Supabase](https://supabase.com)
-— paket gratis sudah cukup.
-
-```bash
-npm install
-cp .env.example .env   # isi kredensial Supabase & AUTH_SECRET
-npm run dev
-```
-
-Databasenya perlu disiapkan lebih dulu; lihat bagian berikutnya.
-
-| Perintah                 | Kegunaan                                                   |
-| ------------------------ | ---------------------------------------------------------- |
-| `npm run dev`            | Server pengembangan                                        |
-| `npm run build`          | Build produksi                                             |
-| `npm run lint`           | ESLint                                                     |
-| `npm test`               | Tes unit                                                   |
-| `npm run test:blackbox`  | Tes HTTP terhadap server yang sedang berjalan (`BASE_URL`) |
-
----
-
-## Menyiapkan Database & Storage
-
-Skema awal ada di `supabase/schema.sql`, dan setiap perubahan sesudahnya ada di
-`supabase/migrations/` dengan nomor urut. Jalankan lewat **SQL Editor** di dashboard Supabase,
-berurutan dari nomor terkecil, lalu buat bucket Storage lewat `/api/setup-buckets` (butuh login
-sebagai ADMIN).
-
-> [!IMPORTANT]
-> Dua migrasi berikut menopang pengamanan yang sudah ada di kode. Selama belum dijalankan,
-> aplikasinya tetap berjalan normal — tapi pengamanannya belum aktif sepenuhnya:
->
-> | Migrasi | Tanpa migrasi ini |
-> | --- | --- |
-> | `022_create_like_table.sql` | Menyukai tetap wajib login, tapi satu akun masih bisa menyukai artikel yang sama berkali-kali. |
-> | `023_create_login_attempt_table.sql` | **Tidak ada pembatas percobaan login sama sekali** — tebakan password bisa dikirim tanpa batas. Log server memuat peringatan `Pembatas login tidak aktif` setiap percobaan login. |
 
 ---
 
@@ -178,17 +133,17 @@ sebagai ADMIN).
 
 ### Publik
 
-| Rute             | Halaman                                            |
-| ---------------- | -------------------------------------------------- |
-| `/`              | Beranda                                            |
-| `/profil`        | Profil & struktur kepengurusan                     |
-| `/program`       | Program kerja                                      |
-| `/berita`        | Daftar publikasi & berita                          |
+| Rute             | Halaman                                                     |
+| ---------------- | ----------------------------------------------------------- |
+| `/`              | Beranda                                                     |
+| `/profil`        | Profil & struktur kepengurusan                              |
+| `/program`       | Program kerja                                               |
+| `/berita`        | Daftar publikasi & berita                                   |
 | `/[slug]`        | Detail artikel — langsung di akar, bukan di bawah `/berita` |
-| `/e-book`        | Perpustakaan e-Book                                |
-| `/e-book/[slug]` | Detail e-Book                                      |
-| `/galeri`        | Galeri dokumentasi                                 |
-| `/mitra`         | Mitra kolaborasi                                   |
+| `/e-book`        | Perpustakaan e-Book                                         |
+| `/e-book/[slug]` | Detail e-Book                                               |
+| `/galeri`        | Galeri dokumentasi                                          |
+| `/mitra`         | Mitra kolaborasi                                            |
 
 ### Terproteksi
 
@@ -205,83 +160,6 @@ Middleware mengalihkan tamu ke `/login` untuk `/profile` dan `/admin`.
 `/informasi-akun` (direktori email kader) bekerja berbeda: URL-nya terbuka, tapi datanya baru
 diambil setelah sesi terverifikasi — tamu hanya menerima gerbang login, tanpa satu pun email
 kader ikut terkirim di HTML-nya.
-
----
-
-## Deployment
-
-Website ini di-deploy di **Vercel**.
-
-1. Impor repositori ke Vercel
-2. Isi seluruh environment variables pada **Settings → Environment Variables**
-3. Deploy — Vercel mendeteksi Next.js secara otomatis, tanpa konfigurasi tambahan
-
-> [!IMPORTANT]
-> Saat berpindah ke domain baru, cukup ubah nilai `NEXT_PUBLIC_SITE_URL` di environment
-> variables Vercel. Canonical URL, sitemap, robots.txt, dan preview tautan akan ikut
-> menyesuaikan tanpa perlu mengubah kode.
-
-### Setelah domain aktif
-
-1. Daftarkan situs di [Google Search Console](https://search.google.com/search-console)
-2. Kirimkan `https://domain-anda/sitemap.xml`
-
----
-
-## Troubleshooting
-
-<details>
-<summary><b>Gambar dari Supabase gagal dimuat, log menyebut <code>resolved to private ip</code></b></summary>
-
-<br>
-
-Terjadi pada jaringan yang memakai **NAT64/DNS64** (umum di jaringan kampus dan asrama).
-Alamat IPv6 sintetis yang dihasilkan jaringan tersebut keliru dianggap sebagai IP privat
-oleh proteksi SSRF bawaan Next.js Image Optimizer, sehingga seluruh gambar eksternal ditolak.
-
-Sudah ditangani di `next.config.ts` dengan memaksa resolusi DNS memakai IPv4.
-Jika masih muncul, pastikan berkas tersebut tidak termodifikasi dan jalankan ulang dev server.
-
-</details>
-
-<details>
-<summary><b>Gambar sampul artikel tidak tampil</b></summary>
-
-<br>
-
-Gambar dari host di luar daftar `remotePatterns` pada `next.config.ts` (misalnya URL yang
-disalin dari hasil pencarian Google) tidak dapat dioptimalkan Next.js.
-Komponen `SafeImage` menanganinya secara otomatis dengan melewati proses optimasi.
-
-Agar gambar tampil optimal, **unggah berkasnya langsung** lewat panel admin
-daripada menempelkan URL dari situs lain.
-
-</details>
-
-<details>
-<summary><b>Error Turbopack: <code>Failed to restore task data (corrupted database)</code></b></summary>
-
-<br>
-
-Cache Turbopack rusak, biasanya karena proses dihentikan paksa. Bersihkan lalu jalankan ulang:
-
-```bash
-rm -rf .next
-npm run dev
-```
-
-</details>
-
-<details>
-<summary><b>Peringatan konsol: <code>Encountered a script tag while rendering React component</code></b></summary>
-
-<br>
-
-Berasal dari pustaka `next-themes` yang menyuntikkan skrip anti-kedip tema, dan dianggap
-bermasalah oleh peringatan baru React 19 meski skripnya berfungsi normal.
-Tidak memengaruhi jalannya aplikasi, dan sudah disaring pada `app/providers.tsx`.
-
-</details>
 
 ---
 

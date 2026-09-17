@@ -1,14 +1,27 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { X, Edit2, Eye, EyeOff } from "lucide-react";
 import { MIN_PASSWORD_LENGTH, PASSWORD_RULE_TEXT } from "@/lib/password";
 import { useModalTransition } from "@/components/ui/useModalTransition";
 import { X, Pencil, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  jabatan?: string | null;
+  bidang?: string | null;
+}
+
 interface EditUserModalProps {
+  user: User;
+  action: (formData: FormData) => void;
   user: {
     id: string;
     name: string;
@@ -22,9 +35,23 @@ interface EditUserModalProps {
 
 export function EditUserModal({ user, action }: EditUserModalProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isRendered, setIsRendered] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const { isRendered, isVisible } = useModalTransition(isOpen);
   const [showPassword, setShowPassword] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => setIsRendered(true), 0);
+      setTimeout(() => setIsVisible(true), 10);
+      document.body.style.overflow = "hidden";
+    } else {
+      setIsVisible(false);
+      const timer = setTimeout(() => {
+        setIsRendered(false);
+        document.body.style.overflow = "unset";
+      }, 300);
+      return () => clearTimeout(timer);
 
 
   const handleFormAction = async (formData: FormData) => {
@@ -35,6 +62,13 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
       toast.success(result.message);
       setIsOpen(false);
     }
+  }, [isOpen]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    action(formData);
+    setIsOpen(false);
   };
 
   return (
@@ -43,6 +77,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
         onClick={() => setIsOpen(true)}
         className="text-slate-600 dark:text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors text-sm flex items-center justify-center gap-1.5"
       >
+        <Edit2 size={14} />
         <Pencil size={14} />
         Edit
       </button>
@@ -74,6 +109,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Ubah informasi akun untuk {user.name}.</p>
               </div>
 
+              <form onSubmit={handleSubmit} className="space-y-5">
               <form action={handleFormAction} className="space-y-5">
                 <input type="hidden" name="id" value={user.id} />
 
@@ -84,6 +120,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                     name="name"
                     defaultValue={user.name}
                     required
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                   />
                 </div>
@@ -95,6 +132,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                     name="email"
                     defaultValue={user.email}
                     required
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                   />
                 </div>
@@ -107,6 +145,9 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                     <input
                       type={showPassword ? "text" : "password"}
                       name="password"
+                      className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 pr-12 outline-none transition-all"
+                      minLength={6}
+                      placeholder="Kosongkan jika tidak ingin mengubah password"
                       className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 pr-12 outline-none transition-all"
                       minLength={MIN_PASSWORD_LENGTH}
                       placeholder="Biarkan kosong jika tidak ingin mengubah password"
@@ -126,6 +167,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                   <select
                     name="role"
                     defaultValue={user.role}
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                   >
                     <option value="USER">User Biasa</option>
@@ -139,6 +181,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                   <select
                     name="jabatan"
                     defaultValue={user.jabatan || ""}
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                   >
                     <option value="">-- Pilih Jabatan --</option>
@@ -159,6 +202,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                   <select
                     name="bidang"
                     defaultValue={user.bidang || ""}
+                    className="w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                   >
                     <option value="">-- Pilih Bidang --</option>
@@ -166,6 +210,7 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                     <option value="Kaderisasi">Kaderisasi</option>
                     <option value="Data dan Informasi">Data dan Informasi</option>
                     <option value="Sosial Masyarakat">Sosial Masyarakat</option>
+                    <option value="Kajian dan Isu">Kajian dan Isu</option>
                     <option value="Litbang">Litbang</option>
                     <option value="Hubungan Masyarakat">Hubungan Masyarakat</option>
                     <option value="Tidak Ada">Tidak Ada</option>
@@ -180,8 +225,10 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                   >
                     Batal
                   </button>
+                  <button type="submit" className="px-5 py-2.5 rounded-xl font-semibold text-white bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-black dark:hover:bg-slate-200 transition-colors shadow-sm">
                   <SubmitButton variant="primary" className="px-5 py-2.5">
                     Simpan Perubahan
+                  </button>
                   </SubmitButton>
                 </div>
               </form>
