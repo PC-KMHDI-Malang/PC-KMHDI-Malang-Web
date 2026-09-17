@@ -6,7 +6,6 @@ import { unstable_rethrow } from "next/navigation";
 import { ConfirmModal } from "./ConfirmModal";
 
 interface SubmitWithConfirmProps {
-  action: (formData: FormData) => void;
   action: (formData: FormData) => Promise<{ error?: string; success?: boolean; message?: string } | void> | void;
   id?: string;
   buttonElement: React.ReactNode;
@@ -18,17 +17,6 @@ interface SubmitWithConfirmProps {
   wrapperClassName?: string;
 }
 
-export function SubmitWithConfirm({
-  action,
-  id,
-  buttonElement,
-  modalTitle,
-  modalDesc,
-  confirmText = "Hapus",
-  cancelText = "Batal",
-  isDestructive = true,
-  wrapperClassName = "",
-}: SubmitWithConfirmProps) {
 export function SubmitWithConfirm({ action, id, buttonElement, modalTitle, modalDesc, confirmText = "Hapus", cancelText = "Batal", isDestructive = true, wrapperClassName = "" }: SubmitWithConfirmProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,24 +64,10 @@ export function SubmitWithConfirm({ action, id, buttonElement, modalTitle, modal
         {buttonElement}
       </div>
 
-      <form ref={formRef} action={action} className="hidden">
       <form ref={formRef} className="hidden">
         {id && <input type="hidden" name="id" value={id} />}
       </form>
 
-      <ConfirmModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        onConfirm={() => {
-          setIsOpen(false);
-          formRef.current?.requestSubmit();
-        }}
-        title={modalTitle}
-        description={modalDesc}
-        confirmText={confirmText}
-        cancelText={cancelText}
-        isDestructive={isDestructive}
-      />
       <ConfirmModal isOpen={isOpen} onClose={() => setIsOpen(false)} onConfirm={handleConfirm} title={modalTitle} description={modalDesc} confirmText={confirmText} cancelText={cancelText} isDestructive={isDestructive} isLoading={loading} />
     </>
   );
