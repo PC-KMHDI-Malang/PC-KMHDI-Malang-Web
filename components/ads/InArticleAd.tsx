@@ -35,7 +35,7 @@ export function InArticleAd() {
       data-ad-layout="in-article"
       data-ad-format="fluid"
       data-ad-client="ca-pub-5436747793264342"
-      data-ad-slot="7953686172"
+      data-ad-slot="2509787803"
     />
   );
 }
