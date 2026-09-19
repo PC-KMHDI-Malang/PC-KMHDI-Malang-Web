@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { EbookShareBar } from "@/components/ui/EbookShareBar";
 import { ReadingProgressBar } from "@/components/ui/ReadingProgressBar";
 import { ViewCounter } from "@/components/ui/ViewCounter";
+import { InArticleAd } from "@/components/ads/InArticleAd";
 import { SafeImage } from "@/components/ui/SafeImage";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl } from "@/lib/site";
@@ -212,6 +213,11 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               <p className="whitespace-pre-line">{news.content}</p>
             )}
           </div>
+        </div>
+
+        {/* Iklan In-Article */}
+        <div className="mt-10">
+          <InArticleAd />
         </div>
 
         {/* Tag & Share Section */}
