@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Image from "next/image";
@@ -218,7 +218,7 @@ export function OrganizationSection({ members }: { members: Member[] }) {
             {organizationInfo.cabinetName}
           </h2>
           <p className="text-slate-500 dark:text-neutral-400 text-sm sm:text-base mt-1.5">
-            Masa Bakti {organizationInfo.period} • &ldquo;{organizationInfo.theme}&rdquo;
+            Masa Bakti {organizationInfo.period} â€¢ &ldquo;{organizationInfo.theme}&rdquo;
           </p>
         </div>
 
@@ -318,7 +318,7 @@ export function OrganizationSection({ members }: { members: Member[] }) {
                 {[0, 1, 2, 3, 4, 5].map((idx) => (
                   /* Hanya sel baris pertama yang ditampilkan di tiap breakpoint: 2 di mobile,
                      3 di tablet, 6 di desktop. Sebelumnya keenam sel selalu dirender, sehingga
-                     batang distribusi ikut tergambar ulang di baris kedua dan ketiga — itulah
+                     batang distribusi ikut tergambar ulang di baris kedua dan ketiga â€” itulah
                      yang membuat garisnya tampak menumpuk tiga di mobile. */
                   <div
                     key={idx}
@@ -351,7 +351,7 @@ export function OrganizationSection({ members }: { members: Member[] }) {
             </div>
 
             {/* --- LEVEL 4: 6 KOLOM SEJAJAR (WARNA SERAGAM & TANPA LABEL STAF BIRO) --- */}
-            <div className="w-full grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4 pt-1">
+            <div className="w-full grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4 pt-1 items-start">
               
               {/* 5 BIDANG PELAKSANA */}
               {bidangList.map((bidang) => {
@@ -390,13 +390,26 @@ export function OrganizationSection({ members }: { members: Member[] }) {
                     </div>
 
                     {/* Seluruh Staf Bidang (Tanpa label pill "Staf") */}
-                    <div className="w-full space-y-2 mt-1">
+                    <div className="w-full mt-1">
                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center block mb-1">
                         Staf ({stafList.length})
                       </span>
-                      {stafList.map((staf) => (
-                        <StafChartCard key={staf.id} member={staf} showRole={false} />
-                      ))}
+                      <div className="relative">
+                        <div
+                          className={`w-full space-y-2 ${
+                            stafList.length > 4
+                              ? "max-h-82 overflow-y-auto pr-1.5 staff-scroll"
+                              : ""
+                          }`}
+                        >
+                          {stafList.map((staf) => (
+                            <StafChartCard key={staf.id} member={staf} showRole={false} />
+                          ))}
+                        </div>
+                        {stafList.length > 4 && (
+                          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 rounded-b-xl bg-linear-to-t from-slate-50/70 dark:from-[#121215] to-transparent" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -421,17 +434,30 @@ export function OrganizationSection({ members }: { members: Member[] }) {
                 </div>
 
                 {/* Pengurus Lembaga (Sekretaris, Bendahara, Staf) */}
-                <div className="w-full space-y-2 mt-1">
+                <div className="w-full mt-1">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center block mb-1">
                     Pengurus ({pengurusKwuList.length})
                   </span>
-                  {pengurusKwuList.map((member) => (
-                    <StafChartCard
-                      key={member.id}
-                      member={member}
-                      showRole={!member.role.toLowerCase().includes("staf")}
-                    />
-                  ))}
+                  <div className="relative">
+                    <div
+                      className={`w-full space-y-2 ${
+                        pengurusKwuList.length > 4
+                          ? "max-h-82 overflow-y-auto pr-1.5 staff-scroll"
+                          : ""
+                      }`}
+                    >
+                      {pengurusKwuList.map((member) => (
+                        <StafChartCard
+                          key={member.id}
+                          member={member}
+                          showRole={!member.role.toLowerCase().includes("staf")}
+                        />
+                      ))}
+                    </div>
+                    {pengurusKwuList.length > 4 && (
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 rounded-b-xl bg-linear-to-t from-slate-50/70 dark:from-[#121215] to-transparent" />
+                    )}
+                  </div>
                 </div>
               </div>
 
