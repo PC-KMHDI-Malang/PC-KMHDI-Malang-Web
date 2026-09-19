@@ -130,6 +130,7 @@ import NextTopLoader from "nextjs-toploader";
 import { Toaster } from "sonner";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import Script from "next/script";
 
 export default function RootLayout({
   children,
@@ -138,6 +139,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" suppressHydrationWarning>
+      <head>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4821640895067604"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+      </head>
       <body className="bg-white dark:bg-[#0a0a0a] text-zinc-900 dark:text-zinc-100 antialiased selection:bg-red-600 selection:text-white transition-colors duration-300" suppressHydrationWarning>
         <JsonLd data={structuredData} />
         <NextTopLoader color="#dc2626" showSpinner={false} />
