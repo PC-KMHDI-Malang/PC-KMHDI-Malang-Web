@@ -10,6 +10,7 @@ import { formatViewCount } from "@/lib/views";
 import { lockDurationFor, nextAttemptState, lockStateOf, emailKey, ipKey, clientIpFrom, type AttemptRecord } from "@/lib/loginRateLimit";
 import { isPasswordLongEnough, MIN_PASSWORD_LENGTH, PASSWORD_RULE_TEXT } from "@/lib/password";
 import { orFilterLiteral, containsPattern } from "@/lib/search";
+import { slugify } from "@/lib/slug";
 import {
   isTreasurerEmail,
   isKasMember,
@@ -465,5 +466,19 @@ describe("storage — mengenali file Supabase lama dan R2 baru", () => {
       "https://abc.supabase.co/storage/v1/object/public/article-images/old.png",
       `${R2}/article-images/new.png`,
     ]);
+  });
+});
+
+describe("slug — rapi tanpa tanda hubung ganda", () => {
+  it("menggabungkan spasi & tanda baca jadi satu tanda hubung", () => {
+    assert.equal(slugify(" Buku Pedoman Organisasi 1 (BPO 1) - Perubahan 4"), "buku-pedoman-organisasi-1-bpo-1-perubahan-4");
+    assert.equal(slugify("KMHDI : Pemetaan Problematika Umat Hindu 2024"), "kmhdi-pemetaan-problematika-umat-hindu-2024");
+    assert.equal(slugify("Buku Saku ERP System KMHDI - Edisi Pertama"), "buku-saku-erp-system-kmhdi-edisi-pertama");
+  });
+
+  it("membuang tanda hubung di awal/akhir dan menyederhanakan huruf beraksen", () => {
+    assert.equal(slugify("  ---Halo, Dunia!---  "), "halo-dunia");
+    assert.equal(slugify("Café Déjà Vu"), "cafe-deja-vu");
+    assert.equal(slugify("!!!"), "");
   });
 });

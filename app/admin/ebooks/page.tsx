@@ -59,7 +59,8 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
   async function addEbook(formData: FormData) {
     "use server";
     await requireAdminPanel();
-    const title = formData.get("title") as string;
+    // Di-trim: spasi di awal judul ikut terbawa ke slug/nama file PDF dan judul halaman.
+    const title = ((formData.get("title") as string) || "").trim();
     const coverImageUrl = formData.get("coverImageUrl") as string;
     const pdfUrl = (formData.get("pdfUrl") as string) || null;
     const description = (formData.get("description") as string) || null;
@@ -86,7 +87,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     "use server";
     await requireAdminPanel();
     const id = formData.get("id") as string;
-    const title = formData.get("title") as string;
+    const title = ((formData.get("title") as string) || "").trim();
     const coverImageUrl = formData.get("coverImageUrl") as string;
     const pdfUrl = (formData.get("pdfUrl") as string) || null;
     const description = (formData.get("description") as string) || null;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { slugify } from "@/lib/slug";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -152,7 +153,7 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ sl
   // error mentah dari domain Supabase) — keduanya menaut ke /api/ebook/[id]/file/[..], yang
   // memverifikasi login lalu mengambilkan filenya di server sebelum diteruskan ke browser.
   // Segmen terakhir URL cuma kosmetik — dipakai Chrome dkk. sebagai judul tab PDF viewer.
-  const pdfFileSlug = ebook.title.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "") || "ebook";
+  const pdfFileSlug = slugify(ebook.title) || "ebook";
   const fileHref = `/api/ebook/${ebook.id}/file/${pdfFileSlug}.pdf`;
   const downloadHref = `${fileHref}?download=1`;
 
