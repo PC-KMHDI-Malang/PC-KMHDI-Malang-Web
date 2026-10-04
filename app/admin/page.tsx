@@ -1,17 +1,20 @@
 import { auth } from "@/lib/auth";
-import { BUCKET_QUOTA_BYTES, getTotalStorageUsage } from "@/lib/storage";
+import { BUCKET_QUOTA_BYTES, getR2StorageUsage, getTotalStorageUsage, R2_QUOTA_BYTES } from "@/lib/storage";
 import { StorageUsage } from "@/components/admin/StorageUsage";
 
 export default async function DashboardHome() {
   const session = await auth();
-  const storage = await getTotalStorageUsage();
+  const [storage, r2Storage] = await Promise.all([getTotalStorageUsage(), getR2StorageUsage()]);
 
   return (
     <div>
       <h1 className="text-4xl font-extrabold mb-3 tracking-tight text-slate-900 dark:text-white transition-colors">Selamat Datang, {session?.user?.name}!</h1>
       <p className="text-slate-500 dark:text-slate-400 mb-10 text-lg transition-colors">Ini adalah panel admin untuk mengelola website KMHDI Malang.</p>
 
-      <StorageUsage usedBytes={storage.usedBytes} quotaBytes={BUCKET_QUOTA_BYTES} label="Kapasitas Storage (Semua Bucket)" />
+      {/* Selama peralihan ke R2, file lama masih ada di Supabase — kedua angka ditampilkan. Setelah
+          migrasi & pembersihan (scripts/migrate-storage-to-r2.mjs), bar Supabase akan mendekati 0. */}
+      {r2Storage && <StorageUsage usedBytes={r2Storage.usedBytes} quotaBytes={R2_QUOTA_BYTES} label="Kapasitas Storage Cloudflare R2" />}
+      <StorageUsage usedBytes={storage.usedBytes} quotaBytes={BUCKET_QUOTA_BYTES} label={r2Storage ? "Storage Supabase (file lama)" : "Kapasitas Storage (Semua Bucket)"} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <div className="bg-white dark:bg-[#111114] p-8 rounded-3xl shadow-lg border border-slate-200/80 dark:border-white/10 hover:shadow-[0_8px_30px_rgb(220,38,38,0.08)] dark:hover:shadow-[0_8px_30px_rgba(220,38,38,0.2)] hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">

@@ -12,6 +12,16 @@ dns.promises.lookup = ((hostname: string, options?: unknown) => {
   return originalDnsLookup(hostname, { ...opts, family: 4 });
 }) as typeof dns.promises.lookup;
 
+// Domain publik bucket gambar Cloudflare R2 (lihat lib/r2.ts). Dibaca saat build, jadi setelah
+// env ini diisi/diubah di Vercel perlu deploy ulang supaya next/image mau memuat gambarnya.
+const r2PublicHost = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_R2_PUBLIC_URL ? new URL(process.env.NEXT_PUBLIC_R2_PUBLIC_URL).hostname : null;
+  } catch {
+    return null;
+  }
+})();
+
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
@@ -42,6 +52,7 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      ...(r2PublicHost ? [{ protocol: "https" as const, hostname: r2PublicHost }] : []),
     ],
   },
 };

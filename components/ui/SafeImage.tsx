@@ -7,6 +7,15 @@ import { ImageOff } from "lucide-react";
 // Keep in sync with images.remotePatterns in next.config.ts.
 const OPTIMIZABLE_HOSTS = [/(^|\.)supabase\.co$/, /^images\.unsplash\.com$/];
 
+// Cloudflare R2 public bucket host (custom domain), also allowed in next.config.ts.
+const R2_PUBLIC_HOST = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_R2_PUBLIC_URL ? new URL(process.env.NEXT_PUBLIC_R2_PUBLIC_URL).hostname : null;
+  } catch {
+    return null;
+  }
+})();
+
 // Content fields like a news cover image can hold any URL an admin pastes in (e.g. hotlinked
 // from a Google Images result), not just our own storage. Next's image optimizer 400s on any
 // host that isn't in remotePatterns, so those must render unoptimized instead of erroring.
@@ -14,6 +23,7 @@ function isUnoptimizableSrc(src: ImageProps["src"]) {
   if (typeof src !== "string" || !/^https?:\/\//.test(src)) return false;
   try {
     const { hostname } = new URL(src);
+    if (R2_PUBLIC_HOST && hostname === R2_PUBLIC_HOST) return false;
     return !OPTIMIZABLE_HOSTS.some((pattern) => pattern.test(hostname));
   } catch {
     return true;

@@ -14,6 +14,9 @@ interface ConfirmModalProps {
   cancelText?: string;
   isDestructive?: boolean;
   isLoading?: boolean;
+  // Default true: modal digeser ke kanan sidebar panel admin (md:left-64). Halaman publik tanpa
+  // sidebar (mis. /kas/kelola) memberi false supaya modalnya benar-benar di tengah layar.
+  offsetSidebar?: boolean;
 }
 
 export function ConfirmModal({
@@ -26,6 +29,7 @@ export function ConfirmModal({
   cancelText = "Batal",
   isDestructive = true,
   isLoading = false,
+  offsetSidebar = true,
 }: ConfirmModalProps) {
   const { isRendered, isVisible } = useModalTransition(isOpen);
 
@@ -33,7 +37,7 @@ export function ConfirmModal({
   if (!isRendered) return null;
 
   const modalContent = (
-    <div className="fixed inset-y-0 right-0 left-0 md:left-64 z-[100] flex items-center justify-center p-4">
+    <div className={`fixed inset-y-0 right-0 left-0 ${offsetSidebar ? "md:left-64" : ""} z-[100] flex items-center justify-center p-4`}>
       {/* Backdrop */}
       <div
         className={`absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity duration-300 ${

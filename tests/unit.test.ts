@@ -5,11 +5,28 @@ import { isAdminPanelRole, canAccessAdminPath } from "@/lib/roles";
 import { looksLikeHtml, stripHtml } from "@/lib/richText";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
 import { absoluteUrl, siteConfig } from "@/lib/site";
-import { formatBytes, extractBucketUrlsFromHtml } from "@/lib/storage";
+import { formatBytes, extractBucketUrlsFromHtml, resolveStoredUrl } from "@/lib/storage";
 import { formatViewCount } from "@/lib/views";
 import { lockDurationFor, nextAttemptState, lockStateOf, emailKey, ipKey, clientIpFrom, type AttemptRecord } from "@/lib/loginRateLimit";
 import { isPasswordLongEnough, MIN_PASSWORD_LENGTH, PASSWORD_RULE_TEXT } from "@/lib/password";
 import { orFilterLiteral, containsPattern } from "@/lib/search";
+import {
+  isTreasurerEmail,
+  isKasMember,
+  isValidPeriod,
+  isValidDate,
+  periodsOfYear,
+  periodRange,
+  currentPeriod,
+  todayInJakarta,
+  monthStatus,
+  arrearsPeriods,
+  memberYearStatus,
+  ledgerSummary,
+  parseRupiahInput,
+  parseYearParam,
+  formatPeriod,
+} from "@/lib/kas";
 
 describe("roles — siapa boleh masuk panel admin", () => {
   it("menerima ADMIN dan KONTRIBUTOR saja", () => {
@@ -285,5 +302,168 @@ describe("escaping filter pencarian PostgREST", () => {
     assert.equal(orFilterLiteral('sa"b'), '"sa\\"b"');
     assert.equal(orFilterLiteral("a\\b"), '"a\\\\b"');
     assert.equal(orFilterLiteral('\\"'), '"\\\\\\""');
+  });
+});
+
+describe("kas — siapa bendahara & siapa anggota", () => {
+  it("mengenali email bendahara tanpa peduli huruf besar/spasi", () => {
+    assert.equal(isTreasurerEmail("bendahara@kmhdimalang.org"), true);
+    assert.equal(isTreasurerEmail("  Bendahara@KMHDIMalang.org "), true);
+    assert.equal(isTreasurerEmail("admin@kmhdimalang.org"), false);
+    assert.equal(isTreasurerEmail("bendahara@kmhdimalang.org.evil.com"), false);
+    assert.equal(isTreasurerEmail(null), false);
+    assert.equal(isTreasurerEmail(""), false);
+  });
+
+  it("hanya memasukkan akun ber-role USER ke daftar anggota kas", () => {
+    assert.equal(isKasMember({ email: "kader@gmail.com", role: "USER" }), true);
+    assert.equal(isKasMember({ email: "kader@gmail.com", role: "ADMIN" }), false);
+    assert.equal(isKasMember({ email: "kader@gmail.com", role: "KONTRIBUTOR" }), false);
+    assert.equal(isKasMember({ email: "kader@gmail.com", role: null }), false);
+  });
+
+  it("mengecualikan akun bendahara dan akun bersama walau role-nya USER", () => {
+    assert.equal(isKasMember({ email: "bendahara@kmhdimalang.org", role: "USER" }), false);
+    assert.equal(isKasMember({ email: "pcmalang@kmhdi.info", role: "USER" }), false);
+    assert.equal(isKasMember({ email: null, role: "USER" }), false);
+  });
+});
+
+describe("kas — periode & tanggal", () => {
+  it("memvalidasi format periode YYYY-MM", () => {
+    assert.equal(isValidPeriod("2026-01"), true);
+    assert.equal(isValidPeriod("2026-12"), true);
+    assert.equal(isValidPeriod("2026-13"), false);
+    assert.equal(isValidPeriod("2026-00"), false);
+    assert.equal(isValidPeriod("2026-1"), false);
+    assert.equal(isValidPeriod(202601), false);
+  });
+
+  it("memvalidasi tanggal YYYY-MM-DD", () => {
+    assert.equal(isValidDate("2026-02-28"), true);
+    assert.equal(isValidDate("2026-02-30x"), false);
+    assert.equal(isValidDate("26-02-28"), false);
+  });
+
+  it("menghasilkan 12 periode per tahun dan rentang lintas tahun", () => {
+    assert.deepEqual(periodsOfYear(2026).slice(0, 2), ["2026-01", "2026-02"]);
+    assert.equal(periodsOfYear(2026).length, 12);
+    assert.deepEqual(periodRange("2025-11", "2026-02"), ["2025-11", "2025-12", "2026-01", "2026-02"]);
+    assert.deepEqual(periodRange("2026-03", "2026-01"), []);
+  });
+
+  it("memakai zona waktu WIB untuk bulan berjalan", () => {
+    // 31 Jan 2026 pukul 20.00 UTC = 1 Feb 2026 pukul 03.00 WIB.
+    const now = new Date("2026-01-31T20:00:00Z");
+    assert.equal(todayInJakarta(now), "2026-02-01");
+    assert.equal(currentPeriod(now), "2026-02");
+  });
+
+  it("menampilkan nama bulan Indonesia", () => {
+    assert.equal(formatPeriod("2026-08"), "Agustus 2026");
+  });
+});
+
+describe("kas — status iuran & tunggakan", () => {
+  const setting = { monthlyFee: 10000, startPeriod: "2026-03" };
+
+  it("menentukan status per bulan", () => {
+    assert.equal(monthStatus("2026-02", false, setting, "2026-06"), "TIDAK_BERLAKU");
+    assert.equal(monthStatus("2026-04", false, setting, "2026-06"), "BELUM");
+    assert.equal(monthStatus("2026-06", false, setting, "2026-06"), "BELUM");
+    assert.equal(monthStatus("2026-07", false, setting, "2026-06"), "MENDATANG");
+    assert.equal(monthStatus("2026-07", true, setting, "2026-06"), "LUNAS");
+    assert.equal(monthStatus("2026-04", false, { monthlyFee: 0, startPeriod: null }, "2026-06"), "TIDAK_BERLAKU");
+  });
+
+  it("menghitung tunggakan sejak iuran berlaku sampai bulan berjalan", () => {
+    assert.deepEqual(arrearsPeriods(["2026-03", "2026-05"], setting, "2026-06"), ["2026-04", "2026-06"]);
+    assert.deepEqual(arrearsPeriods([], { monthlyFee: 10000, startPeriod: null }, "2026-06"), []);
+  });
+
+  it("menghitung tunggakan tahun lalu walau sedang melihat tahun ini", () => {
+    const sejakTahunLalu = { monthlyFee: 10000, startPeriod: "2025-01" };
+    const payments = [{ id: "a", period: "2025-01", amount: 10000, paidAt: "2025-01-05" }];
+    const s = memberYearStatus(payments, 2026, sejakTahunLalu, "2026-10");
+    // 2025: 11 bulan belum dibayar (Feb–Des), 2026: Jan–Okt = 10 bulan.
+    assert.equal(s.arrearsCount, 21);
+    assert.equal(s.arrearsAmount, 210000);
+    assert.equal(memberYearStatus(payments, 2025, sejakTahunLalu, "2026-10").months[1].status, "BELUM");
+  });
+
+  it("merangkum satu tahun memakai nominal yang benar-benar dibayar", () => {
+    const payments = [
+      { id: "a", period: "2026-03", amount: 10000, paidAt: "2026-03-05" },
+      { id: "b", period: "2026-04", amount: 15000, paidAt: "2026-04-05" },
+      { id: "c", period: "2025-12", amount: 5000, paidAt: "2025-12-05" },
+    ];
+    const s = memberYearStatus(payments, 2026, setting, "2026-06");
+    assert.equal(s.yearPaid, 25000);
+    assert.equal(s.totalPaid, 30000);
+    assert.equal(s.arrearsCount, 2); // Mei & Juni
+    assert.equal(s.arrearsAmount, 20000);
+    assert.equal(s.months[2].status, "LUNAS");
+    assert.equal(s.months[0].status, "TIDAK_BERLAKU");
+    assert.equal(s.months[11].status, "MENDATANG");
+  });
+});
+
+describe("kas — buku kas & input", () => {
+  it("menghitung saldo dari iuran + pemasukan lain - pengeluaran", () => {
+    const s = ledgerSummary(100000, [
+      { type: "MASUK", amount: 50000 },
+      { type: "KELUAR", amount: 30000 },
+      { type: "KELUAR", amount: 20000 },
+    ]);
+    assert.deepEqual(s, { iuranTotal: 100000, otherIncome: 50000, expense: 50000, totalIncome: 150000, balance: 100000 });
+  });
+
+  it("membaca nominal rupiah dari berbagai format", () => {
+    assert.equal(parseRupiahInput("10.000"), 10000);
+    assert.equal(parseRupiahInput("Rp 25.500"), 25500);
+    assert.equal(parseRupiahInput(5000), 5000);
+    assert.equal(parseRupiahInput("0"), null);
+    assert.equal(parseRupiahInput("abc"), null);
+    assert.equal(parseRupiahInput(undefined), null);
+  });
+
+  it("membatasi parameter ?tahun= ke rentang wajar", () => {
+    assert.equal(parseYearParam("2025", 2026), 2025);
+    assert.equal(parseYearParam("99999", 2026), 2026);
+    assert.equal(parseYearParam("abc", 2026), 2026);
+    assert.equal(parseYearParam(undefined, 2026), 2026);
+  });
+});
+
+describe("storage — mengenali file Supabase lama dan R2 baru", () => {
+  const R2 = "https://media.kmhdimalang.org";
+  const supa = "https://abc.supabase.co/storage/v1/object/public/news-covers/a1.webp";
+
+  it("mengenali URL Supabase lama", () => {
+    assert.deepEqual(resolveStoredUrl("news-covers", supa, R2), { provider: "supabase", path: "a1.webp" });
+  });
+
+  it("mengenali URL R2 publik dengan key berawalan nama bucket", () => {
+    assert.deepEqual(resolveStoredUrl("news-covers", `${R2}/news-covers/b2.webp`, R2), { provider: "r2-public", key: "news-covers/b2.webp" });
+  });
+
+  it("mengenali PDF di R2 privat", () => {
+    assert.deepEqual(resolveStoredUrl("ebook-files", "r2-private://ebook-files/c3.pdf", R2), { provider: "r2-private", key: "ebook-files/c3.pdf" });
+  });
+
+  it("menolak URL bucket lain, host lain, atau tanpa nama file", () => {
+    assert.equal(resolveStoredUrl("gallery-photos", supa, R2), null);
+    assert.equal(resolveStoredUrl("news-covers", `${R2}/gallery-photos/x.webp`, R2), null);
+    assert.equal(resolveStoredUrl("news-covers", "https://evil.com/news-covers/x.webp", R2), null);
+    assert.equal(resolveStoredUrl("news-covers", `${R2}/news-covers/`, R2), null);
+    assert.equal(resolveStoredUrl("news-covers", `${R2}/news-covers/x.webp`, ""), null);
+  });
+
+  it("menemukan gambar artikel dari Supabase maupun R2 di dalam HTML", () => {
+    const html = `<p><img src="https://abc.supabase.co/storage/v1/object/public/article-images/old.png"><img src="${R2}/article-images/new.png"><img src="https://imgur.com/x.png"></p>`;
+    assert.deepEqual(extractBucketUrlsFromHtml("article-images", html, R2), [
+      "https://abc.supabase.co/storage/v1/object/public/article-images/old.png",
+      `${R2}/article-images/new.png`,
+    ]);
   });
 });

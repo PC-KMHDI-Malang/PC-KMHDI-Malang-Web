@@ -59,3 +59,7 @@ next-env.d.ts
 # Supabase
 supabase/.temp/
 supabase/.branch/
+
+# Laporan & backup dari scripts/migrate-storage-to-r2.mjs
+scripts/migration-*.json
+scripts/rewrite-backup-*.json

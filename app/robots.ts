@@ -6,9 +6,10 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Admin tooling, auth screens, account settings, the kader account directory, and API
+      // Admin tooling, auth screens, account settings, the kader account directory, the
+      // per-member kas (dues) pages, and API
       // routes hold nothing worth indexing and should never surface in search results.
-      disallow: ["/admin", "/login", "/profile", "/informasi-akun", "/api/"],
+      disallow: ["/admin", "/login", "/profile", "/informasi-akun", "/kas", "/api/"],
     },
     sitemap: absoluteUrl("/sitemap.xml"),
     host: siteConfig.url,

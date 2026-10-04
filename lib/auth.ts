@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 
 import { supabaseAdmin } from "@/lib/supabase";
 import { canAccessAdminPath, isAdminPanelRole } from "@/lib/roles";
+import { isTreasurerEmail } from "@/lib/kas";
 import { checkLock, clearAttempts, clientIpFrom, emailKey, ipKey, recordFailure } from "@/lib/loginRateLimit";
 
 export const {
@@ -101,6 +102,16 @@ export const {
         // tapi cuma ke halaman yang diizinkan (Beranda, Artikel, e-Book) — lihat lib/roles.ts.
         if (!isAdminPanelRole(role)) return Response.redirect(new URL("/profile", nextUrl));
         if (!canAccessAdminPath(role, nextUrl.pathname)) return Response.redirect(new URL("/admin", nextUrl));
+        return true;
+      }
+
+      // /kas: setiap akun yang login boleh melihat catatan iurannya sendiri. /kas/kelola cuma
+      // untuk akun bendahara — siapa pun selain itu (termasuk ADMIN) dikembalikan ke /kas.
+      if (nextUrl.pathname === "/kas" || nextUrl.pathname.startsWith("/kas/")) {
+        if (!isLoggedIn) return false;
+        if (nextUrl.pathname.startsWith("/kas/kelola") && !isTreasurerEmail(auth?.user?.email)) {
+          return Response.redirect(new URL("/kas", nextUrl));
+        }
         return true;
       }
 

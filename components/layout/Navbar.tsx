@@ -5,9 +5,10 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
-import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText, Handshake, ClipboardList, Loader2 } from "lucide-react";
+import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText, Handshake, ClipboardList, Loader2, Wallet } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { isAdminPanelRole } from "@/lib/roles";
+import { isTreasurerEmail } from "@/lib/kas";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
 
@@ -107,6 +108,9 @@ export default function Navbar() {
   // beda dengan label "ADMINISTRATOR"/badge yang memang sengaja cuma untuk role ADMIN.
   const hasAdminAccess = isAdminPanelRole(user?.role);
   const accountLink = hasAdminAccess ? "/admin" : "/profile";
+  // Akun bendahara langsung diarahkan ke halaman kelola kas; akun lain ke catatan iurannya sendiri.
+  const kasLink = isTreasurerEmail(user?.email) ? "/kas/kelola" : "/kas";
+  const kasLabel = isTreasurerEmail(user?.email) ? "Kelola Uang Kas" : "Uang Kas Saya";
   const firstName = user?.name ? user.name.split(" ")[0] : "Akun";
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
@@ -323,6 +327,11 @@ export default function Navbar() {
                           <User size={14} className="text-rose-400" />
                           <span>Profil &amp; Sandi</span>
                         </Link>
+
+                        <Link href={kasLink} onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
+                          <Wallet size={14} className="text-emerald-400" />
+                          <span>{kasLabel}</span>
+                        </Link>
                       </div>
 
                       {/* Logout Action */}
@@ -501,6 +510,11 @@ export default function Navbar() {
                           <span>Atur Profil &amp; Sandi</span>
                         </Link>
                       )}
+
+                      <Link href={kasLink} onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
+                        <Wallet size={16} className="text-emerald-400" />
+                        <span>{kasLabel}</span>
+                      </Link>
 
                       {showLogoutConfirm ? (
                         <div className="w-full rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 animate-in fade-in zoom-in-95 duration-200">
