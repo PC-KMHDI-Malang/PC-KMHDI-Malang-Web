@@ -1,11 +1,11 @@
 import { requireAdminPanel } from "@/lib/guard";
 import { supabaseAdmin } from "@/lib/supabase";
 import { containsPattern } from "@/lib/search";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
-import { STORAGE_BUCKETS, deleteFromBucketByUrl, getSignedFileUrl } from "@/lib/storage";
+import { STORAGE_BUCKETS, deleteFromBucketByUrl } from "@/lib/storage";
 import { generateUniqueEbookSlug } from "@/lib/slug";
 
 import { Pagination } from "@/components/ui/Pagination";
@@ -50,12 +50,6 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
   const { data: ebooks, error, count } = await query.range(from, to);
   const totalPages = Math.max(1, Math.ceil((count || 0) / EBOOKS_PER_PAGE));
 
-  // Bucket "ebook-files" privat, jadi link "Buka PDF" di daftar admin ini juga butuh signed URL
-  // sementara — bukan cuma halaman publik /e-book/[slug].
-  const signedPdfUrls = new Map(
-    await Promise.all((ebooks || []).map(async (e) => [e.id, await getSignedFileUrl(STORAGE_BUCKETS.ebookFiles, e.pdfUrl)] as const)),
-  );
-
   async function addEbook(formData: FormData) {
     "use server";
     await requireAdminPanel();
@@ -80,6 +74,10 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
 
     revalidatePath("/admin/ebooks");
     revalidatePath("/e-book");
+    // Daftar /e-book memakai cache data (getEbookListData) dan beranda menampilkan bagian
+    // "Koleksi e-Book" — keduanya harus ikut diperbarui begitu e-book berubah.
+    updateTag("ebook-list");
+    revalidatePath("/");
   }
 
   async function editEbook(formData: FormData) {
@@ -109,6 +107,8 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
 
     revalidatePath("/admin/ebooks");
     revalidatePath("/e-book");
+    updateTag("ebook-list");
+    revalidatePath("/");
     // Halaman detail e-book di-cache statis (lihat app/(public)/e-book/[slug]/page.tsx) —
     // tanpa ini, perubahan baru terlihat setelah jaring pengaman revalidate 1 jam.
     if (updated?.slug) revalidatePath(`/e-book/${updated.slug}`);
@@ -127,6 +127,8 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
     if (ebook?.slug) revalidatePath(`/e-book/${ebook.slug}`);
     revalidatePath("/admin/ebooks");
     revalidatePath("/e-book");
+    updateTag("ebook-list");
+    revalidatePath("/");
   }
 
   return (
@@ -220,9 +222,12 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
 
                 <div className="mt-auto pt-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
                   <div className="flex flex-wrap gap-2">
-                    {ebook.pdfUrl && signedPdfUrls.get(ebook.id) ? (
+                    {/* Bucket "ebook-files" privat — tombol ini memakai route yang sama dengan halaman
+                        publik (/e-book/file/<slug>), yang memeriksa login lalu mengambilkan PDF-nya,
+                        jadi alamat storage tidak pernah terlihat. */}
+                    {ebook.pdfUrl && ebook.slug ? (
                       <a
-                        href={signedPdfUrls.get(ebook.id)!}
+                        href={`/e-book/file/${ebook.slug}`}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center justify-center bg-slate-800 dark:bg-slate-700 text-white font-bold py-2 px-4 rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors shadow-sm text-sm gap-2"

@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { containsPattern } from "@/lib/search";
 import { SafeImage } from "@/components/ui/SafeImage";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml } from "@/lib/storage";
 import { generateUniqueNewsSlug } from "@/lib/slug";
@@ -134,6 +134,7 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
 
       revalidatePath("/admin/news");
       revalidatePath("/");
+      updateTag("news-list");
       return { success: true, message: "Artikel berhasil diterbitkan!" };
     } catch (err: unknown) {
       return { error: errorMessage(err, "Gagal menerbitkan artikel.") };
@@ -158,6 +159,7 @@ export default async function NewsAdminPage({ searchParams: searchParamsPromise 
 
       revalidatePath("/admin/news");
       revalidatePath("/");
+      updateTag("news-list");
       // Halaman artikel yang dihapus di-cache statis (lihat app/(public)/[slug]/page.tsx) —
       // tanpa ini, pengunjung yang sempat membuka URL-nya tetap melihat versi cache lama
       // (bukan notFound()) sampai jaring pengaman revalidate 1 jam berikutnya.

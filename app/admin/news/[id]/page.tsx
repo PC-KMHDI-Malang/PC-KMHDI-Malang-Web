@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { requireAdminPanel } from "@/lib/guard";
 import { supabaseAdmin } from "@/lib/supabase";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml } from "@/lib/storage";
@@ -89,6 +89,7 @@ export default async function EditNewsPage({ params }: { params: Promise<{ id: s
 
     revalidatePath("/admin/news");
     revalidatePath("/");
+    updateTag("news-list");
     revalidatePath(`/${news.slug}`);
     redirect("/admin/news?updated=1");
   }

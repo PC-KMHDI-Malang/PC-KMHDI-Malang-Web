@@ -158,10 +158,9 @@ async function fetchBeritaListData({ query, sortFilter, categoryFilter, currentP
 // terberat halaman ini (kategori, slider, grid, fallback: total 3-5 query Supabase sekaligus)
 // tidak perlu diulang di setiap kunjungan dengan kombinasi filter yang sama. Halaman itu sendiri
 // tetap render tiap request (searchParams membuatnya dinamis), tapi query di dalamnya kena cache.
-// Tidak di-invalidate langsung saat admin menambah/edit/hapus berita — revalidateTag di versi
-// Next.js ini butuh argumen kedua yang belum jelas semantiknya, jadi sengaja tidak dipakai.
-// Artikel baru/yang diubah muncul di daftar publik dalam waktu paling lama 5 menit (revalidate
-// di bawah), sedikit lebih lambat dari revalidatePath("/") yang sudah langsung untuk beranda.
+// Langsung di-invalidate lewat updateTag("news-list") di aksi tambah/edit/hapus berita (panel
+// admin), jadi artikel baru langsung muncul di daftar publik. revalidate 5 menit di bawah cuma
+// pengaman kalau data diubah di luar panel admin (mis. langsung di Supabase).
 export const getBeritaListData = unstable_cache(fetchBeritaListData, ["berita-list"], {
   revalidate: 300,
   tags: ["news-list"],
