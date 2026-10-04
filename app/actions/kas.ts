@@ -130,7 +130,7 @@ export async function recordIuranAction(input: { userId: string; periods: string
 
     const periods = Array.from(new Set(Array.isArray(input.periods) ? input.periods : []));
     if (periods.length === 0) return fail("Pilih minimal satu bulan.");
-    if (periods.length > 24) return fail("Maksimal 24 bulan dalam sekali pencatatan.");
+    if (periods.length > KAS_PERIOD_MAX_MONTHS) return fail(`Maksimal ${KAS_PERIOD_MAX_MONTHS} bulan dalam sekali pencatatan.`);
     if (!periods.every(isValidPeriod)) return fail("Periode bulan tidak valid.");
 
     const amount = parseRupiahInput(input.amount);

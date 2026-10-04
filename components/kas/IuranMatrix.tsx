@@ -9,7 +9,8 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { KasModal, ModalActions, ModalError } from "@/components/kas/KasModal";
 import { STATUS_CLASS, STATUS_LABEL, dateInputClass, inputClass, labelClass } from "@/components/kas/KasUi";
 import { deleteIuranAction, recordIuranAction, setMemberPeriodAction, updateIuranAction } from "@/app/actions/kas";
-import { formatDate, formatPeriod, formatRupiah, memberSetting, monthStatus, MONTH_SHORT, paymentStatus, periodEnd, periodsOfYear, todayInJakarta, type IuranPayment, type KasSetting, type MemberPeriod } from "@/lib/kas";
+import { formatDate, formatPeriod, formatRupiah, memberSetting, monthStatus, MONTH_SHORT, paymentStatus, periodEnd, periodRange, periodsOfYear, todayInJakarta, type IuranPayment, type KasSetting, type MemberPeriod } from "@/lib/kas";
+import { PeriodPicker, PeriodTotal, togglePeriod, type PeriodOption } from "@/components/kas/PeriodPicker";
 
 type Member = { id: string; name: string; jabatan: string | null };
 type Payment = IuranPayment & { userId: string };
@@ -21,13 +22,17 @@ interface IuranMatrixProps {
   setting: KasSetting;
   /** Periode khusus anggota yang masuk/keluar di tengah periode, per userId. */
   memberPeriods: Record<string, MemberPeriod>;
+  /** Bulan yang sudah beres (lunas/menunggu) & yang ditolak per anggota, di SEMUA tahun. */
+  periodState: Record<string, MemberPeriodState>;
   year: number;
   nowPeriod: string;
 }
 
 const shortPeriod = (period: string) => `${MONTH_SHORT[Number(period.slice(5)) - 1]} ${period.slice(0, 4)}`;
 
-export function IuranMatrix({ members, payments, arrears, setting, memberPeriods, year, nowPeriod }: IuranMatrixProps) {
+export type MemberPeriodState = { settled: string[]; rejected: string[] };
+
+export function IuranMatrix({ members, payments, arrears, setting, memberPeriods, periodState, year, nowPeriod }: IuranMatrixProps) {
   const [query, setQuery] = useState("");
   const [periodTarget, setPeriodTarget] = useState<Member | null>(null);
   const [recordTarget, setRecordTarget] = useState<{ member: Member; period: string } | null>(null);
@@ -131,7 +136,7 @@ export function IuranMatrix({ members, payments, arrears, setting, memberPeriods
         </div>
       )}
 
-      <RecordIuranModal target={recordTarget} onClose={() => setRecordTarget(null)} periods={periods} paymentMap={paymentMap} setting={setting} />
+      <RecordIuranModal target={recordTarget} onClose={() => setRecordTarget(null)} setting={setting} memberPeriods={memberPeriods} periodState={periodState} />
 
       <PaymentDetailModal target={detailTarget} onClose={() => setDetailTarget(null)} />
 
@@ -238,52 +243,68 @@ function MemberPeriodModal({ target, current, setting, onClose }: { target: Memb
   );
 }
 
+// Bentuknya sama dengan form "Upload Bukti Pembayaran" milik anggota (PeriodPicker): pilihan bulan
+// mencakup seluruh periode iuran anggota ini (bukan cuma tahun yang sedang dilihat), dan nominal
+// mengikuti Pengaturan. Kalau satu pembayaran perlu nominal berbeda, ubah lewat tombol Ubah di
+// detail pembayaran.
 function RecordIuranModal({
   target,
   onClose,
-  periods,
-  paymentMap,
   setting,
+  memberPeriods,
+  periodState,
 }: {
   target: { member: Member; period: string } | null;
   onClose: () => void;
-  periods: string[];
-  paymentMap: Map<string, Payment>;
   setting: KasSetting;
+  memberPeriods: Record<string, MemberPeriod>;
+  periodState: Record<string, MemberPeriodState>;
 }) {
   const router = useRouter();
   const [shown, setShown] = useState<typeof target>(null);
   const [selected, setSelected] = useState<string[]>([]);
-  const [amount, setAmount] = useState("");
   const [paidAt, setPaidAt] = useState("");
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Bulan yang bisa dicatat: seluruh periode efektif anggota ini, kecuali yang sudah lunas atau
+  // sedang menunggu konfirmasi. Bulan yang buktinya ditolak tetap bisa dicatat (ditandai).
+  const optionsFor = (member: Member): PeriodOption[] => {
+    const own = memberSetting(setting, memberPeriods[member.id]);
+    const end = periodEnd(own);
+    if (!own.startPeriod || !end) return [];
+    const state = periodState[member.id];
+    const settled = new Set(state?.settled ?? []);
+    const rejected = new Set(state?.rejected ?? []);
+    return periodRange(own.startPeriod, end)
+      .filter((p) => !settled.has(p))
+      .map((period) => ({ period, rejected: rejected.has(period) }));
+  };
+
   // Form di-reset setiap kali dibuka untuk sel lain. Dilakukan saat render (bukan useEffect,
   // pola yang sama dengan Navbar.tsx), dan `shown` sengaja tidak ikut dikosongkan saat ditutup
   // supaya isi modal tetap terlihat selama animasi keluar.
   if (target && target !== shown) {
+    const opts = optionsFor(target.member);
     setShown(target);
-    setSelected([target.period]);
-    setAmount(setting.monthlyFee ? String(setting.monthlyFee) : "");
+    // Bulan yang diklik di matriks langsung terpilih (kalau memang bisa dicatat).
+    const initial = opts.some((o) => o.period === target.period) ? target.period : opts[0]?.period;
+    setSelected(initial ? [initial] : []);
     setPaidAt(todayInJakarta());
     setNote("");
     setError(null);
   }
 
-  const unpaidPeriods = shown ? periods.filter((p) => !paymentMap.has(`${shown.member.id}:${p}`)) : [];
-
-  const perMonth = Number(amount.replace(/[^\d]/g, "")) || 0;
-
-  const toggle = (period: string) => setSelected((prev) => (prev.includes(period) ? prev.filter((p) => p !== period) : [...prev, period].sort()));
+  const options = shown ? optionsFor(shown.member) : [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!shown) return;
+    if (selected.length === 0) return setError("Pilih minimal satu bulan.");
     setIsSubmitting(true);
     setError(null);
-    const result = await recordIuranAction({ userId: shown.member.id, periods: selected, amount, paidAt, note });
+    const result = await recordIuranAction({ userId: shown.member.id, periods: selected, amount: setting.monthlyFee, paidAt, note });
     setIsSubmitting(false);
     if (!result.success) {
       setError(result.error);
@@ -300,37 +321,15 @@ function RecordIuranModal({
       <form onSubmit={handleSubmit} className="space-y-5">
         <ModalError message={error} onDismiss={() => setError(null)} />
 
-        <div>
-          <label className={labelClass}>Bulan yang Dibayar</label>
-          <div className="grid grid-cols-4 gap-2">
-            {unpaidPeriods.map((period) => {
-              const active = selected.includes(period);
-              return (
-                <button
-                  key={period}
-                  type="button"
-                  onClick={() => toggle(period)}
-                  className={`rounded-xl border px-2 py-2 text-xs font-bold transition ${
-                    active ? "bg-red-600 dark:bg-rose-600 border-red-600 dark:border-rose-600 text-white" : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-red-300"
-                  }`}
-                >
-                  {MONTH_SHORT[Number(period.slice(5)) - 1]}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-[11px] text-slate-500 mt-1.5">Pilih beberapa bulan sekaligus untuk pembayaran rapel. Bulan yang sudah lunas tidak ditampilkan.</p>
-        </div>
+        {options.length > 0 ? (
+          <PeriodPicker options={options} selected={selected} onToggle={(p) => setSelected((prev) => togglePeriod(prev, p))} hint="Pilih beberapa bulan sekaligus untuk pembayaran rapel. Bulan yang sudah lunas tidak ditampilkan." />
+        ) : (
+          <p className="text-sm text-slate-500 dark:text-neutral-400">Semua iuran anggota ini pada periode berjalan sudah dibayar atau sedang menunggu konfirmasi.</p>
+        )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Nominal per Bulan (Rp)</label>
-            <input inputMode="numeric" required value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass} placeholder="10000" />
-          </div>
-          <div>
-            <label className={labelClass}>Tanggal Bayar</label>
-            <input type="date" required value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={dateInputClass} />
-          </div>
+        <div>
+          <label className={labelClass}>Tanggal Bayar</label>
+          <input type="date" required max={todayInJakarta()} value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={dateInputClass} />
         </div>
 
         <div>
@@ -338,12 +337,7 @@ function RecordIuranModal({
           <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} className={inputClass} placeholder="mis. Transfer BRI / tunai saat rapat" />
         </div>
 
-        <div className="rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-4 py-3 flex items-center justify-between text-sm">
-          <span className="text-slate-500 dark:text-neutral-400">
-            Total {selected.length} bulan
-          </span>
-          <span className="font-extrabold text-slate-900 dark:text-white">{formatRupiah(perMonth * selected.length)}</span>
-        </div>
+        <PeriodTotal count={selected.length} monthlyFee={setting.monthlyFee} />
 
         <ModalActions onCancel={onClose} isSubmitting={isSubmitting} submitLabel="Simpan Pembayaran" />
       </form>

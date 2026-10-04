@@ -10,9 +10,10 @@ import { dateInputClass, inputClass, labelClass } from "@/components/kas/KasUi";
 import { submitIuranProofAction } from "@/app/actions/kas";
 import { uploadKasProof } from "@/lib/uploadClient";
 import { KAS_PROOF_TYPES, MAX_PROOF_MB } from "@/lib/uploadLimits";
-import { formatRupiah, MONTH_SHORT, todayInJakarta } from "@/lib/kas";
+import { todayInJakarta } from "@/lib/kas";
+import { PeriodPicker, PeriodTotal, togglePeriod, type PeriodOption } from "@/components/kas/PeriodPicker";
 
-export type ProofPeriodOption = { period: string; rejected: boolean };
+export type ProofPeriodOption = PeriodOption;
 
 interface UploadBuktiModalProps {
   options: ProofPeriodOption[];
@@ -23,7 +24,6 @@ interface UploadBuktiModalProps {
   variant?: "primary" | "inline";
 }
 
-const periodLabel = (period: string) => `${MONTH_SHORT[Number(period.slice(5)) - 1]} ${period.slice(0, 4)}`;
 
 // Anggota mengunggah foto bukti transfer/pembayaran untuk satu atau beberapa bulan sekaligus.
 // Status bulan-bulan itu jadi "Menunggu Konfirmasi" sampai bendahara mengonfirmasi atau menolak.
@@ -48,7 +48,7 @@ export function UploadBuktiModal({ options, monthlyFee, preselect, variant = "pr
     setIsOpen(true);
   };
 
-  const toggle = (period: string) => setSelected((prev) => (prev.includes(period) ? prev.filter((p) => p !== period) : [...prev, period].sort()));
+  const toggle = (period: string) => setSelected((prev) => togglePeriod(prev, period));
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files?.[0] ?? null;
@@ -116,31 +116,7 @@ export function UploadBuktiModal({ options, monthlyFee, preselect, variant = "pr
         <form onSubmit={handleSubmit} className="space-y-5">
           <ModalError message={error} onDismiss={() => setError(null)} />
 
-          <div>
-            <label className={labelClass}>Bulan yang Dibayar</label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto overflow-x-hidden overscroll-contain pr-1">
-              {options.map(({ period, rejected }) => {
-                const active = selected.includes(period);
-                return (
-                  <button
-                    key={period}
-                    type="button"
-                    onClick={() => toggle(period)}
-                    title={rejected ? "Bukti sebelumnya ditolak — unggah ulang" : undefined}
-                    className={`rounded-xl border px-2 py-2 text-xs font-bold transition ${
-                      active
-                        ? "bg-red-600 dark:bg-rose-600 border-red-600 dark:border-rose-600 text-white"
-                        : "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-red-300"
-                    }`}
-                  >
-                    {periodLabel(period)}
-                    {rejected && <span className="block text-[10px] font-semibold opacity-80">ditolak</span>}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-[11px] text-slate-500 mt-1.5">Pilih beberapa bulan sekaligus kalau membayar rapel dengan satu bukti.</p>
-          </div>
+          <PeriodPicker options={options} selected={selected} onToggle={toggle} hint="Pilih beberapa bulan sekaligus kalau membayar rapel dengan satu bukti." />
 
           <div>
             <label className={labelClass}>Tanggal Bayar</label>
@@ -164,12 +140,7 @@ export function UploadBuktiModal({ options, monthlyFee, preselect, variant = "pr
             <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} className={inputClass} placeholder="mis. Transfer BRI a.n. ..." />
           </div>
 
-          <div className="rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-4 py-3 flex items-center justify-between text-sm">
-            <span className="text-slate-500 dark:text-neutral-400">
-              {selected.length} bulan × {formatRupiah(monthlyFee)}
-            </span>
-            <span className="font-extrabold text-slate-900 dark:text-white">{formatRupiah(monthlyFee * selected.length)}</span>
-          </div>
+          <PeriodTotal count={selected.length} monthlyFee={monthlyFee} />
 
           <ModalActions onCancel={() => setIsOpen(false)} isSubmitting={isSubmitting} submitLabel="Kirim Bukti" submittingLabel="Mengirim..." />
         </form>

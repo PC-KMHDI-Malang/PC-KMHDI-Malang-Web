@@ -8,7 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { arrearsPeriods, currentPeriod, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, memberSetting, parseYearParam, periodEnd, toKasSetting, toMemberPeriod, type MemberPeriod, type IuranStatus, type KasSetting } from "@/lib/kas";
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, cardClass } from "@/components/kas/KasUi";
-import { IuranMatrix } from "@/components/kas/IuranMatrix";
+import { IuranMatrix, type MemberPeriodState } from "@/components/kas/IuranMatrix";
 import { KasSettingForm } from "@/components/kas/KasSettingForm";
 import { KonfirmasiList, type PendingProof } from "@/components/kas/KonfirmasiList";
 import { KasLogList, type KasLogAction, type KasLogItem } from "@/components/kas/KasLogList";
@@ -101,6 +101,14 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
   const paidByMember = new Map<string, string[]>();
   for (const p of iuran) if (isSettled(p.status)) paidByMember.set(p.userId, [...(paidByMember.get(p.userId) ?? []), p.period]);
   const arrears: Record<string, number> = {};
+  // Bulan yang sudah beres & yang ditolak per anggota (semua tahun) — dipakai pilihan bulan di
+  // form "Catat Pembayaran Iuran", yang mencakup seluruh periode, bukan cuma tahun yang dilihat.
+  const periodState: Record<string, MemberPeriodState> = {};
+  for (const p of iuran) {
+    const state = (periodState[p.userId] ??= { settled: [], rejected: [] });
+    if (isSettled(p.status)) state.settled.push(p.period);
+    else if (p.status === "DITOLAK") state.rejected.push(p.period);
+  }
   const memberPeriods: Record<string, MemberPeriod> = {};
   for (const row of memberPeriodRows ?? []) {
     const period = toMemberPeriod(row);
@@ -227,7 +235,7 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
                     </div>
                   }
                 />
-                <IuranMatrix members={members} payments={yearPayments} arrears={arrears} setting={setting} memberPeriods={memberPeriods} year={year} nowPeriod={nowPeriod} />
+                <IuranMatrix members={members} payments={yearPayments} arrears={arrears} setting={setting} memberPeriods={memberPeriods} periodState={periodState} year={year} nowPeriod={nowPeriod} />
               </div>
             )}
 
