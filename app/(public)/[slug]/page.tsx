@@ -215,8 +215,8 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
           </div>
         </div>
 
-        {/* Iklan In-Article */}
-        <div className="mt-10">
+        {/* Iklan In-Article — .ad-slot disembunyikan otomatis kalau AdSense tidak mengisi iklan (globals.css) */}
+        <div className="ad-slot mt-10">
           <InArticleAd />
         </div>
 

@@ -328,3 +328,12 @@ body {
 .dark .rich-content a {
   color: #fb7185;
 }
+
+/* AdSense memesan ruang setinggi iklan untuk unit in-article, lalu menandai <ins>-nya dengan
+   data-ad-status="unfilled" kalau ternyata tidak ada iklan yang bisa ditampilkan. Tanpa aturan
+   ini, ruang kosong ratusan piksel itu tetap tinggal di bawah artikel. Wrapper .ad-slot ikut
+   disembunyikan (lewat :has) supaya jarak marginnya pun tidak tersisa. */
+ins.adsbygoogle[data-ad-status="unfilled"],
+.ad-slot:has(ins.adsbygoogle[data-ad-status="unfilled"]) {
+  display: none !important;
+}
