@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowDownLeft, ArrowUpRight, BookOpenCheck, ChevronLeft, ChevronRight, Landmark, Settings2, Users, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarCheck, ChevronLeft, ChevronRight, ClipboardCheck, Clock, FileSpreadsheet, FileText, Settings2, Users, Wallet } from "lucide-react";
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { arrearsPeriods, currentPeriod, formatPeriod, formatRupiah, isKasMember, isTreasurerEmail, ledgerSummary, parseYearParam, type KasSetting } from "@/lib/kas";
+import { arrearsPeriods, currentPeriod, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, parseYearParam, type IuranStatus, type KasSetting } from "@/lib/kas";
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, cardClass } from "@/components/kas/KasUi";
 import { IuranMatrix } from "@/components/kas/IuranMatrix";
-import { KasTransaksiManager, type Transaksi } from "@/components/kas/KasTransaksiManager";
 import { KasSettingForm } from "@/components/kas/KasSettingForm";
+import { KonfirmasiList, type PendingProof } from "@/components/kas/KonfirmasiList";
 
 export const metadata: Metadata = {
   title: "Kelola Uang Kas",
@@ -19,12 +19,23 @@ export const metadata: Metadata = {
 
 const TABS = [
   { key: "iuran", label: "Iuran Anggota", icon: Users },
-  { key: "buku", label: "Buku Kas", icon: BookOpenCheck },
+  { key: "konfirmasi", label: "Konfirmasi", icon: ClipboardCheck },
   { key: "pengaturan", label: "Pengaturan", icon: Settings2 },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
-type IuranRow = { id: string; userId: string; period: string; amount: number; paidAt: string; note: string | null };
+type IuranRow = {
+  id: string;
+  userId: string;
+  period: string;
+  amount: number;
+  paidAt: string;
+  note: string | null;
+  status: IuranStatus;
+  proofUrl: string | null;
+  submittedAt: string | null;
+  rejectReason: string | null;
+};
 
 // Supabase membatasi satu query maksimal 1.000 baris. Iuran (anggota × bulan) bisa melewati itu
 // setelah beberapa tahun, jadi diambil per halaman supaya total kas tidak diam-diam terpotong.
@@ -57,34 +68,61 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
   const thisYear = Number(nowPeriod.slice(0, 4));
   const year = parseYearParam(params.tahun, thisYear);
 
-  const [{ data: settingRow, error: settingError }, { data: userRows }, iuranResult, transaksiResult] = await Promise.all([
+  const [{ data: settingRow, error: settingError }, { data: userRows }, iuranResult] = await Promise.all([
     supabaseAdmin.from("KasSetting").select("monthlyFee, startPeriod").eq("id", 1).maybeSingle(),
     supabaseAdmin.from("User").select("id, name, email, role, jabatan").order("name", { ascending: true }),
-    fetchAll<IuranRow>("KasIuran", "id, userId, period, amount, paidAt, note", "period"),
-    fetchAll<Transaksi>("KasTransaksi", "id, type, amount, date, description, category", "date"),
+    fetchAll<IuranRow>("KasIuran", "id, userId, period, amount, paidAt, note, status, proofUrl, submittedAt, rejectReason", "period"),
   ]);
 
-  const tableMissing = !!settingError || iuranResult.error || transaksiResult.error;
+  const tableMissing = !!settingError || iuranResult.error;
   const setting: KasSetting = { monthlyFee: settingRow?.monthlyFee ?? 0, startPeriod: settingRow?.startPeriod ?? null };
   const members = (userRows ?? []).filter(isKasMember).map((u) => ({ id: u.id as string, name: (u.name as string) || "Tanpa Nama", jabatan: (u.jabatan as string | null) ?? null }));
   const memberIds = new Set(members.map((m) => m.id));
 
   const iuran = iuranResult.data;
-  const transaksi = transaksiResult.data;
-  const summary = ledgerSummary(
-    iuran.reduce((s, p) => s + p.amount, 0),
-    transaksi,
-  );
+  // Total hanya dari iuran yang sudah dikonfirmasi (LUNAS) — bukti yang masih menunggu atau
+  // ditolak belum dianggap uang masuk.
+  const lunas = iuran.filter((p) => p.status === "LUNAS");
+  const totalIuran = lunas.reduce((s, p) => s + p.amount, 0);
+  const yearIuran = lunas.filter((p) => p.period.startsWith(`${year}-`)).reduce((s, p) => s + p.amount, 0);
 
+  // Bulan yang buktinya menunggu konfirmasi tidak dihitung tunggakan; yang ditolak dihitung lagi.
   const paidByMember = new Map<string, string[]>();
-  for (const p of iuran) paidByMember.set(p.userId, [...(paidByMember.get(p.userId) ?? []), p.period]);
+  for (const p of iuran) if (isSettled(p.status)) paidByMember.set(p.userId, [...(paidByMember.get(p.userId) ?? []), p.period]);
   const arrears: Record<string, number> = {};
   for (const m of members) arrears[m.id] = arrearsPeriods(paidByMember.get(m.id) ?? [], setting, nowPeriod).length;
   const totalArrears = Object.values(arrears).reduce((s, n) => s + n, 0);
 
   const yearPrefix = `${year}-`;
-  const yearPayments = iuran.filter((p) => p.period.startsWith(yearPrefix) && memberIds.has(p.userId));
-  const yearTransaksi = transaksi.filter((t) => t.date.startsWith(yearPrefix));
+  const yearPayments = iuran.filter((p) => p.period.startsWith(yearPrefix) && memberIds.has(p.userId) && p.status !== "DITOLAK");
+
+  // Bukti yang menunggu konfirmasi, dikelompokkan per kiriman (satu file bukti bisa untuk
+  // beberapa bulan sekaligus), yang terlama di atas.
+  const memberNames = new Map(members.map((m) => [m.id, m.name]));
+  const pendingMap = new Map<string, PendingProof>();
+  for (const p of iuran) {
+    if (p.status !== "MENUNGGU" || !memberIds.has(p.userId)) continue;
+    const key = `${p.userId}|${p.proofUrl ?? p.id}`;
+    const group = pendingMap.get(key) ?? {
+      key,
+      ids: [],
+      memberName: memberNames.get(p.userId) ?? "Anggota",
+      periods: [],
+      amountPerMonth: p.amount,
+      total: 0,
+      paidAt: p.paidAt,
+      submittedAt: p.submittedAt,
+      note: p.note,
+      proofHref: `/kas/bukti/${p.id}`,
+    };
+    group.ids.push(p.id);
+    group.periods.push(p.period);
+    group.total += p.amount;
+    pendingMap.set(key, group);
+  }
+  const pending = [...pendingMap.values()]
+    .map((g) => ({ ...g, periods: g.periods.sort() }))
+    .sort((a, b) => (a.submittedAt ?? "").localeCompare(b.submittedAt ?? ""));
 
   return (
     <div className="-mt-32 bg-slate-50/70 dark:bg-[#0a0a0c] transition-colors min-h-screen pb-20">
@@ -101,16 +139,17 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
           <div className={cardClass}>
             <KasNotice title="Tabel database kas belum dibuat di Supabase.">
               Buka <strong>Supabase Dashboard &gt; SQL Editor</strong>, lalu jalankan skrip{" "}
-              <code className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 font-mono text-[11px]">supabase/migrations/025_create_kas_tables.sql</code>. Setelah itu, muat ulang halaman ini.
+              <code className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 font-mono text-[11px]">supabase/migrations/025_create_kas_tables.sql</code> dan{" "}
+              <code className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 font-mono text-[11px]">026_add_kas_iuran_proof_status.sql</code> (berurutan). Setelah itu, muat ulang halaman ini.
             </KasNotice>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              <StatCard icon={Landmark} label="Saldo Kas" value={formatRupiah(summary.balance)} tone={summary.balance < 0 ? "bad" : "good"} />
-              <StatCard icon={Wallet} label="Total Iuran" value={formatRupiah(summary.iuranTotal)} hint={`${iuran.length} pembayaran`} />
-              <StatCard icon={ArrowDownLeft} label="Pemasukan Lain" value={formatRupiah(summary.otherIncome)} />
-              <StatCard icon={ArrowUpRight} label="Pengeluaran" value={formatRupiah(summary.expense)} tone="bad" />
+              <StatCard icon={Wallet} label="Total Iuran Masuk" value={formatRupiah(totalIuran)} hint={`${lunas.length} pembayaran`} tone="good" />
+              <StatCard icon={CalendarCheck} label={`Iuran ${year}`} value={formatRupiah(yearIuran)} />
+              <StatCard icon={Clock} label="Menunggu" value={`${pending.length} bukti`} hint="Perlu dikonfirmasi" />
+              <StatCard icon={AlertTriangle} label="Tunggakan" value={formatRupiah(totalArrears * setting.monthlyFee)} hint={`${totalArrears} bulan`} tone={totalArrears > 0 ? "bad" : "good"} />
             </div>
 
             {!setting.startPeriod && (
@@ -137,6 +176,9 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
                 >
                   <Icon size={16} />
                   {label}
+                  {key === "konfirmasi" && pending.length > 0 && (
+                    <span className="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold text-white">{pending.length}</span>
+                  )}
                 </Link>
               ))}
             </nav>
@@ -147,16 +189,25 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
                   icon={Users}
                   title={`Iuran Anggota ${year}`}
                   description={`${members.length} anggota · ${totalArrears} bulan tunggakan (${formatRupiah(totalArrears * setting.monthlyFee)}). Klik kotak bulan untuk mencatat atau melihat pembayaran.`}
-                  action={<YearNav tab={tab} year={year} />}
+                  action={
+                    <div className="flex shrink-0 flex-wrap md:flex-nowrap items-center gap-2 self-start sm:self-auto">
+                      <ExportButtons year={year} />
+                      <YearNav tab={tab} year={year} />
+                    </div>
+                  }
                 />
                 <IuranMatrix members={members} payments={yearPayments} arrears={arrears} setting={setting} year={year} nowPeriod={nowPeriod} />
               </div>
             )}
 
-            {tab === "buku" && (
+            {tab === "konfirmasi" && (
               <div className={cardClass}>
-                <CardHeading icon={BookOpenCheck} title={`Buku Kas ${year}`} description="Pemasukan di luar iuran dan pengeluaran organisasi. Iuran anggota otomatis terhitung di saldo." action={<YearNav tab={tab} year={year} />} />
-                <KasTransaksiManager transaksi={yearTransaksi} />
+                <CardHeading
+                  icon={ClipboardCheck}
+                  title="Konfirmasi Pembayaran"
+                  description={pending.length ? `${pending.length} bukti pembayaran menunggu diperiksa. Konfirmasi kalau dana sudah diterima, atau tolak dengan alasan.` : "Tidak ada bukti pembayaran yang menunggu konfirmasi."}
+                />
+                <KonfirmasiList items={pending} />
               </div>
             )}
 
@@ -177,6 +228,25 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
         )}
       </div>
     </div>
+  );
+}
+
+// Unduh laporan iuran tahun yang sedang dilihat (app/(public)/kas/kelola/export/route.ts).
+// <a download> biasa, bukan <Link>: hasilnya file, bukan halaman yang dinavigasi.
+function ExportButtons({ year }: { year: number }) {
+  const btn =
+    "inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors";
+  return (
+    <>
+      <a href={`/kas/kelola/export?format=pdf&tahun=${year}`} download className={btn}>
+        <FileText size={15} className="text-red-600 dark:text-rose-400" />
+        Export PDF
+      </a>
+      <a href={`/kas/kelola/export?format=xlsx&tahun=${year}`} download className={btn}>
+        <FileSpreadsheet size={15} className="text-emerald-600 dark:text-emerald-400" />
+        Export Excel
+      </a>
+    </>
   );
 }
 

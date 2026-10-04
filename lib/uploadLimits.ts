@@ -39,3 +39,11 @@ export const BUCKET_FILE_SIZE_LIMITS: Record<string, number> = {
 };
 
 export const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
+// Bukti pembayaran iuran kas yang diunggah anggota (lihat app/actions/kas.ts). Sengaja TIDAK
+// dimasukkan ke STORAGE_BUCKETS: daftar itu dipakai upload panel admin, sedangkan bukti kas
+// diunggah anggota biasa lewat action-nya sendiri. Disimpan di bucket R2 privat — hanya pemilik
+// iuran dan bendahara yang bisa membukanya (app/(public)/kas/bukti/[id]/route.ts).
+export const KAS_PROOF_BUCKET = "kas-proofs";
+export const MAX_PROOF_MB = MAX_IMAGE_MB;
+export const KAS_PROOF_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);

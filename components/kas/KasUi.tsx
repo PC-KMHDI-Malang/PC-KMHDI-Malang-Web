@@ -13,7 +13,8 @@ export const inputClass =
 export const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5";
 
 export const STATUS_LABEL: Record<MonthStatus, string> = {
-  LUNAS: "Lunas",
+  LUNAS: "Sudah Bayar",
+  MENUNGGU: "Menunggu Konfirmasi",
   BELUM: "Belum Bayar",
   MENDATANG: "Mendatang",
   TIDAK_BERLAKU: "Tidak Berlaku",
@@ -21,6 +22,7 @@ export const STATUS_LABEL: Record<MonthStatus, string> = {
 
 export const STATUS_CLASS: Record<MonthStatus, string> = {
   LUNAS: "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400",
+  MENUNGGU: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-400",
   BELUM: "bg-red-50 dark:bg-rose-950/30 border-red-200 dark:border-rose-900/50 text-red-600 dark:text-rose-400",
   MENDATANG: "bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400",
   TIDAK_BERLAKU: "bg-slate-50/60 dark:bg-white/[0.02] border-dashed border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500",

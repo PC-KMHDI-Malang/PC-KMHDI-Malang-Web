@@ -3,7 +3,7 @@ import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObject
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isR2Configured, r2Client, R2_PRIVATE_BUCKET, R2_PUBLIC_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
-import { STORAGE_BUCKETS } from "@/lib/uploadLimits";
+import { KAS_PROOF_BUCKET, STORAGE_BUCKETS } from "@/lib/uploadLimits";
 
 // Nama bucket & batas ukuran per bucket kini tinggal di lib/uploadLimits.ts (file murni yang
 // juga bisa di-import komponen client), dan di-export ulang di sini supaya import lama
@@ -33,7 +33,8 @@ export const R2_PRIVATE_SCHEME = "r2-private://";
 
 // Bucket privat di Supabase; di R2 isinya masuk ke bucket R2 privat, sisanya ke bucket R2 publik.
 // Jangan pernah dipindah ke bucket publik — PDF e-book cuma boleh dibuka lewat signed URL.
-const PRIVATE_BUCKETS = new Set<string>([STORAGE_BUCKETS.ebookFiles]);
+// Bukti pembayaran kas (KAS_PROOF_BUCKET) juga privat — berisi data keuangan pribadi anggota.
+const PRIVATE_BUCKETS = new Set<string>([STORAGE_BUCKETS.ebookFiles, KAS_PROOF_BUCKET]);
 
 export type StoredFileRef = { provider: "supabase"; path: string } | { provider: "r2-public" | "r2-private"; key: string };
 

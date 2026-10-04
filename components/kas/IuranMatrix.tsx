@@ -3,13 +3,13 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, Search, Trash2 } from "lucide-react";
+import { Check, Clock, ExternalLink, Pencil, Search, Trash2 } from "lucide-react";
 
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { KasModal, ModalActions, ModalError } from "@/components/kas/KasModal";
 import { STATUS_CLASS, STATUS_LABEL, inputClass, labelClass } from "@/components/kas/KasUi";
-import { deleteIuranAction, recordIuranAction } from "@/app/actions/kas";
-import { formatDate, formatPeriod, formatRupiah, monthStatus, MONTH_SHORT, periodsOfYear, todayInJakarta, type IuranPayment, type KasSetting } from "@/lib/kas";
+import { deleteIuranAction, recordIuranAction, updateIuranAction } from "@/app/actions/kas";
+import { formatDate, formatPeriod, formatRupiah, monthStatus, MONTH_SHORT, paymentStatus, periodsOfYear, todayInJakarta, type IuranPayment, type KasSetting } from "@/lib/kas";
 
 type Member = { id: string; name: string; jabatan: string | null };
 type Payment = IuranPayment & { userId: string };
@@ -45,7 +45,7 @@ export function IuranMatrix({ members, payments, arrears, setting, year, nowPeri
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari nama atau jabatan..." className={`${inputClass} pl-10 py-2.5 text-sm`} />
         </div>
         <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
-          {(["LUNAS", "BELUM", "MENDATANG", "TIDAK_BERLAKU"] as const).map((s) => (
+          {(["LUNAS", "MENUNGGU", "BELUM", "MENDATANG", "TIDAK_BERLAKU"] as const).map((s) => (
             <span key={s} className={`inline-flex items-center rounded-full border px-2.5 py-1 ${STATUS_CLASS[s]}`}>
               {STATUS_LABEL[s]}
             </span>
@@ -78,7 +78,7 @@ export function IuranMatrix({ members, payments, arrears, setting, year, nowPeri
                   </td>
                   {periods.map((period) => {
                     const payment = paymentMap.get(`${member.id}:${period}`);
-                    const status = monthStatus(period, !!payment, setting, nowPeriod);
+                    const status = monthStatus(period, paymentStatus(payment), setting, nowPeriod);
                     return (
                       <td key={period} className="px-1 py-2.5 text-center">
                         <button
@@ -87,7 +87,7 @@ export function IuranMatrix({ members, payments, arrears, setting, year, nowPeri
                           onClick={() => (payment ? setDetailTarget({ member, payment }) : setRecordTarget({ member, period }))}
                           className={`w-9 h-9 inline-flex items-center justify-center rounded-xl border transition hover:scale-110 ${STATUS_CLASS[status]}`}
                         >
-                          {payment ? <Check size={15} strokeWidth={3} /> : <span className="text-xs">–</span>}
+                          {status === "MENUNGGU" ? <Clock size={15} strokeWidth={2.5} /> : payment ? <Check size={15} strokeWidth={3} /> : <span className="text-xs">–</span>}
                         </button>
                       </td>
                     );
@@ -241,9 +241,50 @@ function PaymentDetailModal({ target, onClose }: { target: { member: Member; pay
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Mode edit manual (bendahara): nominal, tanggal bayar, catatan, dan status.
+  const [editing, setEditing] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [paidAt, setPaidAt] = useState("");
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState<"LUNAS" | "MENUNGGU">("LUNAS");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   // Data ditahan selama animasi tutup, supaya isi modal tidak kosong mendadak saat memudar.
+  // Setiap kali dibuka untuk catatan lain, modal kembali ke tampilan detail (bukan form edit).
   const [shown, setShown] = useState(target);
-  if (target && target !== shown) setShown(target);
+  if (target && target !== shown) {
+    setShown(target);
+    setEditing(false);
+    setError(null);
+  }
+
+  const startEdit = () => {
+    if (!shown) return;
+    setAmount(String(shown.payment.amount));
+    setPaidAt(shown.payment.paidAt);
+    setNote(shown.payment.note ?? "");
+    setStatus(paymentStatus(shown.payment) === "MENUNGGU" ? "MENUNGGU" : "LUNAS");
+    setError(null);
+    setEditing(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shown) return;
+    setIsSaving(true);
+    setError(null);
+    const result = await updateIuranAction({ id: shown.payment.id, amount, paidAt, note, status });
+    setIsSaving(false);
+    if (!result.success) {
+      setError(result.error);
+      toast.error(result.error ?? "Gagal menyimpan");
+      return;
+    }
+    toast.success("Catatan iuran diperbarui.");
+    router.refresh();
+    onClose();
+  };
 
   const handleDelete = async () => {
     if (!shown) return;
@@ -262,11 +303,51 @@ function PaymentDetailModal({ target, onClose }: { target: { member: Member; pay
 
   return (
     <>
-      <KasModal isOpen={!!target && !confirmOpen} onClose={onClose} title="Detail Pembayaran" description={shown ? `Anggota: ${shown.member.name}` : undefined}>
-        {shown && (
+      <KasModal
+        isOpen={!!target && !confirmOpen}
+        onClose={onClose}
+        disableClose={isSaving}
+        title={editing ? "Ubah Pembayaran" : "Detail Pembayaran"}
+        description={shown ? `Anggota: ${shown.member.name} · ${formatPeriod(shown.payment.period)}` : undefined}
+      >
+        {shown && editing && (
+          <form onSubmit={handleSave} className="space-y-5">
+            <ModalError message={error} onDismiss={() => setError(null)} />
+
+            <div>
+              <label className={labelClass}>Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value as "LUNAS" | "MENUNGGU")} className={inputClass}>
+                <option value="LUNAS">{STATUS_LABEL.LUNAS}</option>
+                {shown.payment.proofUrl && <option value="MENUNGGU">{STATUS_LABEL.MENUNGGU}</option>}
+              </select>
+              <p className="text-[11px] text-slate-500 mt-1.5">Untuk menjadikan &ldquo;Belum Bayar&rdquo;, gunakan tombol Batalkan pada detail pembayaran.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>Nominal (Rp)</label>
+                <input inputMode="numeric" required value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Tanggal Bayar</label>
+                <input type="date" required value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={inputClass} />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Catatan (Opsional)</label>
+              <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} className={inputClass} />
+            </div>
+
+            <ModalActions onCancel={() => setEditing(false)} isSubmitting={isSaving} submitLabel="Simpan Perubahan" />
+          </form>
+        )}
+
+        {shown && !editing && (
           <div className="space-y-5">
             <dl className="rounded-2xl border border-slate-200 dark:border-white/10 divide-y divide-slate-100 dark:divide-white/10 text-sm">
               {[
+                ["Status", STATUS_LABEL[paymentStatus(shown.payment) === "MENUNGGU" ? "MENUNGGU" : "LUNAS"]],
                 ["Periode", formatPeriod(shown.payment.period)],
                 ["Nominal", formatRupiah(shown.payment.amount)],
                 ["Tanggal Bayar", formatDate(shown.payment.paidAt)],
@@ -279,6 +360,19 @@ function PaymentDetailModal({ target, onClose }: { target: { member: Member; pay
               ))}
             </dl>
 
+            {/* Bukti dari anggota (kalau iuran ini diunggah lewat /kas). Konfirmasi/tolak ada di tab Konfirmasi. */}
+            {shown.payment.proofUrl && (
+              <a
+                href={`/kas/bukti/${shown.payment.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+              >
+                <ExternalLink size={16} />
+                Lihat Bukti Pembayaran
+              </a>
+            )}
+
             <div className="flex gap-3 justify-between pt-2">
               <button
                 type="button"
@@ -288,9 +382,19 @@ function PaymentDetailModal({ target, onClose }: { target: { member: Member; pay
                 <Trash2 size={16} />
                 Batalkan
               </button>
-              <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
-                Tutup
-              </button>
+              <div className="flex gap-2">
+                <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors">
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  onClick={startEdit}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm"
+                >
+                  <Pencil size={16} />
+                  Ubah
+                </button>
+              </div>
             </div>
           </div>
         )}

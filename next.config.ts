@@ -23,6 +23,9 @@ const r2PublicHost = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  // Library pembuat laporan PDF/Excel kas (lib/kasExport.ts) dipakai apa adanya dari node_modules,
+  // tidak di-bundle: jspdf punya build khusus Node yang hanya terpilih kalau di-require langsung.
+  serverExternalPackages: ["jspdf", "jspdf-autotable", "exceljs"],
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",

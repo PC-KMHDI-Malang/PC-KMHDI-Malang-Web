@@ -99,26 +99,49 @@ export type KasSetting = {
   startPeriod: string | null;
 };
 
+// Status satu baris KasIuran di database (lihat migrasi 026). Baris tanpa status (data lama /
+// unit test) dianggap LUNAS — dulu semua baris memang dicatat langsung oleh bendahara.
+export type IuranStatus = "LUNAS" | "MENUNGGU" | "DITOLAK";
+
 export type IuranPayment = {
   id: string;
   period: string;
   amount: number;
   paidAt: string;
   note?: string | null;
+  status?: IuranStatus | null;
+  proofUrl?: string | null;
+  rejectReason?: string | null;
 };
 
-// LUNAS: sudah dibayar. BELUM: sudah jatuh tempo tapi belum dibayar (tunggakan).
-// MENDATANG: bulan setelah bulan berjalan. TIDAK_BERLAKU: sebelum iuran mulai berlaku.
-export type MonthStatus = "LUNAS" | "BELUM" | "MENDATANG" | "TIDAK_BERLAKU";
+export function paymentStatus(payment: Pick<IuranPayment, "status"> | null | undefined): IuranStatus | null {
+  if (!payment) return null;
+  return payment.status ?? "LUNAS";
+}
 
-export function monthStatus(period: string, paid: boolean, setting: KasSetting, nowPeriod: string): MonthStatus {
-  if (paid) return "LUNAS";
+// Bulan dianggap "beres" (bukan tunggakan) kalau sudah LUNAS, atau buktinya sedang MENUNGGU
+// konfirmasi — anggota sudah membayar, tinggal diverifikasi. DITOLAK kembali jadi tunggakan.
+export function isSettled(status: IuranStatus | null): boolean {
+  return status === "LUNAS" || status === "MENUNGGU";
+}
+
+// LUNAS: sudah dibayar. MENUNGGU: bukti sudah diunggah, menunggu konfirmasi bendahara.
+// BELUM: sudah jatuh tempo tapi belum dibayar (tunggakan, termasuk yang buktinya ditolak).
+// MENDATANG: bulan setelah bulan berjalan. TIDAK_BERLAKU: sebelum iuran mulai berlaku.
+export type MonthStatus = "LUNAS" | "MENUNGGU" | "BELUM" | "MENDATANG" | "TIDAK_BERLAKU";
+
+// `paid` boleh boolean (true = LUNAS) atau status baris iuran-nya langsung.
+export function monthStatus(period: string, paid: boolean | IuranStatus | null, setting: KasSetting, nowPeriod: string): MonthStatus {
+  const status: IuranStatus | null = paid === true ? "LUNAS" : paid === false ? null : paid;
+  if (status === "LUNAS") return "LUNAS";
+  if (status === "MENUNGGU") return "MENUNGGU";
   if (!setting.startPeriod || period < setting.startPeriod) return "TIDAK_BERLAKU";
   if (period > nowPeriod) return "MENDATANG";
   return "BELUM";
 }
 
 // Daftar bulan yang sudah jatuh tempo tapi belum dibayar, sejak iuran berlaku sampai bulan berjalan.
+// `paidPeriods` berisi bulan yang sudah beres (LUNAS atau MENUNGGU — lihat isSettled).
 export function arrearsPeriods(paidPeriods: Iterable<string>, setting: KasSetting, nowPeriod: string): string[] {
   if (!setting.startPeriod) return [];
   const paid = new Set(paidPeriods);
@@ -129,26 +152,23 @@ export function memberYearStatus(payments: IuranPayment[], year: number, setting
   const byPeriod = new Map(payments.map((p) => [p.period, p]));
   const months = periodsOfYear(year).map((period) => {
     const payment = byPeriod.get(period) ?? null;
-    return { period, payment, status: monthStatus(period, !!payment, setting, nowPeriod) };
+    return { period, payment, status: monthStatus(period, paymentStatus(payment), setting, nowPeriod) };
   });
-  const yearPaid = months.reduce((sum, m) => sum + (m.payment?.amount ?? 0), 0);
-  const arrears = arrearsPeriods(byPeriod.keys(), setting, nowPeriod);
+  const lunas = (p: IuranPayment | null) => paymentStatus(p) === "LUNAS";
+  const yearPaid = months.reduce((sum, m) => sum + (lunas(m.payment) ? m.payment!.amount : 0), 0);
+  const arrears = arrearsPeriods(
+    payments.filter((p) => isSettled(paymentStatus(p))).map((p) => p.period),
+    setting,
+    nowPeriod,
+  );
   return {
     months,
     yearPaid,
-    totalPaid: payments.reduce((sum, p) => sum + p.amount, 0),
+    totalPaid: payments.filter(lunas).reduce((sum, p) => sum + p.amount, 0),
+    pendingCount: payments.filter((p) => paymentStatus(p) === "MENUNGGU").length,
     arrearsCount: arrears.length,
     arrearsAmount: arrears.length * setting.monthlyFee,
   };
-}
-
-export type KasTransaksiType = "MASUK" | "KELUAR";
-
-export function ledgerSummary(iuranTotal: number, transaksi: { type: KasTransaksiType; amount: number }[]) {
-  const otherIncome = transaksi.filter((t) => t.type === "MASUK").reduce((s, t) => s + t.amount, 0);
-  const expense = transaksi.filter((t) => t.type === "KELUAR").reduce((s, t) => s + t.amount, 0);
-  const totalIncome = iuranTotal + otherIncome;
-  return { iuranTotal, otherIncome, expense, totalIncome, balance: totalIncome - expense };
 }
 
 // Tahun yang ditampilkan dari ?tahun=..., dibatasi ke rentang wajar supaya URL iseng tidak

@@ -22,10 +22,11 @@ import {
   monthStatus,
   arrearsPeriods,
   memberYearStatus,
-  ledgerSummary,
   parseRupiahInput,
   parseYearParam,
   formatPeriod,
+  paymentStatus,
+  isSettled,
 } from "@/lib/kas";
 
 describe("roles — siapa boleh masuk panel admin", () => {
@@ -408,16 +409,7 @@ describe("kas — status iuran & tunggakan", () => {
   });
 });
 
-describe("kas — buku kas & input", () => {
-  it("menghitung saldo dari iuran + pemasukan lain - pengeluaran", () => {
-    const s = ledgerSummary(100000, [
-      { type: "MASUK", amount: 50000 },
-      { type: "KELUAR", amount: 30000 },
-      { type: "KELUAR", amount: 20000 },
-    ]);
-    assert.deepEqual(s, { iuranTotal: 100000, otherIncome: 50000, expense: 50000, totalIncome: 150000, balance: 100000 });
-  });
-
+describe("kas — input", () => {
   it("membaca nominal rupiah dari berbagai format", () => {
     assert.equal(parseRupiahInput("10.000"), 10000);
     assert.equal(parseRupiahInput("Rp 25.500"), 25500);
@@ -465,5 +457,43 @@ describe("storage — mengenali file Supabase lama dan R2 baru", () => {
       "https://abc.supabase.co/storage/v1/object/public/article-images/old.png",
       `${R2}/article-images/new.png`,
     ]);
+  });
+});
+
+describe("kas — bukti pembayaran & konfirmasi bendahara", () => {
+  const setting = { monthlyFee: 10000, startPeriod: "2026-01" };
+
+  it("membaca status baris iuran (data lama tanpa status dianggap lunas)", () => {
+    assert.equal(paymentStatus(null), null);
+    assert.equal(paymentStatus({}), "LUNAS");
+    assert.equal(paymentStatus({ status: "MENUNGGU" }), "MENUNGGU");
+    assert.equal(isSettled("LUNAS"), true);
+    assert.equal(isSettled("MENUNGGU"), true);
+    assert.equal(isSettled("DITOLAK"), false);
+    assert.equal(isSettled(null), false);
+  });
+
+  it("menampilkan status per bulan sesuai status buktinya", () => {
+    assert.equal(monthStatus("2026-02", "MENUNGGU", setting, "2026-06"), "MENUNGGU");
+    assert.equal(monthStatus("2026-02", "LUNAS", setting, "2026-06"), "LUNAS");
+    // Bukti ditolak: kembali jadi belum bayar (atau mendatang kalau bulannya belum tiba).
+    assert.equal(monthStatus("2026-02", "DITOLAK", setting, "2026-06"), "BELUM");
+    assert.equal(monthStatus("2026-09", "DITOLAK", setting, "2026-06"), "MENDATANG");
+  });
+
+  it("hanya menghitung yang sudah dikonfirmasi sebagai uang masuk", () => {
+    const payments = [
+      { id: "a", period: "2026-01", amount: 10000, paidAt: "2026-01-05", status: "LUNAS" as const },
+      { id: "b", period: "2026-02", amount: 10000, paidAt: "2026-02-05", status: "MENUNGGU" as const },
+      { id: "c", period: "2026-03", amount: 10000, paidAt: "2026-03-05", status: "DITOLAK" as const },
+    ];
+    const s = memberYearStatus(payments, 2026, setting, "2026-04");
+    assert.equal(s.yearPaid, 10000);
+    assert.equal(s.totalPaid, 10000);
+    assert.equal(s.pendingCount, 1);
+    // Tunggakan: Maret (ditolak) & April (belum ada) — Februari menunggu konfirmasi, bukan tunggakan.
+    assert.equal(s.arrearsCount, 2);
+    assert.equal(s.months[1].status, "MENUNGGU");
+    assert.equal(s.months[2].status, "BELUM");
   });
 });

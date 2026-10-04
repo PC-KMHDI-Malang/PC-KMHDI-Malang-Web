@@ -1,4 +1,5 @@
 import { createUploadUrlAction, uploadFileAction } from "@/lib/actions";
+import { createKasProofUploadUrlAction, uploadKasProofAction } from "@/app/actions/kas";
 import { SERVER_UPLOAD_MAX_BYTES } from "@/lib/uploadLimits";
 
 // Satu pintu upload untuk semua komponen admin (ImagePicker, FilePicker, RichTextEditor, modal
@@ -30,5 +31,32 @@ export async function uploadFile(file: File, bucket: string): Promise<string> {
   }
 
   if (!response.ok) throw new Error(`Upload ke storage gagal (HTTP ${response.status}).`);
+  return target.fileUrl;
+}
+
+// Sama seperti uploadFile di atas, khusus bukti pembayaran iuran yang diunggah anggota. Pakai
+// action-nya sendiri (bukan action panel admin) karena anggota biasa tidak punya akses panel admin.
+export async function uploadKasProof(file: File): Promise<string> {
+  const viaServer = async () => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const result = await uploadKasProofAction(formData);
+    if (!result.url) throw new Error(result.error ?? "Gagal mengunggah bukti pembayaran.");
+    return result.url;
+  };
+
+  const target = await createKasProofUploadUrlAction({ fileName: file.name, contentType: file.type, size: file.size });
+  if (target.mode === "error") throw new Error(target.error);
+  if (target.mode === "server") return viaServer();
+
+  let response: Response;
+  try {
+    response = await fetch(target.uploadUrl, { method: "PUT", headers: target.headers, body: file });
+  } catch {
+    if (file.size <= SERVER_UPLOAD_MAX_BYTES) return viaServer();
+    throw new Error("Koneksi ke storage terputus. Coba lagi.");
+  }
+
+  if (!response.ok) throw new Error(`Upload bukti gagal (HTTP ${response.status}).`);
   return target.fileUrl;
 }
