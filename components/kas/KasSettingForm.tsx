@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { inputClass, labelClass } from "@/components/kas/KasUi";
 import { ModalError } from "@/components/kas/KasModal";
 import { updateKasSettingAction } from "@/app/actions/kas";
-import { currentPeriod, type KasSetting } from "@/lib/kas";
+import { addMonths, currentPeriod, formatPeriod, isValidPeriod, KAS_PERIOD_MONTHS, type KasSetting } from "@/lib/kas";
 
 export function KasSettingForm({ setting }: { setting: KasSetting }) {
   const router = useRouter();
@@ -43,9 +43,12 @@ export function KasSettingForm({ setting }: { setting: KasSetting }) {
           <p className="text-[11px] text-slate-500 mt-1.5">Dipakai sebagai nominal default dan dasar perhitungan tunggakan.</p>
         </div>
         <div>
-          <label className={labelClass}>Iuran Berlaku Mulai</label>
+          <label className={labelClass}>Awal Periode Iuran</label>
           <input type="month" required pattern="\d{4}-(0[1-9]|1[0-2])" placeholder="YYYY-MM" value={startPeriod} onChange={(e) => setStartPeriod(e.target.value)} className={inputClass} />
-          <p className="text-[11px] text-slate-500 mt-1.5">Bulan ini sampai bulan berjalan yang belum dibayar dihitung sebagai tunggakan, termasuk tahun-tahun sebelumnya.</p>
+          <p className="text-[11px] text-slate-500 mt-1.5">
+            Satu periode berlaku 2 tahun
+            {isValidPeriod(startPeriod) ? `: ${formatPeriod(startPeriod)} – ${formatPeriod(addMonths(startPeriod, KAS_PERIOD_MONTHS))}` : ""}. Bulan yang sudah lewat dan belum dibayar dihitung sebagai tunggakan.
+          </p>
         </div>
       </div>
 

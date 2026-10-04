@@ -2,7 +2,7 @@ import ExcelJS from "exceljs";
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 
-import { formatDate, formatPeriod, formatRupiah, MONTH_SHORT, type MonthStatus } from "@/lib/kas";
+import { formatDate, formatPeriod, formatRupiah, MONTH_SHORT, periodEnd, type MonthStatus } from "@/lib/kas";
 import type { KasReport } from "@/lib/kasReport";
 
 // Pembuat file laporan iuran (Excel & PDF) untuk bendahara. Hanya dipanggil dari route
@@ -33,7 +33,7 @@ function printedAt(iso: string): string {
 
 function settingText(report: KasReport): string {
   const { monthlyFee, startPeriod } = report.setting;
-  return startPeriod ? `Iuran per bulan ${formatRupiah(monthlyFee)} (berlaku sejak ${formatPeriod(startPeriod)})` : "Iuran belum diatur";
+  return startPeriod ? `Iuran per bulan ${formatRupiah(monthlyFee)} (periode ${formatPeriod(startPeriod)} - ${formatPeriod(periodEnd(report.setting)!)})` : "Iuran belum diatur";
 }
 
 export function reportFileName(report: KasReport, ext: "pdf" | "xlsx"): string {

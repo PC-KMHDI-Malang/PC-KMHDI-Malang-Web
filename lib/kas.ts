@@ -131,11 +131,28 @@ export function isSettled(status: IuranStatus | null): boolean {
 export type MonthStatus = "LUNAS" | "MENUNGGU" | "BELUM" | "MENDATANG" | "TIDAK_BERLAKU";
 
 // `paid` boleh boolean (true = LUNAS) atau status baris iuran-nya langsung.
+// Satu periode kepengurusan = 2 tahun. Iuran berlaku dari bulan mulai (Pengaturan bendahara)
+// sampai 24 bulan sesudahnya, mis. mulai Juni 2025 → berlaku s.d. Juni 2027. Untuk periode
+// berikutnya, bendahara cukup mengganti bulan mulai di Pengaturan.
+export const KAS_PERIOD_MONTHS = 24;
+
+export function addMonths(period: string, months: number): string {
+  const [y, m] = period.split("-").map(Number);
+  const index = y * 12 + (m - 1) + months;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+}
+
+// Bulan terakhir iuran berlaku untuk periode ini (inklusif), atau null kalau iuran belum diatur.
+export function periodEnd(setting: KasSetting): string | null {
+  return setting.startPeriod ? addMonths(setting.startPeriod, KAS_PERIOD_MONTHS) : null;
+}
+
 export function monthStatus(period: string, paid: boolean | IuranStatus | null, setting: KasSetting, nowPeriod: string): MonthStatus {
   const status: IuranStatus | null = paid === true ? "LUNAS" : paid === false ? null : paid;
   if (status === "LUNAS") return "LUNAS";
   if (status === "MENUNGGU") return "MENUNGGU";
-  if (!setting.startPeriod || period < setting.startPeriod) return "TIDAK_BERLAKU";
+  const end = periodEnd(setting);
+  if (!setting.startPeriod || !end || period < setting.startPeriod || period > end) return "TIDAK_BERLAKU";
   if (period > nowPeriod) return "MENDATANG";
   return "BELUM";
 }
@@ -143,9 +160,11 @@ export function monthStatus(period: string, paid: boolean | IuranStatus | null, 
 // Daftar bulan yang sudah jatuh tempo tapi belum dibayar, sejak iuran berlaku sampai bulan berjalan.
 // `paidPeriods` berisi bulan yang sudah beres (LUNAS atau MENUNGGU — lihat isSettled).
 export function arrearsPeriods(paidPeriods: Iterable<string>, setting: KasSetting, nowPeriod: string): string[] {
-  if (!setting.startPeriod) return [];
+  const end = periodEnd(setting);
+  if (!setting.startPeriod || !end) return [];
   const paid = new Set(paidPeriods);
-  return periodRange(setting.startPeriod, nowPeriod).filter((p) => !paid.has(p));
+  // Tunggakan dihitung sampai bulan berjalan, tapi tidak melewati akhir periode.
+  return periodRange(setting.startPeriod, nowPeriod < end ? nowPeriod : end).filter((p) => !paid.has(p));
 }
 
 export function memberYearStatus(payments: IuranPayment[], year: number, setting: KasSetting, nowPeriod: string) {

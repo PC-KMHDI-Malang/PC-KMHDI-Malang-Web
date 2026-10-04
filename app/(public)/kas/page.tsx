@@ -5,7 +5,7 @@ import { CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, History, Settin
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { currentPeriod, formatDate, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, memberYearStatus, MONTH_NAMES, parseYearParam, paymentStatus, periodRange, type IuranPayment, type IuranStatus, type KasSetting } from "@/lib/kas";
+import { currentPeriod, formatDate, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, memberYearStatus, MONTH_NAMES, parseYearParam, paymentStatus, periodEnd, periodRange, type IuranPayment, type IuranStatus, type KasSetting } from "@/lib/kas";
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, STATUS_CLASS, STATUS_LABEL, cardClass } from "@/components/kas/KasUi";
 import { UploadBuktiModal, type ProofPeriodOption } from "@/components/kas/UploadBuktiModal";
@@ -40,18 +40,21 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
   const summary = memberYearStatus(payments, year, setting, nowPeriod);
   const isMember = isKasMember({ email: session.user.email, role: session.user.role });
 
-  // Bulan yang bisa dibayar lewat unggah bukti: sejak iuran berlaku sampai akhir tahun ini, kecuali
-  // yang sudah lunas atau sedang menunggu konfirmasi. Bulan yang buktinya ditolak boleh diunggah ulang.
+  // Bulan yang bisa dibayar lewat unggah bukti: seluruh periode kepengurusan (bulan mulai s.d. 2
+  // tahun sesudahnya, lihat periodEnd), kecuali yang sudah lunas atau sedang menunggu konfirmasi.
+  // Bulan yang buktinya ditolak boleh diunggah ulang.
   const statusByPeriod = new Map(payments.map((p) => [p.period, paymentStatus(p)] as const));
-  const proofOptions: ProofPeriodOption[] = setting.startPeriod
-    ? periodRange(setting.startPeriod, `${thisYear}-12`)
-        .filter((p) => !isSettled(statusByPeriod.get(p) ?? null))
-        .map((period) => ({ period, rejected: statusByPeriod.get(period) === "DITOLAK" }))
-    : [];
+  const endPeriod = periodEnd(setting);
+  const proofOptions: ProofPeriodOption[] =
+    setting.startPeriod && endPeriod
+      ? periodRange(setting.startPeriod, endPeriod)
+          .filter((p) => !isSettled(statusByPeriod.get(p) ?? null))
+          .map((period) => ({ period, rejected: statusByPeriod.get(period) === "DITOLAK" }))
+      : [];
 
-  // Navigasi tahun dibatasi dari tahun iuran mulai (atau pembayaran tertua) sampai tahun depan.
+  // Navigasi tahun dibatasi dari tahun iuran mulai (atau pembayaran tertua) sampai akhir periode.
   const firstYear = Math.min(thisYear, Number((setting.startPeriod ?? nowPeriod).slice(0, 4)), ...payments.map((p) => Number(p.period.slice(0, 4))));
-  const lastYear = thisYear + 1;
+  const lastYear = Math.max(thisYear + 1, Number((endPeriod ?? nowPeriod).slice(0, 4)));
 
   return (
     <div className="-mt-32 bg-slate-50/70 dark:bg-[#0a0a0c] transition-colors min-h-screen pb-20">
@@ -95,7 +98,7 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
           <>
             {/* Ringkasan */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-              <StatCard icon={Wallet} label="Iuran per Bulan" value={setting.startPeriod ? formatRupiah(setting.monthlyFee) : "-"} hint={setting.startPeriod ? `Berlaku sejak ${formatPeriod(setting.startPeriod)}` : "Belum diatur bendahara"} />
+              <StatCard icon={Wallet} label="Iuran per Bulan" value={setting.startPeriod ? formatRupiah(setting.monthlyFee) : "-"} hint={setting.startPeriod && endPeriod ? `Periode ${formatPeriod(setting.startPeriod)} – ${formatPeriod(endPeriod)}` : "Belum diatur bendahara"} />
               <StatCard icon={CalendarCheck} label={`Dibayar ${year}`} value={formatRupiah(summary.yearPaid)} hint={`${summary.months.filter((m) => m.status === "LUNAS").length} bulan lunas`} tone="good" />
               <StatCard
                 icon={summary.arrearsCount > 0 ? AlertTriangle : CheckCircle2}
@@ -114,7 +117,7 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
                 <CardHeading
                   icon={Receipt}
                   title="Bayar Iuran"
-                  description={proofOptions.length ? "Sudah transfer atau membayar? Unggah buktinya di sini, lalu tunggu konfirmasi bendahara." : "Semua iuran sampai akhir tahun ini sudah dibayar atau sedang dikonfirmasi."}
+                  description={proofOptions.length ? "Sudah transfer atau membayar? Unggah buktinya di sini, lalu tunggu konfirmasi bendahara." : "Semua iuran periode ini sudah dibayar atau sedang dikonfirmasi."}
                   action={<UploadBuktiModal options={proofOptions} monthlyFee={setting.monthlyFee} />}
                 />
                 {summary.pendingCount > 0 ? (

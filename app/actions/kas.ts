@@ -8,7 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { isR2Configured } from "@/lib/r2";
 import { createR2UploadUrl, deleteFromBucketByUrl, resolveStoredUrl, uploadToBucket } from "@/lib/storage";
 import { KAS_PROOF_BUCKET, KAS_PROOF_TYPES, MAX_PROOF_MB, SERVER_UPLOAD_MAX_BYTES } from "@/lib/uploadLimits";
-import { currentPeriod, isKasMember, isValidDate, isValidPeriod, parseRupiahInput, todayInJakarta } from "@/lib/kas";
+import { isKasMember, isValidDate, isValidPeriod, parseRupiahInput, periodEnd, todayInJakarta } from "@/lib/kas";
 
 // Satu-satunya jalur tulis untuk data kas. Server Action adalah endpoint HTTP publik (lihat
 // catatan di lib/guard.ts), jadi SETIAP action di sini wajib memeriksa sesinya sendiri:
@@ -264,7 +264,8 @@ export async function submitIuranProofAction(input: { periods: string[]; paidAt:
     if (periods.length === 0) return fail("Pilih minimal satu bulan.");
     if (periods.length > 24) return fail("Maksimal 24 bulan dalam sekali unggah.");
     if (!periods.every(isValidPeriod)) return fail("Periode bulan tidak valid.");
-    const maxPeriod = `${Number(currentPeriod().slice(0, 4)) + 1}-12`;
+    // Sampai akhir periode kepengurusan (2 tahun sejak bulan mulai), sama dengan pilihan di form.
+    const maxPeriod = periodEnd({ monthlyFee: setting.monthlyFee as number, startPeriod: setting.startPeriod })!;
     if (periods.some((p) => p < setting.startPeriod! || p > maxPeriod)) return fail("Ada bulan yang di luar masa berlaku iuran.");
 
     const amount = setting.monthlyFee as number;

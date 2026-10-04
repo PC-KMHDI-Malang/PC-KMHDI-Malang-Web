@@ -5,7 +5,7 @@ import { AlertTriangle, CalendarCheck, ChevronLeft, ChevronRight, ClipboardCheck
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { arrearsPeriods, currentPeriod, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, parseYearParam, type IuranStatus, type KasSetting } from "@/lib/kas";
+import { arrearsPeriods, currentPeriod, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, parseYearParam, periodEnd, type IuranStatus, type KasSetting } from "@/lib/kas";
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, cardClass } from "@/components/kas/KasUi";
 import { IuranMatrix } from "@/components/kas/IuranMatrix";
@@ -252,11 +252,11 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
                 <CardHeading
                   icon={Settings2}
                   title="Pengaturan Iuran"
-                  description={setting.startPeriod ? `Saat ini ${formatRupiah(setting.monthlyFee)} per bulan, berlaku sejak ${formatPeriod(setting.startPeriod)}.` : "Iuran belum diatur."}
+                  description={setting.startPeriod ? `Saat ini ${formatRupiah(setting.monthlyFee)} per bulan, periode ${formatPeriod(setting.startPeriod)} – ${formatPeriod(periodEnd(setting)!)}.` : "Iuran belum diatur."}
                 />
                 <KasSettingForm setting={setting} />
                 <div className="mt-6">
-                  <KasNotice title="Catatan:">Mengubah nominal tidak mengubah pembayaran yang sudah tercatat — riwayat tetap menyimpan nominal saat dibayar. Daftar anggota diambil dari akun ber-role USER di Manajemen User (dikelola Admin).</KasNotice>
+                  <KasNotice title="Catatan:">Mengubah nominal tidak mengubah pembayaran yang sudah tercatat — riwayat tetap menyimpan nominal saat dibayar.</KasNotice>
                 </div>
               </div>
             )}

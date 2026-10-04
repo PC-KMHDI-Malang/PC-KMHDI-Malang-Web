@@ -27,6 +27,8 @@ import {
   formatPeriod,
   paymentStatus,
   isSettled,
+  addMonths,
+  periodEnd,
 } from "@/lib/kas";
 
 describe("roles — siapa boleh masuk panel admin", () => {
@@ -495,5 +497,31 @@ describe("kas — bukti pembayaran & konfirmasi bendahara", () => {
     assert.equal(s.arrearsCount, 2);
     assert.equal(s.months[1].status, "MENUNGGU");
     assert.equal(s.months[2].status, "BELUM");
+  });
+});
+
+describe("kas — periode kepengurusan 2 tahun", () => {
+  const setting = { monthlyFee: 10000, startPeriod: "2025-06" };
+
+  it("menghitung bulan lintas tahun", () => {
+    assert.equal(addMonths("2025-06", 24), "2027-06");
+    assert.equal(addMonths("2025-11", 3), "2026-02");
+    assert.equal(addMonths("2026-01", -1), "2025-12");
+  });
+
+  it("periode Juni 2025 berlaku sampai Juni 2027", () => {
+    assert.equal(periodEnd(setting), "2027-06");
+    assert.equal(periodEnd({ monthlyFee: 0, startPeriod: null }), null);
+  });
+
+  it("bulan setelah akhir periode tidak berlaku", () => {
+    assert.equal(monthStatus("2027-06", false, setting, "2026-10"), "MENDATANG");
+    assert.equal(monthStatus("2027-07", false, setting, "2026-10"), "TIDAK_BERLAKU");
+  });
+
+  it("tunggakan tidak dihitung melewati akhir periode", () => {
+    // Bulan berjalan sudah lewat periode: tunggakan berhenti di Juni 2027 (25 bulan).
+    assert.equal(arrearsPeriods([], setting, "2028-01").length, 25);
+    assert.equal(arrearsPeriods([], setting, "2025-08").length, 3);
   });
 });
