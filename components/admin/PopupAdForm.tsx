@@ -53,7 +53,7 @@ export function PopupAdForm({ imageUrl, linkUrl, isActive, action }: PopupAdForm
 
       <div>
         <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Gambar Poster</label>
-        <ImagePicker name="imageUrl" bucket="popup-ads" defaultImageUrl={imageUrl} maxSizeMB={2} />
+        <ImagePicker name="imageUrl" bucket="popup-ads" defaultImageUrl={imageUrl} />
         <p className="text-[10px] text-slate-500 mt-1">Tampil sebagai pop-up begitu pengunjung pertama kali membuka situs.</p>
       </div>
 

@@ -5,7 +5,8 @@ import { createPortal } from "react-dom";
 import { useBodyScrollLock } from "@/components/ui/useModalTransition";
 import { useHydrated } from "@/components/ui/useHydrated";
 import { SafeImage } from "@/components/ui/SafeImage";
-import { uploadFileAction } from "@/lib/actions";
+import { uploadFile } from "@/lib/uploadClient";
+import { MAX_IMAGE_MB } from "@/lib/uploadLimits";
 import { errorMessage } from "@/lib/errors";
 
 function getImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
@@ -29,13 +30,12 @@ interface ImagePickerProps {
   bucket?: string;
   /** Nama field hidden input yang menampung URL terpilih. Default "coverImageUrl" agar kompatibel dengan pemakaian yang sudah ada. */
   name?: string;
-  /** Batas ukuran file, dalam MB. Harus disamakan dengan fileSizeLimit bucket-nya di
-   * app/api/setup-buckets/route.ts — kalau beda, upload bisa lolos di sini tapi ditolak Supabase
-   * (atau sebaliknya, ditolak di sini padahal bucket-nya sebenarnya boleh lebih besar). */
+  /** Batas ukuran file, dalam MB. Default-nya MAX_IMAGE_MB (lib/uploadLimits.ts) — angka yang
+   * sama dipakai server untuk menolak file yang lebih besar. */
   maxSizeMB?: number;
 }
 
-export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name = "coverImageUrl", maxSizeMB = 1 }: ImagePickerProps) {
+export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name = "coverImageUrl", maxSizeMB = MAX_IMAGE_MB }: ImagePickerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState(defaultImageUrl);
   const [isUploading, setIsUploading] = useState(false);
@@ -83,11 +83,7 @@ export function ImagePicker({ defaultImageUrl = "", bucket = "news-covers", name
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("bucket", bucket);
-
-      const newUrl = await uploadFileAction(formData);
+      const newUrl = await uploadFile(file, bucket);
 
       setSelectedUrl(newUrl);
       setIsModalOpen(false);

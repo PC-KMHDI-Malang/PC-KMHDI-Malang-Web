@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { useHydrated } from "@/components/ui/useHydrated";
 
 interface AnnouncementPopupProps {
   imageUrl: string | null;
@@ -17,10 +18,9 @@ const DISMISS_KEY = "popupAdDismissed";
 // di kunjungan berikutnya tanpa mengganggu navigasi di dalam kunjungan yang sama.
 export function AnnouncementPopup({ imageUrl, linkUrl, isActive }: AnnouncementPopupProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
 
   useEffect(() => {
-    setMounted(true);
     if (!isActive || !imageUrl) return;
     try {
       if (sessionStorage.getItem(DISMISS_KEY)) return;

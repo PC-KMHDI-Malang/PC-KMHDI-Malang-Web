@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { useBodyScrollLock } from "@/components/ui/useModalTransition";
 import { toast } from "sonner";
 import { X, UserPlus, Upload, Loader2, Image as ImageIcon, Instagram } from "lucide-react";
-import { uploadFileAction } from "@/lib/actions";
+import { uploadFile } from "@/lib/uploadClient";
+import { MAX_IMAGE_MB } from "@/lib/uploadLimits";
 import { organizationRoleGroups } from "@/data/organization";
 
 interface AddPengurusModalProps {
@@ -42,19 +43,16 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
       return;
     }
 
-    // Bucket "organization-photos" di Supabase dikonfigurasi dengan batas 1 MB per file.
-    if (file.size > 1 * 1024 * 1024) {
-      setError("Ukuran file maksimal 1 MB.");
+    // Sama dengan batas yang ditegakkan server (lib/uploadLimits.ts).
+    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+      setError(`Ukuran file maksimal ${MAX_IMAGE_MB} MB.`);
       e.target.value = "";
       return;
     }
 
     setIsUploading(true);
     try {
-      const uploadData = new FormData();
-      uploadData.append("file", file);
-      uploadData.append("bucket", "organization-photos");
-      const url = await uploadFileAction(uploadData);
+      const url = await uploadFile(file, "organization-photos");
       setPreviewUrl(url);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
@@ -151,7 +149,7 @@ export function AddPengurusModal({ action }: AddPengurusModalProps) {
                         className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-700 dark:text-white rounded-xl text-xs font-bold transition cursor-pointer"
                       >
                         <Upload size={14} />
-                        <span>{isUploading ? "Mengunggah..." : "Pilih Foto (Max 2MB)"}</span>
+                        <span>{isUploading ? "Mengunggah..." : `Pilih Foto (Max ${MAX_IMAGE_MB}MB)`}</span>
                       </button>
                       <p className="text-[11px] text-slate-400 mt-1">Format JPG, PNG, atau WEBP. Gunakan pasfoto resmi berjas untuk hasil terbaik.</p>
                     </div>

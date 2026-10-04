@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { useBodyScrollLock } from "@/components/ui/useModalTransition";
 import { toast } from "sonner";
 import { X, Edit2, Upload, Loader2, Image as ImageIcon, Instagram } from "lucide-react";
-import { uploadFileAction } from "@/lib/actions";
+import { uploadFile } from "@/lib/uploadClient";
+import { MAX_IMAGE_MB } from "@/lib/uploadLimits";
 import { Member, organizationRoleGroups } from "@/data/organization";
 
 interface EditPengurusModalProps {
@@ -43,19 +44,16 @@ export function EditPengurusModal({ member, action }: EditPengurusModalProps) {
       return;
     }
 
-    // Bucket "organization-photos" di Supabase dikonfigurasi dengan batas 1 MB per file.
-    if (file.size > 1 * 1024 * 1024) {
-      setError("Ukuran file maksimal 1 MB.");
+    // Sama dengan batas yang ditegakkan server (lib/uploadLimits.ts).
+    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+      setError(`Ukuran file maksimal ${MAX_IMAGE_MB} MB.`);
       e.target.value = "";
       return;
     }
 
     setIsUploading(true);
     try {
-      const uploadData = new FormData();
-      uploadData.append("file", file);
-      uploadData.append("bucket", "organization-photos");
-      const url = await uploadFileAction(uploadData);
+      const url = await uploadFile(file, "organization-photos");
       setPreviewUrl(url);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
@@ -161,7 +159,7 @@ export function EditPengurusModal({ member, action }: EditPengurusModalProps) {
                         <Upload size={14} />
                         <span>{isUploading ? "Mengunggah..." : "Ganti Foto"}</span>
                       </button>
-                      <p className="text-[11px] text-slate-400 mt-1">Format JPG, PNG, atau WEBP. Maksimal 2 MB.</p>
+                      <p className="text-[11px] text-slate-400 mt-1">Format JPG, PNG, atau WEBP. Maksimal {MAX_IMAGE_MB} MB.</p>
                     </div>
                   </div>
                 </div>

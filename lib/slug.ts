@@ -8,19 +8,12 @@ import { supabaseAdmin } from "@/lib/supabase";
 // dari awal saat slug dibuat, bukan dibiarkan baru ketahuan setelah admin publish.
 const RESERVED_SLUGS = new Set(["admin", "api", "login", "berita", "e-book", "galeri", "mitra", "profil", "profile", "program", "informasi-akun", "sitemap.xml", "robots.txt", "opengraph-image", "favicon.ico"]);
 
-// Setiap rangkaian spasi/tanda baca jadi SATU tanda hubung, dan tanda hubung di awal/akhir
-// dibuang. Versi sebelumnya cuma mengganti spasi lalu menghapus tanda baca, jadi judul seperti
-// "BPO 1 - Perubahan 4" atau "KMHDI : Pemetaan" berakhir sebagai "bpo-1---perubahan-4" dan
-// "kmhdi--pemetaan". Huruf beraksen (mis. "é") disederhanakan ke huruf dasarnya dulu.
-// Slug yang sudah tersimpan di database tidak berubah — fungsi ini hanya dipakai saat membuat
-// slug baru (slug e-book/artikel tidak dibuat ulang saat diedit).
-export function slugify(text: string): string {
+function slugify(text: string): string {
   return text
-    .normalize("NFKD")
-    .replace(/\p{M}/gu, "")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .trim()
+    .replace(/ /g, "-")
+    .replace(/[^\w-]+/g, "");
 }
 
 // Membuat slug dari judul artikel, dijamin unik (dicek ke tabel News) dan tidak bentrok dengan

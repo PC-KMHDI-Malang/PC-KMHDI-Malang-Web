@@ -15,7 +15,7 @@ interface EbookAccessButtonsProps {
 
 // Status login dibaca di client (bukan lagi lewat auth() di server) supaya halaman e-book bisa
 // di-cache — lihat catatan yang sama di app/(public)/layout.tsx. Ini aman karena akses filenya
-// sendiri tetap diperiksa ulang di server oleh app/api/ebook/[id]/file/[filename]/route.ts —
+// sendiri tetap diperiksa ulang di server oleh app/(public)/e-book/file/[slug]/route.ts —
 // komponen ini cuma menentukan tombol MANA yang ditampilkan, bukan gerbang keamanan yang
 // sebenarnya.
 export function EbookAccessButtons({ hasPdf, fileHref, downloadHref, readLoginHref, downloadLoginHref }: EbookAccessButtonsProps) {

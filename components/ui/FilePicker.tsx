@@ -4,7 +4,8 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useBodyScrollLock } from "@/components/ui/useModalTransition";
 import { useHydrated } from "@/components/ui/useHydrated";
-import { uploadFileAction } from "@/lib/actions";
+import { uploadFile } from "@/lib/uploadClient";
+import { MAX_PDF_MB } from "@/lib/uploadLimits";
 import { errorMessage } from "@/lib/errors";
 
 interface FilePickerProps {
@@ -38,23 +39,17 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files" }: File
       return;
     }
 
-    // Batas diset di bawah 4.5 MB, bukan di batas bucket Supabase — Vercel membatasi ukuran
-    // body request ke Server Function sebesar 4.5 MB secara keras (di luar kendali kode/config
-    // Next.js), jadi file yang lolos cek 5 MB tapi lewat 4.5 MB akan gagal upload dengan pesan
-    // generik "An unexpected response was received from the server."
-    if (file.size > 4 * 1024 * 1024) {
-      setError("Ukuran file maksimal 4 MB.");
+    // PDF dikirim langsung dari browser ke R2 (lib/uploadClient.ts), jadi tidak lagi terikat
+    // batas body request Vercel 4.5 MB — batasnya MAX_PDF_MB, sama dengan yang ditegakkan server.
+    if (file.size > MAX_PDF_MB * 1024 * 1024) {
+      setError(`Ukuran file maksimal ${MAX_PDF_MB} MB.`);
       e.target.value = "";
       return;
     }
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("bucket", bucket);
-
-      const newUrl = await uploadFileAction(formData);
+      const newUrl = await uploadFile(file, bucket);
 
       setSelectedUrl(newUrl);
       setIsModalOpen(false);
@@ -106,7 +101,7 @@ export function FilePicker({ defaultFileUrl = "", bucket = "ebook-files" }: File
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                   </svg>
                   <span className="text-blue-600 dark:text-blue-400 font-semibold">Klik untuk memilih file</span>
-                  <span className="text-slate-400 dark:text-slate-500 text-sm mt-1">Mendukung format PDF (Maks 4 MB)</span>
+                  <span className="text-slate-400 dark:text-slate-500 text-sm mt-1">Mendukung format PDF (Maks {MAX_PDF_MB} MB)</span>
                 </>
               )}
             </div>

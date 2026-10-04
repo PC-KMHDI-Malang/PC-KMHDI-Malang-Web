@@ -35,26 +35,31 @@ export function EbookShareBar({ title, type, id, initialLikes = 0, coverImage, c
   const hydrated = useHydrated();
   const shareUrl = hydrated ? window.location.href : "";
 
-  const [liked, setLiked] = useState(false);
+  // Status suka disimpan bersama "kunci"-nya (akun login + artikel/e-book). Begitu kuncinya
+  // berubah (logout, atau pindah ke item lain), nilai lama otomatis tidak berlaku dan heart
+  // kembali kosong — tanpa perlu setState sinkron di dalam efek untuk me-reset-nya.
+  const likeKey = isLoggedIn && type && id ? `${type}:${id}` : null;
+  const [likedEntry, setLikedEntry] = useState<{ key: string; liked: boolean } | null>(null);
+  const liked = likeKey !== null && likedEntry?.key === likeKey && likedEntry.liked;
+  const setLiked = (value: boolean) => {
+    if (likeKey) setLikedEntry({ key: likeKey, liked: value });
+  };
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   // Baru dicek begitu kita tahu pengguna ini login — sebelum itu heart tampil kosong, sama
   // seperti pengunjung tamu, lalu berubah ke terisi kalau ternyata dia sudah pernah menyukainya.
   useEffect(() => {
-    if (!isLoggedIn || !type || !id) {
-      setLiked(false);
-      return;
-    }
+    if (!likeKey || !type || !id) return;
     let cancelled = false;
     import("@/app/actions/like").then(({ getLikeStatusAction }) =>
       getLikeStatusAction(type, id).then((res) => {
-        if (!cancelled) setLiked(res);
+        if (!cancelled) setLikedEntry({ key: likeKey, liked: res });
       }),
     );
     return () => {
       cancelled = true;
     };
-  }, [isLoggedIn, type, id]);
+  }, [likeKey, type, id]);
 
   const handleCopy = async () => {
     try {

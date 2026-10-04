@@ -3,33 +3,12 @@ import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObject
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isR2Configured, r2Client, R2_PRIVATE_BUCKET, R2_PUBLIC_BUCKET, R2_PUBLIC_URL } from "@/lib/r2";
+import { STORAGE_BUCKETS } from "@/lib/uploadLimits";
 
-export const STORAGE_BUCKETS = {
-  news: "news-covers",
-  ebook: "ebook-covers",
-  gallery: "gallery-photos",
-  ebookFiles: "ebook-files",
-  articleImages: "article-images",
-  partnerLogos: "partner-logos",
-  organizationPhotos: "organization-photos",
-  popupAds: "popup-ads",
-} as const;
-
-// Satu-satunya sumber batas ukuran per bucket, dipakai oleh app/api/setup-buckets/route.ts
-// (konfigurasi bucket-nya sendiri di Supabase) DAN lib/actions.ts (gerbang validasi sebenarnya
-// saat upload — ImagePicker/FilePicker cuma menampilkan pesan lebih awal di browser, bukan
-// penegaknya). Sebelum disatukan di sini, kedua tempat itu masing-masing punya angka sendiri
-// yang gampang lupa disamakan — persis yang terjadi saat batas popup-ads dinaikkan ke 2 MB.
-export const BUCKET_FILE_SIZE_LIMITS: Record<string, number> = {
-  [STORAGE_BUCKETS.news]: 1 * 1024 * 1024,
-  [STORAGE_BUCKETS.ebook]: 1 * 1024 * 1024,
-  [STORAGE_BUCKETS.gallery]: 1 * 1024 * 1024,
-  [STORAGE_BUCKETS.partnerLogos]: 1 * 1024 * 1024,
-  [STORAGE_BUCKETS.articleImages]: 1 * 1024 * 1024,
-  [STORAGE_BUCKETS.organizationPhotos]: 1 * 1024 * 1024,
-  [STORAGE_BUCKETS.ebookFiles]: 5 * 1024 * 1024,
-  [STORAGE_BUCKETS.popupAds]: 2 * 1024 * 1024,
-};
+// Nama bucket & batas ukuran per bucket kini tinggal di lib/uploadLimits.ts (file murni yang
+// juga bisa di-import komponen client), dan di-export ulang di sini supaya import lama
+// (`from "@/lib/storage"`) tetap jalan apa adanya.
+export { STORAGE_BUCKETS, BUCKET_FILE_SIZE_LIMITS } from "@/lib/uploadLimits";
 
 // Kuota tampilan storage. Supabase tidak memberi kuota per-bucket — 1 GB ini adalah jatah asli
 // akun (lihat Project Settings > Billing di Supabase Dashboard) yang dipakai BERSAMA oleh semua
@@ -86,7 +65,7 @@ export function resolveStoredUrl(bucket: string, url: string, r2PublicUrl: strin
 
 // Ekstensi datang dari nama file kiriman pengguna, jadi tidak dipakai apa adanya: dibatasi
 // huruf/angka dan panjangnya supaya tidak ada nama objek aneh (mis. ".html", "..%2f") di bucket publik.
-function safeObjectName(fileName: string): string {
+export function safeObjectName(fileName: string): string {
   const rawExt = fileName.includes(".") ? fileName.split(".").pop() : "";
   const ext = /^[a-zA-Z0-9]{1,5}$/.test(rawExt || "") ? rawExt!.toLowerCase() : "bin";
   return `${randomUUID()}.${ext}`;
@@ -127,6 +106,35 @@ export async function uploadToBucket(bucket: string, file: File): Promise<string
 
   const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
+}
+
+// Link upload sementara (presigned PUT) supaya browser bisa mengirim file LANGSUNG ke R2, tanpa
+// lewat server Vercel yang membatasi body request 4.5 MB. Nama objek dibuat di server (UUID),
+// dan Content-Type + Content-Length ikut ditandatangani: browser hanya bisa mengunggah file
+// dengan jenis & ukuran persis seperti yang sudah divalidasi di createUploadUrlAction
+// (lib/actions.ts). Link kedaluwarsa dalam 10 menit.
+export async function createR2UploadUrl(bucket: string, fileName: string, contentType: string, size: number) {
+  const isPrivate = PRIVATE_BUCKETS.has(bucket);
+  const key = `${bucket}/${safeObjectName(fileName)}`;
+  const cacheControl = isPrivate ? "private, no-store" : "public, max-age=31536000, immutable";
+
+  const uploadUrl = await getSignedUrl(
+    r2Client(),
+    new PutObjectCommand({
+      Bucket: isPrivate ? R2_PRIVATE_BUCKET : R2_PUBLIC_BUCKET,
+      Key: key,
+      ContentType: contentType,
+      ContentLength: size,
+      CacheControl: cacheControl,
+    }),
+    { expiresIn: 600, signableHeaders: new Set(["content-type", "content-length"]) },
+  );
+
+  return {
+    uploadUrl,
+    headers: { "Content-Type": contentType, "Cache-Control": cacheControl },
+    fileUrl: isPrivate ? `${R2_PRIVATE_SCHEME}${key}` : `${R2_PUBLIC_URL}/${key}`,
+  };
 }
 
 export async function deleteFromBucketByUrl(bucket: string, url: string | null | undefined) {

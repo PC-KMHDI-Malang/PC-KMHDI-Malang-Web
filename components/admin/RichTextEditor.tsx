@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bold, Italic, Underline, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, AlignJustify, ImageIcon, Loader2, Undo2, Redo2, Link2, Unlink } from "lucide-react";
-import { uploadFileAction } from "@/lib/actions";
+import { uploadFile } from "@/lib/uploadClient";
+import { MAX_IMAGE_MB } from "@/lib/uploadLimits";
 import { looksLikeHtml } from "@/lib/richText";
 
 interface RichTextEditorProps {
@@ -226,20 +227,16 @@ export function RichTextEditor({ name, defaultValue = "", bucket = "article-imag
       setError("Format gambar harus JPG, PNG, WEBP, atau GIF.");
       return;
     }
-    // Bucket "article-images" di Supabase dikonfigurasi dengan batas 1 MB per file — validasi
-    // client ini wajib sama persis, kalau tidak upload akan lolos di sini tapi ditolak Supabase.
-    if (file.size > 1 * 1024 * 1024) {
-      setError("Ukuran gambar maksimal 1 MB.");
+    // Sama dengan batas yang ditegakkan server (lib/uploadLimits.ts).
+    if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+      setError(`Ukuran gambar maksimal ${MAX_IMAGE_MB} MB.`);
       return;
     }
 
     setError(null);
     setIsUploading(true);
     try {
-      const uploadData = new FormData();
-      uploadData.append("file", file);
-      uploadData.append("bucket", bucket);
-      const url = await uploadFileAction(uploadData);
+      const url = await uploadFile(file, bucket);
       runCommand("insertHTML", `<img src="${url}" alt="" style="display:block;max-width:100%;height:auto;margin:1.25rem auto;border-radius:0.75rem;" />`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "terjadi kesalahan";

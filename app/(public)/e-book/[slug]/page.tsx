@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { slugify } from "@/lib/slug";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -17,7 +16,7 @@ import { absoluteUrl } from "@/lib/site";
 // prompt login, status suka) tidak lagi ditentukan di server render ini — dipindah ke
 // komponen client (EbookAccessButtons, EbookShareBar) yang membaca sesinya sendiri, karena
 // akses file yang sebenarnya sudah diperiksa ulang secara independen di
-// app/api/ebook/[id]/file/[filename]/route.ts (lihat catatan yang sama di
+// app/(public)/e-book/file/[slug]/route.ts (lihat catatan yang sama di
 // app/(public)/layout.tsx). Slug baru langsung tampil tanpa perlu revalidate (belum pernah
 // di-cache); slug yang diedit/dihapus di-invalidate lewat revalidatePath di app/admin/ebooks/page.tsx.
 
@@ -150,11 +149,9 @@ export default async function EbookDetailPage({ params }: { params: Promise<{ sl
 
   // File PDF ada di bucket "ebook-files" yang privat. Tombol baca/unduh di bawah tidak
   // pernah menaut langsung ke signed URL Supabase (itu kedaluwarsa dan berujung ke JSON
-  // error mentah dari domain Supabase) — keduanya menaut ke /api/ebook/[id]/file/[..], yang
+  // error mentah dari domain Supabase) — keduanya menaut ke /e-book/file/<slug>, yang
   // memverifikasi login lalu mengambilkan filenya di server sebelum diteruskan ke browser.
-  // Segmen terakhir URL cuma kosmetik — dipakai Chrome dkk. sebagai judul tab PDF viewer.
-  const pdfFileSlug = slugify(ebook.title) || "ebook";
-  const fileHref = `/api/ebook/${ebook.id}/file/${pdfFileSlug}.pdf`;
+  const fileHref = `/e-book/file/${ebook.slug}`;
   const downloadHref = `${fileHref}?download=1`;
 
   // callbackUrl mengarah langsung ke file yang tadi mau dibuka/diunduh, bukan ke beranda —

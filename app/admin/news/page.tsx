@@ -7,7 +7,6 @@ import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl, deleteManyFromBucketByUrls, extractBucketUrlsFromHtml } from "@/lib/storage";
 import { generateUniqueNewsSlug } from "@/lib/slug";
 import Link from "next/link";
-import { AddNewsModal } from "@/components/admin/AddNewsModal";
 import dynamic from "next/dynamic";
 import { RedirectToast } from "@/components/admin/RedirectToast";
 import { Pagination } from "@/components/ui/Pagination";

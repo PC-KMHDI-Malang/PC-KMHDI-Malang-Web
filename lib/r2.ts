@@ -27,6 +27,12 @@ export function r2Client(): S3Client {
         accessKeyId: process.env.R2_ACCESS_KEY_ID!,
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
       },
+      // AWS SDK versi baru otomatis menambahkan checksum CRC32 ke setiap request. Untuk presigned
+      // URL upload (lib/storage.ts → createR2UploadUrl) itu berarti checksum dari body KOSONG
+      // ikut tertanam di URL, sehingga upload dari browser ditolak. Checksum cukup dihitung
+      // saat memang diwajibkan (mis. DeleteObjects).
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED",
     });
   }
   return client;
