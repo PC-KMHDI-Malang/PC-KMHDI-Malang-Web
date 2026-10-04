@@ -36,6 +36,8 @@ function LoginForm() {
     lockedMessage = "Silakan login terlebih dahulu untuk mengakses Panel Admin.";
   } else if (callbackUrl.includes("/profile")) {
     lockedMessage = "Silakan login terlebih dahulu untuk mengatur profil & kata sandi Anda.";
+  } else if (callbackUrl.includes("/kas")) {
+    lockedMessage = "Silakan login terlebih dahulu untuk melihat uang kas Anda.";
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
