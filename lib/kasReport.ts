@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
-import { arrearsPeriods, currentPeriod, isKasMember, isSettled, monthStatus, periodsOfYear, type IuranStatus, type KasSetting, type MonthStatus } from "@/lib/kas";
+import { arrearsPeriods, currentPeriod, isKasMember, isSettled, monthStatus, periodsOfYear, toKasSetting, type IuranStatus, type KasSetting, type MonthStatus } from "@/lib/kas";
 
 // Data laporan iuran satu tahun untuk export PDF/Excel bendahara (app/(public)/kas/kelola/export).
 // Aturan status & tunggakannya sama persis dengan halaman /kas/kelola: hanya LUNAS yang dihitung
@@ -51,12 +51,12 @@ async function fetchAllIuran(): Promise<ReportRow[]> {
 export async function loadKasReport(year: number): Promise<KasReport> {
   const nowPeriod = currentPeriod();
   const [{ data: settingRow }, { data: userRows }, iuran] = await Promise.all([
-    supabaseAdmin.from("KasSetting").select("monthlyFee, startPeriod").eq("id", 1).maybeSingle(),
+    supabaseAdmin.from("KasSetting").select("*").eq("id", 1).maybeSingle(),
     supabaseAdmin.from("User").select("id, name, email, role, jabatan").order("name", { ascending: true }),
     fetchAllIuran(),
   ]);
 
-  const setting: KasSetting = { monthlyFee: settingRow?.monthlyFee ?? 0, startPeriod: settingRow?.startPeriod ?? null };
+  const setting: KasSetting = toKasSetting(settingRow);
   const users = (userRows ?? []).filter(isKasMember).map((u) => ({ id: u.id as string, name: (u.name as string) || "Tanpa Nama", jabatan: (u.jabatan as string | null) ?? null }));
   const names = new Map(users.map((u) => [u.id, u.name]));
   const periods = periodsOfYear(year);

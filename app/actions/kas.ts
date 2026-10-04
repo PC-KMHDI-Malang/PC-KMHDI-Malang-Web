@@ -8,7 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { isR2Configured } from "@/lib/r2";
 import { createR2UploadUrl, deleteFromBucketByUrl, resolveStoredUrl, uploadToBucket } from "@/lib/storage";
 import { KAS_PROOF_BUCKET, KAS_PROOF_TYPES, MAX_PROOF_MB, SERVER_UPLOAD_MAX_BYTES } from "@/lib/uploadLimits";
-import { isKasMember, isValidDate, isValidPeriod, parseRupiahInput, periodEnd, todayInJakarta } from "@/lib/kas";
+import { addMonths, isKasMember, isValidDate, isValidPeriod, KAS_PERIOD_MAX_MONTHS, parseRupiahInput, periodEnd, periodRange, todayInJakarta, toKasSetting } from "@/lib/kas";
 
 // Satu-satunya jalur tulis untuk data kas. Server Action adalah endpoint HTTP publik (lihat
 // catatan di lib/guard.ts), jadi SETIAP action di sini wajib memeriksa sesinya sendiri:
@@ -257,18 +257,19 @@ export async function submitIuranProofAction(input: { periods: string[]; paidAt:
   if ("error" in member) return fail(member.error);
 
   try {
-    const { data: setting } = await supabaseAdmin.from("KasSetting").select("startPeriod, monthlyFee").eq("id", 1).maybeSingle();
-    if (!setting?.startPeriod || !setting.monthlyFee) return fail("Iuran belum diatur oleh bendahara.");
+    const { data: settingRow } = await supabaseAdmin.from("KasSetting").select("*").eq("id", 1).maybeSingle();
+    const setting = toKasSetting(settingRow);
+    if (!setting.startPeriod || !setting.monthlyFee) return fail("Iuran belum diatur oleh bendahara.");
 
     const periods = Array.from(new Set(Array.isArray(input.periods) ? input.periods : [])).sort();
     if (periods.length === 0) return fail("Pilih minimal satu bulan.");
     if (periods.length > 24) return fail("Maksimal 24 bulan dalam sekali unggah.");
     if (!periods.every(isValidPeriod)) return fail("Periode bulan tidak valid.");
     // Sampai akhir periode kepengurusan (2 tahun sejak bulan mulai), sama dengan pilihan di form.
-    const maxPeriod = periodEnd({ monthlyFee: setting.monthlyFee as number, startPeriod: setting.startPeriod })!;
+    const maxPeriod = periodEnd(setting)!;
     if (periods.some((p) => p < setting.startPeriod! || p > maxPeriod)) return fail("Ada bulan yang di luar masa berlaku iuran.");
 
-    const amount = setting.monthlyFee as number;
+    const amount = setting.monthlyFee;
     if (!isValidDate(input.paidAt) || input.paidAt > todayInJakarta()) return fail("Tanggal bayar tidak valid.");
 
     // Hanya file yang memang diunggah lewat createKasProofUploadUrlAction/uploadKasProofAction
@@ -374,16 +375,23 @@ export async function rejectIuranAction(ids: string[], reason: string): Promise<
   }
 }
 
-export async function updateKasSettingAction(input: { monthlyFee: string | number; startPeriod: string }): Promise<ActionResult> {
+export async function updateKasSettingAction(input: { monthlyFee: string | number; startPeriod: string; endPeriod: string }): Promise<ActionResult> {
   const denied = await guard();
   if (denied) return denied;
 
   try {
     const monthlyFee = parseRupiahInput(input.monthlyFee);
     if (!monthlyFee) return fail("Nominal iuran bulanan harus lebih dari 0.");
-    if (!isValidPeriod(input.startPeriod)) return fail("Bulan mulai iuran tidak valid.");
+    if (!isValidPeriod(input.startPeriod)) return fail("Awal periode iuran tidak valid.");
+    if (!isValidPeriod(input.endPeriod)) return fail("Akhir periode iuran tidak valid.");
+    if (input.endPeriod < input.startPeriod) return fail("Akhir periode tidak boleh sebelum awal periode.");
+    if (periodRange(input.startPeriod, input.endPeriod).length > KAS_PERIOD_MAX_MONTHS) {
+      return fail(`Satu periode maksimal ${KAS_PERIOD_MAX_MONTHS / 12} tahun (sampai ${addMonths(input.startPeriod, KAS_PERIOD_MAX_MONTHS - 1)}).`);
+    }
 
-    const { error } = await supabaseAdmin.from("KasSetting").upsert({ id: 1, monthlyFee, startPeriod: input.startPeriod, updatedAt: new Date().toISOString() });
+    const { error } = await supabaseAdmin
+      .from("KasSetting")
+      .upsert({ id: 1, monthlyFee, startPeriod: input.startPeriod, endPeriod: input.endPeriod, updatedAt: new Date().toISOString() });
     if (error) return fail("Gagal menyimpan pengaturan kas.");
 
     revalidateKas();

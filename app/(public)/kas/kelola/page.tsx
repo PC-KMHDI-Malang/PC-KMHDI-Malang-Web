@@ -5,7 +5,7 @@ import { AlertTriangle, CalendarCheck, ChevronLeft, ChevronRight, ClipboardCheck
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { arrearsPeriods, currentPeriod, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, parseYearParam, periodEnd, type IuranStatus, type KasSetting } from "@/lib/kas";
+import { arrearsPeriods, currentPeriod, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, parseYearParam, periodEnd, toKasSetting, type IuranStatus, type KasSetting } from "@/lib/kas";
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, cardClass } from "@/components/kas/KasUi";
 import { IuranMatrix } from "@/components/kas/IuranMatrix";
@@ -71,7 +71,7 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
   const year = parseYearParam(params.tahun, thisYear);
 
   const [{ data: settingRow, error: settingError }, { data: userRows }, iuranResult, { data: logRows, error: logError }] = await Promise.all([
-    supabaseAdmin.from("KasSetting").select("monthlyFee, startPeriod").eq("id", 1).maybeSingle(),
+    supabaseAdmin.from("KasSetting").select("*").eq("id", 1).maybeSingle(),
     supabaseAdmin.from("User").select("id, name, email, role, jabatan").order("name", { ascending: true }),
     fetchAll<IuranRow>("KasIuran", "id, userId, period, amount, paidAt, note, status, proofUrl, submittedAt, rejectReason", "period"),
     // Log transaksi terbaru (tabel KasLog, migrasi 027). Hanya 300 terakhir — cukup untuk
@@ -83,7 +83,7 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
   ]);
 
   const tableMissing = !!settingError || iuranResult.error;
-  const setting: KasSetting = { monthlyFee: settingRow?.monthlyFee ?? 0, startPeriod: settingRow?.startPeriod ?? null };
+  const setting: KasSetting = toKasSetting(settingRow);
   const members = (userRows ?? []).filter(isKasMember).map((u) => ({ id: u.id as string, name: (u.name as string) || "Tanpa Nama", jabatan: (u.jabatan as string | null) ?? null }));
   const memberIds = new Set(members.map((m) => m.id));
 

@@ -5,7 +5,7 @@ import { CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, History, Settin
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { currentPeriod, formatDate, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, memberYearStatus, MONTH_NAMES, parseYearParam, paymentStatus, periodEnd, periodRange, type IuranPayment, type IuranStatus, type KasSetting } from "@/lib/kas";
+import { currentPeriod, formatDate, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, memberYearStatus, MONTH_NAMES, parseYearParam, paymentStatus, periodEnd, periodRange, toKasSetting, type IuranPayment, type IuranStatus, type KasSetting } from "@/lib/kas";
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, STATUS_CLASS, STATUS_LABEL, cardClass } from "@/components/kas/KasUi";
 import { UploadBuktiModal, type ProofPeriodOption } from "@/components/kas/UploadBuktiModal";
@@ -30,12 +30,12 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
   const year = parseYearParam((await searchParams).tahun, thisYear);
 
   const [{ data: settingRow, error: settingError }, { data: paymentRows, error: paymentError }] = await Promise.all([
-    supabaseAdmin.from("KasSetting").select("monthlyFee, startPeriod").eq("id", 1).maybeSingle(),
+    supabaseAdmin.from("KasSetting").select("*").eq("id", 1).maybeSingle(),
     supabaseAdmin.from("KasIuran").select("id, period, amount, paidAt, note, status, proofUrl, rejectReason").eq("userId", session.user.id).order("period", { ascending: false }),
   ]);
 
   const tableMissing = !!settingError || !!paymentError;
-  const setting: KasSetting = { monthlyFee: settingRow?.monthlyFee ?? 0, startPeriod: settingRow?.startPeriod ?? null };
+  const setting: KasSetting = toKasSetting(settingRow);
   const payments: IuranPayment[] = paymentRows ?? [];
   const summary = memberYearStatus(payments, year, setting, nowPeriod);
   const isMember = isKasMember({ email: session.user.email, role: session.user.role });

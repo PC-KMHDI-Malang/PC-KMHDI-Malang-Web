@@ -29,6 +29,7 @@ import {
   isSettled,
   addMonths,
   periodEnd,
+  toKasSetting,
 } from "@/lib/kas";
 
 describe("roles — siapa boleh masuk panel admin", () => {
@@ -523,5 +524,26 @@ describe("kas — periode kepengurusan 2 tahun", () => {
     // Bulan berjalan sudah lewat periode: tunggakan berhenti di Juni 2027 (25 bulan).
     assert.equal(arrearsPeriods([], setting, "2028-01").length, 25);
     assert.equal(arrearsPeriods([], setting, "2025-08").length, 3);
+  });
+});
+
+describe("kas — akhir periode diatur bendahara", () => {
+  it("memakai akhir periode yang diatur, atau default 2 tahun kalau kosong", () => {
+    assert.equal(periodEnd({ monthlyFee: 10000, startPeriod: "2025-06", endPeriod: "2027-05" }), "2027-05");
+    assert.equal(periodEnd({ monthlyFee: 10000, startPeriod: "2025-06", endPeriod: null }), "2027-06");
+    // Akhir sebelum awal dianggap tidak valid → default.
+    assert.equal(periodEnd({ monthlyFee: 10000, startPeriod: "2025-06", endPeriod: "2024-01" }), "2027-06");
+  });
+
+  it("bulan setelah akhir periode yang diatur tidak berlaku", () => {
+    const setting = { monthlyFee: 10000, startPeriod: "2025-06", endPeriod: "2026-12" };
+    assert.equal(monthStatus("2026-12", false, setting, "2026-10"), "MENDATANG");
+    assert.equal(monthStatus("2027-01", false, setting, "2026-10"), "TIDAK_BERLAKU");
+  });
+
+  it("membaca baris pengaturan dari database dengan aman (kolom baru boleh belum ada)", () => {
+    assert.deepEqual(toKasSetting({ monthlyFee: 10000, startPeriod: "2025-07" }), { monthlyFee: 10000, startPeriod: "2025-07", endPeriod: null });
+    assert.deepEqual(toKasSetting({ monthlyFee: 10000, startPeriod: "2025-07", endPeriod: "2027-06" }).endPeriod, "2027-06");
+    assert.deepEqual(toKasSetting(null), { monthlyFee: 0, startPeriod: null, endPeriod: null });
   });
 });

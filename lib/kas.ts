@@ -97,7 +97,19 @@ export function parseRupiahInput(value: unknown): number | null {
 export type KasSetting = {
   monthlyFee: number;
   startPeriod: string | null;
+  /** Akhir periode (inklusif) yang diatur bendahara; kosong = default 2 tahun dari startPeriod. */
+  endPeriod?: string | null;
 };
+
+// Baris KasSetting dari database → KasSetting. Dibaca dengan select("*") supaya halaman kas tetap
+// jalan walau kolom endPeriod (migrasi 028) belum ada — nilainya cuma dianggap kosong.
+export function toKasSetting(row: Record<string, unknown> | null | undefined): KasSetting {
+  return {
+    monthlyFee: typeof row?.monthlyFee === "number" ? row.monthlyFee : 0,
+    startPeriod: isValidPeriod(row?.startPeriod) ? row.startPeriod : null,
+    endPeriod: isValidPeriod(row?.endPeriod) ? row.endPeriod : null,
+  };
+}
 
 // Status satu baris KasIuran di database (lihat migrasi 026). Baris tanpa status (data lama /
 // unit test) dianggap LUNAS — dulu semua baris memang dicatat langsung oleh bendahara.
@@ -131,10 +143,12 @@ export function isSettled(status: IuranStatus | null): boolean {
 export type MonthStatus = "LUNAS" | "MENUNGGU" | "BELUM" | "MENDATANG" | "TIDAK_BERLAKU";
 
 // `paid` boleh boolean (true = LUNAS) atau status baris iuran-nya langsung.
-// Satu periode kepengurusan = 2 tahun. Iuran berlaku dari bulan mulai (Pengaturan bendahara)
-// sampai 24 bulan sesudahnya, mis. mulai Juni 2025 → berlaku s.d. Juni 2027. Untuk periode
-// berikutnya, bendahara cukup mengganti bulan mulai di Pengaturan.
+// Satu periode iuran berlaku dari bulan mulai sampai bulan akhir (keduanya diatur bendahara di
+// Pengaturan). Kalau akhir periode belum diisi, default-nya 24 bulan (2 tahun kepengurusan)
+// sesudah bulan mulai, mis. mulai Juni 2025 → berlaku s.d. Juni 2027.
 export const KAS_PERIOD_MONTHS = 24;
+// Batas wajar panjang satu periode, supaya salah ketik tahun tidak membuat tagihan puluhan tahun.
+export const KAS_PERIOD_MAX_MONTHS = 60;
 
 export function addMonths(period: string, months: number): string {
   const [y, m] = period.split("-").map(Number);
@@ -144,7 +158,9 @@ export function addMonths(period: string, months: number): string {
 
 // Bulan terakhir iuran berlaku untuk periode ini (inklusif), atau null kalau iuran belum diatur.
 export function periodEnd(setting: KasSetting): string | null {
-  return setting.startPeriod ? addMonths(setting.startPeriod, KAS_PERIOD_MONTHS) : null;
+  if (!setting.startPeriod) return null;
+  if (setting.endPeriod && setting.endPeriod >= setting.startPeriod) return setting.endPeriod;
+  return addMonths(setting.startPeriod, KAS_PERIOD_MONTHS);
 }
 
 export function monthStatus(period: string, paid: boolean | IuranStatus | null, setting: KasSetting, nowPeriod: string): MonthStatus {
