@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
-import { arrearsPeriods, currentPeriod, isKasMember, isSettled, monthStatus, periodsOfYear, toKasSetting, type IuranStatus, type KasSetting, type MonthStatus } from "@/lib/kas";
+import { arrearsPeriods, currentPeriod, isKasMember, isSettled, monthStatus, memberSetting, periodsOfYear, toKasSetting, toMemberPeriod, type IuranStatus, type KasSetting, type MonthStatus } from "@/lib/kas";
 
 // Data laporan iuran satu tahun untuk export PDF/Excel bendahara (app/(public)/kas/kelola/export).
 // Aturan status & tunggakannya sama persis dengan halaman /kas/kelola: hanya LUNAS yang dihitung
@@ -50,11 +50,13 @@ async function fetchAllIuran(): Promise<ReportRow[]> {
 
 export async function loadKasReport(year: number): Promise<KasReport> {
   const nowPeriod = currentPeriod();
-  const [{ data: settingRow }, { data: userRows }, iuran] = await Promise.all([
+  const [{ data: settingRow }, { data: userRows }, iuran, { data: memberPeriodRows }] = await Promise.all([
     supabaseAdmin.from("KasSetting").select("*").eq("id", 1).maybeSingle(),
     supabaseAdmin.from("User").select("id, name, email, role, jabatan").order("name", { ascending: true }),
     fetchAllIuran(),
+    supabaseAdmin.from("KasMemberPeriod").select("*"),
   ]);
+  const memberPeriods = new Map((memberPeriodRows ?? []).map((r) => [r.userId as string, toMemberPeriod(r)]));
 
   const setting: KasSetting = toKasSetting(settingRow);
   const users = (userRows ?? []).filter(isKasMember).map((u) => ({ id: u.id as string, name: (u.name as string) || "Tanpa Nama", jabatan: (u.jabatan as string | null) ?? null }));
@@ -66,14 +68,16 @@ export async function loadKasReport(year: number): Promise<KasReport> {
 
   const members: ReportMember[] = users.map((u) => {
     const rows = byMember.get(u.id) ?? [];
+    // Periode efektif anggota ini (masuk/keluar di tengah periode).
+    const own = memberSetting(setting, memberPeriods.get(u.id));
     const byPeriod = new Map(rows.filter((r) => r.status !== "DITOLAK").map((r) => [r.period, r]));
     const months = periods.map((period) => {
       const row = byPeriod.get(period);
-      return { period, status: monthStatus(period, row?.status ?? null, setting, nowPeriod), amount: row ? row.amount : null };
+      return { period, status: monthStatus(period, row?.status ?? null, own, nowPeriod), amount: row ? row.amount : null };
     });
     const arrears = arrearsPeriods(
       rows.filter((r) => isSettled(r.status)).map((r) => r.period),
-      setting,
+      own,
       nowPeriod,
     );
     return {

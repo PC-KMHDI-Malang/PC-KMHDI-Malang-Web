@@ -3,13 +3,13 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, Clock, ExternalLink, Pencil, Search, Trash2 } from "lucide-react";
+import { CalendarRange, Check, Clock, ExternalLink, Pencil, Search, Trash2 } from "lucide-react";
 
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { KasModal, ModalActions, ModalError } from "@/components/kas/KasModal";
-import { STATUS_CLASS, STATUS_LABEL, inputClass, labelClass } from "@/components/kas/KasUi";
-import { deleteIuranAction, recordIuranAction, updateIuranAction } from "@/app/actions/kas";
-import { formatDate, formatPeriod, formatRupiah, monthStatus, MONTH_SHORT, paymentStatus, periodsOfYear, todayInJakarta, type IuranPayment, type KasSetting } from "@/lib/kas";
+import { STATUS_CLASS, STATUS_LABEL, dateInputClass, inputClass, labelClass } from "@/components/kas/KasUi";
+import { deleteIuranAction, recordIuranAction, setMemberPeriodAction, updateIuranAction } from "@/app/actions/kas";
+import { formatDate, formatPeriod, formatRupiah, memberSetting, monthStatus, MONTH_SHORT, paymentStatus, periodEnd, periodsOfYear, todayInJakarta, type IuranPayment, type KasSetting, type MemberPeriod } from "@/lib/kas";
 
 type Member = { id: string; name: string; jabatan: string | null };
 type Payment = IuranPayment & { userId: string };
@@ -19,12 +19,17 @@ interface IuranMatrixProps {
   payments: Payment[];
   arrears: Record<string, number>;
   setting: KasSetting;
+  /** Periode khusus anggota yang masuk/keluar di tengah periode, per userId. */
+  memberPeriods: Record<string, MemberPeriod>;
   year: number;
   nowPeriod: string;
 }
 
-export function IuranMatrix({ members, payments, arrears, setting, year, nowPeriod }: IuranMatrixProps) {
+const shortPeriod = (period: string) => `${MONTH_SHORT[Number(period.slice(5)) - 1]} ${period.slice(0, 4)}`;
+
+export function IuranMatrix({ members, payments, arrears, setting, memberPeriods, year, nowPeriod }: IuranMatrixProps) {
   const [query, setQuery] = useState("");
+  const [periodTarget, setPeriodTarget] = useState<Member | null>(null);
   const [recordTarget, setRecordTarget] = useState<{ member: Member; period: string } | null>(null);
   const [detailTarget, setDetailTarget] = useState<{ member: Member; payment: Payment } | null>(null);
 
@@ -73,12 +78,22 @@ export function IuranMatrix({ members, payments, arrears, setting, year, nowPeri
               {filtered.map((member) => (
                 <tr key={member.id} className="hover:bg-slate-50/60 dark:hover:bg-white/[0.02] transition-colors">
                   <td className="sticky left-0 z-10 bg-white dark:bg-[#121215] px-4 py-2.5">
-                    <p className="font-bold text-slate-800 dark:text-white truncate max-w-44">{member.name}</p>
-                    {member.jabatan && <p className="text-[11px] text-slate-500 dark:text-neutral-400 truncate max-w-44">{member.jabatan}</p>}
+                    {/* Klik nama untuk mengatur mulai/berhenti iuran anggota ini. */}
+                    <button type="button" onClick={() => setPeriodTarget(member)} title="Atur periode iuran anggota ini" className="group block text-left max-w-44">
+                      <span className="block font-bold text-slate-800 dark:text-white truncate group-hover:text-red-600 dark:group-hover:text-rose-400 transition-colors">{member.name}</span>
+                      {member.jabatan && <span className="block text-[11px] text-slate-500 dark:text-neutral-400 truncate">{member.jabatan}</span>}
+                      {memberPeriods[member.id] && (
+                        <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                          <CalendarRange size={11} />
+                          {memberPeriods[member.id].startPeriod ? shortPeriod(memberPeriods[member.id].startPeriod!) : "Awal"} – {memberPeriods[member.id].endPeriod ? shortPeriod(memberPeriods[member.id].endPeriod!) : "Akhir"}
+                        </span>
+                      )}
+                    </button>
                   </td>
                   {periods.map((period) => {
                     const payment = paymentMap.get(`${member.id}:${period}`);
-                    const status = monthStatus(period, paymentStatus(payment), setting, nowPeriod);
+                    // Periode efektif anggota ini (masuk/keluar di tengah periode).
+                    const status = monthStatus(period, paymentStatus(payment), memberSetting(setting, memberPeriods[member.id]), nowPeriod);
                     return (
                       <td key={period} className="px-1 py-2.5 text-center">
                         <button
@@ -119,7 +134,107 @@ export function IuranMatrix({ members, payments, arrears, setting, year, nowPeri
       <RecordIuranModal target={recordTarget} onClose={() => setRecordTarget(null)} periods={periods} paymentMap={paymentMap} setting={setting} />
 
       <PaymentDetailModal target={detailTarget} onClose={() => setDetailTarget(null)} />
+
+      <MemberPeriodModal target={periodTarget} current={periodTarget ? memberPeriods[periodTarget.id] ?? null : null} setting={setting} onClose={() => setPeriodTarget(null)} />
     </div>
+  );
+}
+
+// Mulai/berhenti iuran untuk satu anggota (masuk atau keluar di tengah periode). Kosong = ikut
+// periode umum di Pengaturan.
+function MemberPeriodModal({ target, current, setting, onClose }: { target: Member | null; current: MemberPeriod | null; setting: KasSetting; onClose: () => void }) {
+  const router = useRouter();
+  const [shown, setShown] = useState<Member | null>(null);
+  const [startPeriod, setStartPeriod] = useState("");
+  const [endPeriod, setEndPeriod] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Form di-reset setiap kali dibuka untuk anggota lain (pola yang sama dengan modal lain di sini).
+  if (target && target !== shown) {
+    setShown(target);
+    setStartPeriod(current?.startPeriod ?? "");
+    setEndPeriod(current?.endPeriod ?? "");
+    setError(null);
+  }
+
+  const generalStart = setting.startPeriod;
+  const generalEnd = periodEnd(setting);
+
+  const save = async (start: string, end: string) => {
+    if (!shown) return;
+    setIsSaving(true);
+    setError(null);
+    const result = await setMemberPeriodAction({ userId: shown.id, startPeriod: start, endPeriod: end });
+    setIsSaving(false);
+    if (!result.success) {
+      setError(result.error);
+      toast.error(result.error ?? "Gagal menyimpan");
+      return;
+    }
+    toast.success(`Periode iuran ${shown.name} disimpan.`);
+    router.refresh();
+    onClose();
+  };
+
+  return (
+    <KasModal isOpen={!!target} onClose={onClose} disableClose={isSaving} title="Periode Iuran Anggota" description={shown ? `Anggota: ${shown.name}` : undefined}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          save(startPeriod, endPeriod);
+        }}
+        className="space-y-5"
+      >
+        <ModalError message={error} onDismiss={() => setError(null)} />
+
+        <p className="text-sm text-slate-600 dark:text-neutral-300">
+          Untuk anggota yang masuk atau keluar di tengah periode
+          {generalStart && generalEnd ? ` (periode umum ${formatPeriod(generalStart)} – ${formatPeriod(generalEnd)})` : ""}. Bulan di luar rentang ini tidak ditagih dan tidak dihitung tunggakan.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Mulai Iuran</label>
+            <input type="month" value={startPeriod} onChange={(e) => setStartPeriod(e.target.value)} className={dateInputClass} />
+            <p className="text-[11px] text-slate-500 mt-1.5">Kosongkan = sejak awal periode.</p>
+          </div>
+          <div>
+            <label className={labelClass}>Berhenti Iuran</label>
+            <input type="month" min={startPeriod || undefined} value={endPeriod} onChange={(e) => setEndPeriod(e.target.value)} className={dateInputClass} />
+            <p className="text-[11px] text-slate-500 mt-1.5">Kosongkan = sampai akhir periode.</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between pt-2">
+          {current ? (
+            <button
+              type="button"
+              onClick={() => save("", "")}
+              disabled={isSaving}
+              className="px-4 py-2.5 rounded-xl font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors disabled:opacity-40 text-sm"
+            >
+              Ikuti Periode Umum
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSaving}
+              className="px-5 py-2.5 rounded-xl font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors disabled:opacity-40"
+            >
+              Batal
+            </button>
+            <button type="submit" disabled={isSaving} className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-600 dark:bg-rose-600 hover:bg-red-700 dark:hover:bg-rose-700 transition-colors shadow-sm disabled:opacity-50">
+              {isSaving ? "Menyimpan..." : "Simpan"}
+            </button>
+          </div>
+        </div>
+      </form>
+    </KasModal>
   );
 }
 
@@ -214,7 +329,7 @@ function RecordIuranModal({
           </div>
           <div>
             <label className={labelClass}>Tanggal Bayar</label>
-            <input type="date" required value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={inputClass} />
+            <input type="date" required value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={dateInputClass} />
           </div>
         </div>
 
@@ -330,7 +445,7 @@ function PaymentDetailModal({ target, onClose }: { target: { member: Member; pay
               </div>
               <div>
                 <label className={labelClass}>Tanggal Bayar</label>
-                <input type="date" required value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={inputClass} />
+                <input type="date" required value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={dateInputClass} />
               </div>
             </div>
 

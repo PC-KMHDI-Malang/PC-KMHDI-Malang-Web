@@ -5,7 +5,7 @@ import { AlertTriangle, CalendarCheck, ChevronLeft, ChevronRight, ClipboardCheck
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { arrearsPeriods, currentPeriod, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, parseYearParam, periodEnd, toKasSetting, type IuranStatus, type KasSetting } from "@/lib/kas";
+import { arrearsPeriods, currentPeriod, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, memberSetting, parseYearParam, periodEnd, toKasSetting, toMemberPeriod, type MemberPeriod, type IuranStatus, type KasSetting } from "@/lib/kas";
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, cardClass } from "@/components/kas/KasUi";
 import { IuranMatrix } from "@/components/kas/IuranMatrix";
@@ -70,7 +70,7 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
   const thisYear = Number(nowPeriod.slice(0, 4));
   const year = parseYearParam(params.tahun, thisYear);
 
-  const [{ data: settingRow, error: settingError }, { data: userRows }, iuranResult, { data: logRows, error: logError }] = await Promise.all([
+  const [{ data: settingRow, error: settingError }, { data: userRows }, iuranResult, { data: logRows, error: logError }, { data: memberPeriodRows }] = await Promise.all([
     supabaseAdmin.from("KasSetting").select("*").eq("id", 1).maybeSingle(),
     supabaseAdmin.from("User").select("id, name, email, role, jabatan").order("name", { ascending: true }),
     fetchAll<IuranRow>("KasIuran", "id, userId, period, amount, paidAt, note, status, proofUrl, submittedAt, rejectReason", "period"),
@@ -80,6 +80,9 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
     tab === "log"
       ? supabaseAdmin.from("KasLog").select("id, createdAt, action, userId, periods, amount, note").order("createdAt", { ascending: false }).limit(300)
       : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
+    // Periode khusus anggota yang masuk/keluar di tengah periode (migrasi 029). Kalau tabelnya
+    // belum ada, hasilnya kosong dan semua anggota mengikuti periode umum.
+    supabaseAdmin.from("KasMemberPeriod").select("*"),
   ]);
 
   const tableMissing = !!settingError || iuranResult.error;
@@ -98,7 +101,13 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
   const paidByMember = new Map<string, string[]>();
   for (const p of iuran) if (isSettled(p.status)) paidByMember.set(p.userId, [...(paidByMember.get(p.userId) ?? []), p.period]);
   const arrears: Record<string, number> = {};
-  for (const m of members) arrears[m.id] = arrearsPeriods(paidByMember.get(m.id) ?? [], setting, nowPeriod).length;
+  const memberPeriods: Record<string, MemberPeriod> = {};
+  for (const row of memberPeriodRows ?? []) {
+    const period = toMemberPeriod(row);
+    if (period) memberPeriods[row.userId as string] = period;
+  }
+  // Tunggakan tiap anggota dihitung dengan periode efektifnya sendiri (masuk/keluar di tengah periode).
+  for (const m of members) arrears[m.id] = arrearsPeriods(paidByMember.get(m.id) ?? [], memberSetting(setting, memberPeriods[m.id]), nowPeriod).length;
   const totalArrears = Object.values(arrears).reduce((s, n) => s + n, 0);
 
   const yearPrefix = `${year}-`;
@@ -218,7 +227,7 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
                     </div>
                   }
                 />
-                <IuranMatrix members={members} payments={yearPayments} arrears={arrears} setting={setting} year={year} nowPeriod={nowPeriod} />
+                <IuranMatrix members={members} payments={yearPayments} arrears={arrears} setting={setting} memberPeriods={memberPeriods} year={year} nowPeriod={nowPeriod} />
               </div>
             )}
 

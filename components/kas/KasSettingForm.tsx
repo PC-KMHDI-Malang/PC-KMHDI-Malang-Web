@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-import { inputClass, labelClass } from "@/components/kas/KasUi";
+import { dateInputClass, inputClass, labelClass } from "@/components/kas/KasUi";
 import { ModalError } from "@/components/kas/KasModal";
 import { updateKasSettingAction } from "@/app/actions/kas";
 import { addMonths, currentPeriod, formatPeriod, isValidPeriod, KAS_PERIOD_MONTHS, periodEnd, periodRange, type KasSetting } from "@/lib/kas";
@@ -61,7 +61,7 @@ export function KasSettingForm({ setting }: { setting: KasSetting }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Awal Periode Iuran</label>
-            <input type="month" required pattern={MONTH_INPUT_PATTERN} placeholder="YYYY-MM" value={startPeriod} onChange={(e) => changeStart(e.target.value)} className={inputClass} />
+            <input type="month" required pattern={MONTH_INPUT_PATTERN} placeholder="YYYY-MM" value={startPeriod} onChange={(e) => changeStart(e.target.value)} className={dateInputClass} />
           </div>
           <div>
             <label className={labelClass}>Akhir Periode Iuran</label>
@@ -76,7 +76,7 @@ export function KasSettingForm({ setting }: { setting: KasSetting }) {
                 setEndTouched(true);
                 setEndPeriod(e.target.value);
               }}
-              className={inputClass}
+              className={dateInputClass}
             />
           </div>
         </div>

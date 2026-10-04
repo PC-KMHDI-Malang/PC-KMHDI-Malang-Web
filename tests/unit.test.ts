@@ -30,6 +30,7 @@ import {
   addMonths,
   periodEnd,
   toKasSetting,
+  memberSetting,
 } from "@/lib/kas";
 
 describe("roles — siapa boleh masuk panel admin", () => {
@@ -545,5 +546,39 @@ describe("kas — akhir periode diatur bendahara", () => {
     assert.deepEqual(toKasSetting({ monthlyFee: 10000, startPeriod: "2025-07" }), { monthlyFee: 10000, startPeriod: "2025-07", endPeriod: null });
     assert.deepEqual(toKasSetting({ monthlyFee: 10000, startPeriod: "2025-07", endPeriod: "2027-06" }).endPeriod, "2027-06");
     assert.deepEqual(toKasSetting(null), { monthlyFee: 0, startPeriod: null, endPeriod: null });
+  });
+});
+
+describe("kas — anggota masuk/keluar di tengah periode", () => {
+  const setting = { monthlyFee: 10000, startPeriod: "2025-06", endPeriod: "2027-06" };
+
+  it("tanpa periode khusus, anggota ikut periode umum", () => {
+    assert.deepEqual(memberSetting(setting, null), { monthlyFee: 10000, startPeriod: "2025-06", endPeriod: "2027-06" });
+  });
+
+  it("anggota yang masuk Maret 2026 baru ditagih sejak Maret 2026", () => {
+    const own = memberSetting(setting, { startPeriod: "2026-03", endPeriod: null });
+    assert.equal(monthStatus("2026-02", false, own, "2026-10"), "TIDAK_BERLAKU");
+    assert.equal(monthStatus("2026-03", false, own, "2026-10"), "BELUM");
+    // Tunggakan Mar–Okt 2026 = 8 bulan, bukan sejak Juni 2025.
+    assert.equal(arrearsPeriods([], own, "2026-10").length, 8);
+  });
+
+  it("anggota yang berhenti Desember 2025 tidak ditagih sesudahnya", () => {
+    const own = memberSetting(setting, { startPeriod: null, endPeriod: "2025-12" });
+    assert.equal(monthStatus("2026-01", false, own, "2026-10"), "TIDAK_BERLAKU");
+    assert.equal(arrearsPeriods([], own, "2026-10").length, 7); // Jun–Des 2025
+  });
+
+  it("periode khusus tidak bisa melebar keluar periode umum", () => {
+    const own = memberSetting(setting, { startPeriod: "2024-01", endPeriod: "2030-01" });
+    assert.equal(own.startPeriod, "2025-06");
+    assert.equal(own.endPeriod, "2027-06");
+  });
+
+  it("berhenti sebelum periode dimulai = tidak ada bulan yang ditagih", () => {
+    const own = memberSetting(setting, { startPeriod: null, endPeriod: "2025-01" });
+    assert.equal(own.startPeriod, null);
+    assert.equal(arrearsPeriods([], own, "2026-10").length, 0);
   });
 });

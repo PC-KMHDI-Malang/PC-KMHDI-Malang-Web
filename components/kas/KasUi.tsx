@@ -10,7 +10,11 @@ export const cardClass = "rounded-3xl border border-slate-200/80 dark:border-whi
 export const inputClass =
   "w-full bg-slate-50 dark:bg-[#111114] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all";
 
-export const labelClass = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5";
+// Untuk <input type="date"/"month">: di HP (terutama iOS) input jenis ini punya lebar minimum
+// sendiri dan bisa lebih lebar dari modal, membuat isi modal bisa digeser ke kanan-kiri.
+export const dateInputClass = `${inputClass} block min-w-0 max-w-full appearance-none`;
+
+export const labelClass ="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5";
 
 export const STATUS_LABEL: Record<MonthStatus, string> = {
   LUNAS: "Sudah Bayar",

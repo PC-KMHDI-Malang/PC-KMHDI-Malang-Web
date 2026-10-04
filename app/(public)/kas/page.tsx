@@ -5,7 +5,7 @@ import { CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, History, Settin
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
-import { currentPeriod, formatDate, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, memberYearStatus, MONTH_NAMES, parseYearParam, paymentStatus, periodEnd, periodRange, toKasSetting, type IuranPayment, type IuranStatus, type KasSetting } from "@/lib/kas";
+import { currentPeriod, formatDate, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, memberYearStatus, MONTH_NAMES, memberSetting, parseYearParam, paymentStatus, periodEnd, periodRange, toKasSetting, toMemberPeriod, type IuranPayment, type IuranStatus, type KasSetting } from "@/lib/kas";
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, STATUS_CLASS, STATUS_LABEL, cardClass } from "@/components/kas/KasUi";
 import { UploadBuktiModal, type ProofPeriodOption } from "@/components/kas/UploadBuktiModal";
@@ -29,13 +29,18 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
   const thisYear = Number(nowPeriod.slice(0, 4));
   const year = parseYearParam((await searchParams).tahun, thisYear);
 
-  const [{ data: settingRow, error: settingError }, { data: paymentRows, error: paymentError }] = await Promise.all([
+  const [{ data: settingRow, error: settingError }, { data: paymentRows, error: paymentError }, { data: memberRow }] = await Promise.all([
     supabaseAdmin.from("KasSetting").select("*").eq("id", 1).maybeSingle(),
     supabaseAdmin.from("KasIuran").select("id, period, amount, paidAt, note, status, proofUrl, rejectReason").eq("userId", session.user.id).order("period", { ascending: false }),
+    // Periode khusus anggota ini (masuk/keluar di tengah periode, migrasi 029). Kalau tabelnya
+    // belum ada, hasilnya kosong dan anggota mengikuti periode umum.
+    supabaseAdmin.from("KasMemberPeriod").select("*").eq("userId", session.user.id).maybeSingle(),
   ]);
 
   const tableMissing = !!settingError || !!paymentError;
-  const setting: KasSetting = toKasSetting(settingRow);
+  const generalSetting: KasSetting = toKasSetting(settingRow);
+  // Semua perhitungan di halaman ini memakai periode efektif anggota ini.
+  const setting: KasSetting = memberSetting(generalSetting, toMemberPeriod(memberRow));
   const payments: IuranPayment[] = paymentRows ?? [];
   const summary = memberYearStatus(payments, year, setting, nowPeriod);
   const isMember = isKasMember({ email: session.user.email, role: session.user.role });
@@ -109,7 +114,11 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
               />
             </div>
 
-            {!setting.startPeriod && <KasNotice title="Iuran belum diatur.">Bendahara belum menetapkan nominal dan bulan mulai iuran kas.</KasNotice>}
+            {!generalSetting.startPeriod ? (
+              <KasNotice title="Iuran belum diatur.">Bendahara belum menetapkan nominal dan bulan mulai iuran kas.</KasNotice>
+            ) : (
+              !setting.startPeriod && <KasNotice title="Anda tidak sedang dalam masa iuran.">Tidak ada bulan iuran yang ditagihkan kepada Anda pada periode ini.</KasNotice>
+            )}
 
             {/* Bayar iuran: unggah bukti untuk dikonfirmasi bendahara */}
             {setting.startPeriod && (

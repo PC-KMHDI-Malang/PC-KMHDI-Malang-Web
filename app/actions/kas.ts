@@ -8,7 +8,21 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { isR2Configured } from "@/lib/r2";
 import { createR2UploadUrl, deleteFromBucketByUrl, resolveStoredUrl, uploadToBucket } from "@/lib/storage";
 import { KAS_PROOF_BUCKET, KAS_PROOF_TYPES, MAX_PROOF_MB, SERVER_UPLOAD_MAX_BYTES } from "@/lib/uploadLimits";
-import { addMonths, isKasMember, isValidDate, isValidPeriod, KAS_PERIOD_MAX_MONTHS, parseRupiahInput, periodEnd, periodRange, todayInJakarta, toKasSetting } from "@/lib/kas";
+import {
+  addMonths,
+  formatPeriod,
+  isKasMember,
+  isValidDate,
+  isValidPeriod,
+  KAS_PERIOD_MAX_MONTHS,
+  memberSetting,
+  parseRupiahInput,
+  periodEnd,
+  periodRange,
+  todayInJakarta,
+  toKasSetting,
+  toMemberPeriod,
+} from "@/lib/kas";
 
 // Satu-satunya jalur tulis untuk data kas. Server Action adalah endpoint HTTP publik (lihat
 // catatan di lib/guard.ts), jadi SETIAP action di sini wajib memeriksa sesinya sendiri:
@@ -257,16 +271,22 @@ export async function submitIuranProofAction(input: { periods: string[]; paidAt:
   if ("error" in member) return fail(member.error);
 
   try {
-    const { data: settingRow } = await supabaseAdmin.from("KasSetting").select("*").eq("id", 1).maybeSingle();
-    const setting = toKasSetting(settingRow);
-    if (!setting.startPeriod || !setting.monthlyFee) return fail("Iuran belum diatur oleh bendahara.");
+    const [{ data: settingRow }, { data: memberRow }] = await Promise.all([
+      supabaseAdmin.from("KasSetting").select("*").eq("id", 1).maybeSingle(),
+      supabaseAdmin.from("KasMemberPeriod").select("*").eq("userId", member.userId).maybeSingle(),
+    ]);
+    // Periode efektif anggota ini: periode umum dipotong periode khususnya (masuk/keluar di
+    // tengah periode) — sama dengan pilihan bulan di form unggah bukti.
+    const general = toKasSetting(settingRow);
+    if (!general.startPeriod || !general.monthlyFee) return fail("Iuran belum diatur oleh bendahara.");
+    const setting = memberSetting(general, toMemberPeriod(memberRow));
+    const maxPeriod = periodEnd(setting);
+    if (!setting.startPeriod || !maxPeriod) return fail("Anda tidak sedang dalam masa iuran.");
 
     const periods = Array.from(new Set(Array.isArray(input.periods) ? input.periods : [])).sort();
     if (periods.length === 0) return fail("Pilih minimal satu bulan.");
-    if (periods.length > 24) return fail("Maksimal 24 bulan dalam sekali unggah.");
+    if (periods.length > KAS_PERIOD_MAX_MONTHS) return fail(`Maksimal ${KAS_PERIOD_MAX_MONTHS} bulan dalam sekali unggah.`);
     if (!periods.every(isValidPeriod)) return fail("Periode bulan tidak valid.");
-    // Sampai akhir periode kepengurusan (2 tahun sejak bulan mulai), sama dengan pilihan di form.
-    const maxPeriod = periodEnd(setting)!;
     if (periods.some((p) => p < setting.startPeriod! || p > maxPeriod)) return fail("Ada bulan yang di luar masa berlaku iuran.");
 
     const amount = setting.monthlyFee;
@@ -368,6 +388,37 @@ export async function rejectIuranAction(ids: string[], reason: string): Promise<
     // Hanya terhapus kalau tidak ada baris lain yang masih memakai file yang sama.
     await removeUnusedProofs((rows ?? []).map((r) => r.proofUrl));
     await writeLog(logPerMember("DITOLAK", rows ?? [], rejectReason));
+    revalidateKas();
+    return ok;
+  } catch {
+    return fail("Terjadi kesalahan sistem.");
+  }
+}
+
+// Periode iuran khusus satu anggota (masuk/keluar di tengah periode). Kedua bulan boleh kosong =
+// ikut periode umum; kalau dua-duanya kosong, barisnya dihapus.
+export async function setMemberPeriodAction(input: { userId: string; startPeriod: string; endPeriod: string }): Promise<ActionResult> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  try {
+    const memberError = await assertKasMember(input.userId);
+    if (memberError) return fail(memberError);
+
+    const startPeriod = input.startPeriod ? input.startPeriod : null;
+    const endPeriod = input.endPeriod ? input.endPeriod : null;
+    if (startPeriod && !isValidPeriod(startPeriod)) return fail("Bulan mulai iuran tidak valid.");
+    if (endPeriod && !isValidPeriod(endPeriod)) return fail("Bulan berhenti iuran tidak valid.");
+    if (startPeriod && endPeriod && endPeriod < startPeriod) return fail("Bulan berhenti tidak boleh sebelum bulan mulai.");
+
+    const { error } =
+      startPeriod || endPeriod
+        ? await supabaseAdmin.from("KasMemberPeriod").upsert({ userId: input.userId, startPeriod, endPeriod, updatedAt: new Date().toISOString() })
+        : await supabaseAdmin.from("KasMemberPeriod").delete().eq("userId", input.userId);
+    if (error) return fail("Gagal menyimpan periode iuran anggota.");
+
+    const describe = startPeriod || endPeriod ? `Periode iuran anggota: ${startPeriod ? formatPeriod(startPeriod) : "awal periode"} – ${endPeriod ? formatPeriod(endPeriod) : "akhir periode"}` : "Periode iuran anggota dikembalikan ke periode umum";
+    await writeLog([{ action: "DIUBAH", userId: input.userId, periods: [], amount: 0, note: describe }]);
     revalidateKas();
     return ok;
   } catch {

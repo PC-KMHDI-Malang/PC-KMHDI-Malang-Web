@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { ImageUp, Upload } from "lucide-react";
 
 import { KasModal, ModalActions, ModalError } from "@/components/kas/KasModal";
-import { inputClass, labelClass } from "@/components/kas/KasUi";
+import { dateInputClass, inputClass, labelClass } from "@/components/kas/KasUi";
 import { submitIuranProofAction } from "@/app/actions/kas";
 import { uploadKasProof } from "@/lib/uploadClient";
 import { KAS_PROOF_TYPES, MAX_PROOF_MB } from "@/lib/uploadLimits";
@@ -118,7 +118,7 @@ export function UploadBuktiModal({ options, monthlyFee, preselect, variant = "pr
 
           <div>
             <label className={labelClass}>Bulan yang Dibayar</label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto overflow-x-hidden overscroll-contain pr-1">
               {options.map(({ period, rejected }) => {
                 const active = selected.includes(period);
                 return (
@@ -144,12 +144,12 @@ export function UploadBuktiModal({ options, monthlyFee, preselect, variant = "pr
 
           <div>
             <label className={labelClass}>Tanggal Bayar</label>
-            <input type="date" required max={todayInJakarta()} value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={inputClass} />
+            <input type="date" required max={todayInJakarta()} value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={dateInputClass} />
           </div>
 
           <div>
             <label className={labelClass}>Foto Bukti Pembayaran</label>
-            <label className="flex items-center gap-3 rounded-xl border-2 border-dashed border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-white/5 px-4 py-4 cursor-pointer hover:border-red-300 dark:hover:border-rose-800 transition-colors">
+            <label className="flex w-full min-w-0 overflow-hidden items-center gap-3 rounded-xl border-2 border-dashed border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-white/5 px-4 py-4 cursor-pointer hover:border-red-300 dark:hover:border-rose-800 transition-colors">
               <ImageUp size={22} className="shrink-0 text-slate-400" />
               <span className="min-w-0 text-sm">
                 <span className="block font-semibold text-slate-700 dark:text-slate-200 truncate">{file ? file.name : "Pilih foto bukti transfer / pembayaran"}</span>

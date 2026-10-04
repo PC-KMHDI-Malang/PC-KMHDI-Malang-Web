@@ -163,6 +163,30 @@ export function periodEnd(setting: KasSetting): string | null {
   return addMonths(setting.startPeriod, KAS_PERIOD_MONTHS);
 }
 
+// Periode iuran khusus satu anggota (tabel KasMemberPeriod, migrasi 029) — untuk anggota yang
+// masuk atau keluar di tengah periode. Kosong = ikut periode umum.
+export type MemberPeriod = { startPeriod: string | null; endPeriod: string | null };
+
+// Periode efektif seorang anggota: irisan periode umum (KasSetting) dengan periode khususnya.
+// Hasilnya KasSetting biasa, jadi monthStatus/arrearsPeriods/dst. bisa dipakai apa adanya.
+// Kalau irisannya kosong (mis. anggota berhenti sebelum periode dimulai), tidak ada bulan yang ditagih.
+export function memberSetting(setting: KasSetting, member?: MemberPeriod | null): KasSetting {
+  const generalEnd = periodEnd(setting);
+  if (!setting.startPeriod || !generalEnd) return setting;
+  const start = member?.startPeriod && member.startPeriod > setting.startPeriod ? member.startPeriod : setting.startPeriod;
+  const end = member?.endPeriod && member.endPeriod < generalEnd ? member.endPeriod : generalEnd;
+  if (end < start) return { monthlyFee: setting.monthlyFee, startPeriod: null, endPeriod: null };
+  return { monthlyFee: setting.monthlyFee, startPeriod: start, endPeriod: end };
+}
+
+export function toMemberPeriod(row: Record<string, unknown> | null | undefined): MemberPeriod | null {
+  if (!row) return null;
+  return {
+    startPeriod: isValidPeriod(row.startPeriod) ? row.startPeriod : null,
+    endPeriod: isValidPeriod(row.endPeriod) ? row.endPeriod : null,
+  };
+}
+
 export function monthStatus(period: string, paid: boolean | IuranStatus | null, setting: KasSetting, nowPeriod: string): MonthStatus {
   const status: IuranStatus | null = paid === true ? "LUNAS" : paid === false ? null : paid;
   if (status === "LUNAS") return "LUNAS";
