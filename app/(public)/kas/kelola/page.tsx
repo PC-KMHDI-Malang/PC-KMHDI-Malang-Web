@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, CalendarCheck, ChevronLeft, ChevronRight, ClipboardCheck, Clock, FileSpreadsheet, FileText, Settings2, Users, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarCheck, ChevronLeft, ChevronRight, ClipboardCheck, Clock, FileSpreadsheet, FileText, History, Settings2, Users, Wallet } from "lucide-react";
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -11,6 +11,7 @@ import { CardHeading, KasNotice, StatCard, cardClass } from "@/components/kas/Ka
 import { IuranMatrix } from "@/components/kas/IuranMatrix";
 import { KasSettingForm } from "@/components/kas/KasSettingForm";
 import { KonfirmasiList, type PendingProof } from "@/components/kas/KonfirmasiList";
+import { KasLogList, type KasLogAction, type KasLogItem } from "@/components/kas/KasLogList";
 
 export const metadata: Metadata = {
   title: "Kelola Uang Kas",
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
 const TABS = [
   { key: "iuran", label: "Iuran Anggota", icon: Users },
   { key: "konfirmasi", label: "Konfirmasi", icon: ClipboardCheck },
+  { key: "log", label: "Log Transaksi", icon: History },
   { key: "pengaturan", label: "Pengaturan", icon: Settings2 },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
@@ -68,10 +70,16 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
   const thisYear = Number(nowPeriod.slice(0, 4));
   const year = parseYearParam(params.tahun, thisYear);
 
-  const [{ data: settingRow, error: settingError }, { data: userRows }, iuranResult] = await Promise.all([
+  const [{ data: settingRow, error: settingError }, { data: userRows }, iuranResult, { data: logRows, error: logError }] = await Promise.all([
     supabaseAdmin.from("KasSetting").select("monthlyFee, startPeriod").eq("id", 1).maybeSingle(),
     supabaseAdmin.from("User").select("id, name, email, role, jabatan").order("name", { ascending: true }),
     fetchAll<IuranRow>("KasIuran", "id, userId, period, amount, paidAt, note, status, proofUrl, submittedAt, rejectReason", "period"),
+    // Log transaksi terbaru (tabel KasLog, migrasi 027). Hanya 300 terakhir — cukup untuk
+    // memantau aktivitas; riwayat lengkap tetap ada di export laporan. Cuma diambil saat tab
+    // Log dibuka, supaya tab lain tidak ikut menunggu query yang hasilnya tidak ditampilkan.
+    tab === "log"
+      ? supabaseAdmin.from("KasLog").select("id, createdAt, action, userId, periods, amount, note").order("createdAt", { ascending: false }).limit(300)
+      : Promise.resolve({ data: [] as Record<string, unknown>[], error: null }),
   ]);
 
   const tableMissing = !!settingError || iuranResult.error;
@@ -120,6 +128,20 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
     group.total += p.amount;
     pendingMap.set(key, group);
   }
+  // Nama diambil dari semua akun (bukan cuma anggota aktif), supaya log anggota yang role-nya
+  // sudah berubah tetap terbaca namanya.
+  const allNames = new Map((userRows ?? []).map((u) => [u.id as string, (u.name as string) || "Tanpa Nama"]));
+  const timeFormat = new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const logs: KasLogItem[] = (logRows ?? []).map((l) => ({
+    id: l.id as string,
+    time: `${timeFormat.format(new Date(l.createdAt as string))} WIB`,
+    action: l.action as KasLogAction,
+    memberName: allNames.get(l.userId as string) ?? "Anggota",
+    periods: (l.periods as string[]) ?? [],
+    amount: (l.amount as number) ?? 0,
+    note: (l.note as string | null) ?? null,
+  }));
+
   const pending = [...pendingMap.values()]
     .map((g) => ({ ...g, periods: g.periods.sort() }))
     .sort((a, b) => (a.submittedAt ?? "").localeCompare(b.submittedAt ?? ""));
@@ -208,6 +230,20 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
                   description={pending.length ? `${pending.length} bukti pembayaran menunggu diperiksa. Konfirmasi kalau dana sudah diterima, atau tolak dengan alasan.` : "Tidak ada bukti pembayaran yang menunggu konfirmasi."}
                 />
                 <KonfirmasiList items={pending} />
+              </div>
+            )}
+
+            {tab === "log" && (
+              <div className={cardClass}>
+                <CardHeading icon={History} title="Log Transaksi" description="Aktivitas iuran terbaru: siapa yang membayar, mengirim bukti, serta pembayaran yang dikonfirmasi atau ditolak." />
+                {logError ? (
+                  <KasNotice title="Tabel log belum dibuat di Supabase.">
+                    Jalankan skrip{" "}
+                    <code className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 font-mono text-[11px]">supabase/migrations/027_create_kas_log_table.sql</code> di SQL Editor, lalu muat ulang halaman ini.
+                  </KasNotice>
+                ) : (
+                  <KasLogList items={logs} />
+                )}
               </div>
             )}
 

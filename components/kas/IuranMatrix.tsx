@@ -99,7 +99,7 @@ export function IuranMatrix({ members, payments, arrears, setting, year, nowPeri
                         <span className="block text-[11px] font-semibold text-slate-500 dark:text-neutral-400">{formatRupiah(arrears[member.id] * setting.monthlyFee)}</span>
                       </span>
                     ) : (
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Lunas</span>
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Tidak ada</span>
                     )}
                   </td>
                 </tr>

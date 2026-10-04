@@ -17,13 +17,17 @@ export type ProofPeriodOption = { period: string; rejected: boolean };
 interface UploadBuktiModalProps {
   options: ProofPeriodOption[];
   monthlyFee: number;
+  /** Bulan yang langsung terpilih saat form dibuka (mis. bulan yang buktinya ditolak). */
+  preselect?: string;
+  /** "primary" = tombol utama di kartu Bayar Iuran; "inline" = tautan kecil "Upload ulang" di riwayat. */
+  variant?: "primary" | "inline";
 }
 
 const periodLabel = (period: string) => `${MONTH_SHORT[Number(period.slice(5)) - 1]} ${period.slice(0, 4)}`;
 
 // Anggota mengunggah foto bukti transfer/pembayaran untuk satu atau beberapa bulan sekaligus.
 // Status bulan-bulan itu jadi "Menunggu Konfirmasi" sampai bendahara mengonfirmasi atau menolak.
-export function UploadBuktiModal({ options, monthlyFee }: UploadBuktiModalProps) {
+export function UploadBuktiModal({ options, monthlyFee, preselect, variant = "primary" }: UploadBuktiModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -34,8 +38,9 @@ export function UploadBuktiModal({ options, monthlyFee }: UploadBuktiModalProps)
   const [error, setError] = useState<string | null>(null);
 
   const open = () => {
-    // Bulan tertua yang belum dibayar langsung terpilih — kasus paling umum.
-    setSelected(options.length ? [options[0].period] : []);
+    // Bulan yang diminta (upload ulang) atau, kalau tidak ada, bulan tertua yang belum dibayar.
+    const initial = preselect && options.some((o) => o.period === preselect) ? preselect : options[0]?.period;
+    setSelected(initial ? [initial] : []);
     setPaidAt(todayInJakarta());
     setNote("");
     setFile(null);
@@ -86,15 +91,26 @@ export function UploadBuktiModal({ options, monthlyFee }: UploadBuktiModalProps)
 
   return (
     <>
-      <button
-        type="button"
-        onClick={open}
-        disabled={options.length === 0}
-        className="bg-red-600 dark:bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-red-700 dark:hover:bg-rose-700 shadow-sm transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <Upload size={16} />
-        Upload Bukti Pembayaran
-      </button>
+      {variant === "inline" ? (
+        <button
+          type="button"
+          onClick={open}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-red-600 dark:bg-rose-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-red-700 dark:hover:bg-rose-700 transition-colors"
+        >
+          <Upload size={13} />
+          Upload Ulang
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={open}
+          disabled={options.length === 0}
+          className="bg-red-600 dark:bg-rose-600 text-white font-bold px-5 py-2.5 rounded-xl hover:bg-red-700 dark:hover:bg-rose-700 shadow-sm transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Upload size={16} />
+          Upload Bukti Pembayaran
+        </button>
+      )}
 
       <KasModal isOpen={isOpen} onClose={() => setIsOpen(false)} disableClose={isSubmitting} title="Upload Bukti Pembayaran" description="Bukti akan diperiksa bendahara sebelum iuran dinyatakan sudah bayar.">
         <form onSubmit={handleSubmit} className="space-y-5">

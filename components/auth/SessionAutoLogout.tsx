@@ -25,10 +25,14 @@ export function SessionAutoLogout({ timeoutMinutes = 120 }: SessionAutoLogoutPro
       }
 
       timerRef.current = setTimeout(async () => {
+        // Reload penuh (bukan router.push) disengaja: setelah sesi habis, semua state & cache
+        // halaman yang masih mengira pengguna login harus ikut dibuang.
         try {
           await logoutAction();
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- reload penuh disengaja, lihat di atas
           window.location.href = "/login?reason=timeout";
         } catch {
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- reload penuh disengaja, lihat di atas
           window.location.href = "/login";
         }
       }, timeoutMs);

@@ -184,7 +184,7 @@ export function buildKasPdf(report: KasReport): Buffer {
       m.jabatan ? `${m.name}\n${m.jabatan}` : m.name,
       ...m.months.map((mo) => PDF_STATUS_TEXT[mo.status]),
       formatRupiah(m.yearPaid),
-      m.arrearsCount ? `${m.arrearsCount} bln\n${formatRupiah(m.arrearsAmount)}` : "Lunas",
+      m.arrearsCount ? `${m.arrearsCount} bln\n${formatRupiah(m.arrearsAmount)}` : "Tidak ada",
     ]),
     foot: [["", "TOTAL", ...Array(12).fill(""), formatRupiah(report.totals.yearPaid), `${report.totals.arrearsCount} bln\n${formatRupiah(report.totals.arrearsAmount)}`]],
     showFoot: "lastPage",

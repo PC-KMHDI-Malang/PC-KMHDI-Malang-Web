@@ -175,14 +175,22 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-white/10">
                   {payments.map((p) => (
-                    <div key={p.id} className="flex items-start justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-800 dark:text-white">Iuran {formatPeriod(p.period)}</p>
-                        <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                          Dibayar {formatDate(p.paidAt)}
-                          {p.note ? ` · ${p.note}` : ""}
-                        </p>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <div key={p.id} className="py-3.5 first:pt-0 last:pb-0">
+                      {/* Baris 1: periode & tanggal bayar — nominal di kanan */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-800 dark:text-white">Iuran {formatPeriod(p.period)}</p>
+                          <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
+                            Dibayar {formatDate(p.paidAt)}
+                            {p.note ? ` · ${p.note}` : ""}
+                          </p>
+                        </div>
+                        <p className={`shrink-0 text-sm font-bold ${paymentStatus(p) === "LUNAS" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-neutral-500"}`}>{formatRupiah(p.amount)}</p>
+                      </div>
+
+                      {/* Baris 2: status — tombol unggah ulang (kalau ditolak) di pojok kanan */}
+                      <div className="mt-1.5 flex items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-2">
                           <HistoryBadge status={paymentStatus(p) ?? "LUNAS"} />
                           {p.proofUrl && (
                             <a href={`/kas/bukti/${p.id}`} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-red-600 dark:text-rose-400 hover:underline">
@@ -190,9 +198,17 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
                             </a>
                           )}
                         </div>
-                        {paymentStatus(p) === "DITOLAK" && p.rejectReason && <p className="text-[11px] text-red-600 dark:text-rose-400 mt-1">Alasan: {p.rejectReason}</p>}
+                        {paymentStatus(p) === "DITOLAK" && proofOptions.some((o) => o.period === p.period) && (
+                          <UploadBuktiModal options={proofOptions} monthlyFee={setting.monthlyFee} preselect={p.period} variant="inline" />
+                        )}
                       </div>
-                      <p className={`shrink-0 text-sm font-bold ${paymentStatus(p) === "LUNAS" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-neutral-500"}`}>{formatRupiah(p.amount)}</p>
+
+                      {/* Baris 3: alasan penolakan, kotak selebar baris */}
+                      {paymentStatus(p) === "DITOLAK" && p.rejectReason && (
+                        <div className="mt-2.5 rounded-xl border border-red-100 dark:border-rose-900/40 bg-red-50 dark:bg-rose-950/20 px-3.5 py-2.5 text-xs text-red-700 dark:text-rose-300">
+                          <span className="font-semibold">Alasan:</span> {p.rejectReason}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

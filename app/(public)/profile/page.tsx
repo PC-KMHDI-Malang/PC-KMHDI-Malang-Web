@@ -6,7 +6,7 @@ import { ArrowLeft, KeyRound, UserCheck, Shield, Lock, Wallet, ChevronRight } fr
 import { ProfileSettingsForm } from "@/components/profile/ProfileSettingsForm";
 import { UpdatePasswordForm } from "@/components/admin/UpdatePasswordForm";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
-import { isTreasurerEmail } from "@/lib/kas";
+import { isKasMember, isTreasurerEmail } from "@/lib/kas";
 
 export const metadata: Metadata = {
   // The "| PC KMHDI Malang" suffix comes from the title template in the root layout.
@@ -29,6 +29,8 @@ export default async function ProfilePage() {
   // /admin/profile — soalnya halaman publik ini ("/profile") tetap bisa diakses siapa pun yang
   // login, apa pun role-nya (lihat authorized() di lib/auth.ts, blok isOnProfile).
   const isTreasurer = isTreasurerEmail(session.user.email);
+  // Pintasan kas hanya untuk yang ditagih iuran (anggota) dan bendahara — lihat Navbar.tsx.
+  const showKas = isTreasurer || isKasMember({ email: session.user.email, role: session.user.role });
   const isAccountLocked = isProtectedAccountEmail(session.user.email) || session.user.role === "KONTRIBUTOR";
 
   return (
@@ -103,19 +105,21 @@ export default async function ProfilePage() {
             </div>
 
             {/* Pintasan Uang Kas */}
-            <Link
-              href={isTreasurer ? "/kas/kelola" : "/kas"}
-              className="group flex items-center gap-4 rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#121215] p-5 sm:p-6 shadow-xl transition hover:border-red-200 dark:hover:border-rose-900/50"
-            >
-              <div className="w-10 h-10 shrink-0 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 flex items-center justify-center text-red-600 dark:text-red-400 shadow-sm">
-                <Wallet size={20} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isTreasurer ? "Kelola Uang Kas" : "Uang Kas Saya"}</h3>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">{isTreasurer ? "Catat iuran anggota dan buku kas organisasi." : "Lihat status iuran kas bulanan Anda."}</p>
-              </div>
-              <ChevronRight size={18} className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-red-600" />
-            </Link>
+            {showKas && (
+              <Link
+                href={isTreasurer ? "/kas/kelola" : "/kas"}
+                className="group flex items-center gap-4 rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#121215] p-5 sm:p-6 shadow-xl transition hover:border-red-200 dark:hover:border-rose-900/50"
+              >
+                <div className="w-10 h-10 shrink-0 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 flex items-center justify-center text-red-600 dark:text-red-400 shadow-sm">
+                  <Wallet size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">{isTreasurer ? "Kelola Uang Kas" : "Uang Kas Saya"}</h3>
+                  <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">{isTreasurer ? "Kelola iuran anggota, konfirmasi bukti, dan unduh laporan." : "Lihat status iuran dan unggah bukti pembayaran."}</p>
+                </div>
+                <ChevronRight size={18} className="shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-red-600" />
+              </Link>
+            )}
           </div>
 
           {/* Kolom Kanan: Kartu Ganti Password (7/12) */}

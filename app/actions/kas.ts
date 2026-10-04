@@ -69,6 +69,36 @@ async function requireKasMember(): Promise<{ userId: string } | { error: string 
   return { userId: user.id as string };
 }
 
+// ---------------------------------------------------------------------------------------------
+// Log transaksi (tabel KasLog, migrasi 027) — ditampilkan di tab "Log Transaksi" bendahara.
+// ---------------------------------------------------------------------------------------------
+
+type LogAction = "DICATAT" | "DIKIRIM" | "DIKONFIRMASI" | "DITOLAK" | "DIUBAH" | "DIBATALKAN";
+type LogEntry = { action: LogAction; userId: string; periods: string[]; amount: number; note?: string | null };
+
+// Best-effort: kalau log gagal ditulis (mis. migrasi 027 belum dijalankan), aksi utamanya tetap
+// dianggap berhasil — log adalah catatan tambahan, bukan bagian dari transaksi iurannya.
+async function writeLog(entries: LogEntry[]) {
+  if (entries.length === 0) return;
+  try {
+    await supabaseAdmin.from("KasLog").insert(entries.map((e) => ({ ...e, periods: [...e.periods].sort(), note: e.note ?? null })));
+  } catch {
+    // diabaikan, lihat catatan di atas
+  }
+}
+
+// Satu entri log per anggota (konfirmasi/tolak bisa mencakup beberapa bulan sekaligus).
+function logPerMember(action: LogAction, rows: { userId: string; period: string; amount: number }[], note?: string | null): LogEntry[] {
+  const byUser = new Map<string, LogEntry>();
+  for (const r of rows) {
+    const entry = byUser.get(r.userId) ?? { action, userId: r.userId, periods: [], amount: 0, note };
+    entry.periods.push(r.period);
+    entry.amount += r.amount;
+    byUser.set(r.userId, entry);
+  }
+  return [...byUser.values()];
+}
+
 function validateProofFile(contentType: unknown, size: unknown): string | null {
   if (typeof contentType !== "string" || !KAS_PROOF_TYPES.has(contentType)) return "Bukti harus berupa gambar JPG, PNG, atau WebP.";
   if (typeof size !== "number" || !Number.isFinite(size) || size <= 0) return "File tidak valid.";
@@ -111,6 +141,7 @@ export async function recordIuranAction(input: { userId: string; periods: string
     }
 
     await removeUnusedProofs((rejected ?? []).map((r) => r.proofUrl));
+    await writeLog([{ action: "DICATAT", userId: input.userId, periods, amount: amount * periods.length, note }]);
     revalidateKas();
     return ok;
   } catch {
@@ -134,7 +165,7 @@ export async function updateIuranAction(input: { id: string; amount: string | nu
     if (!amount) return fail("Nominal harus lebih dari 0.");
     if (!isValidDate(input.paidAt)) return fail("Tanggal bayar tidak valid.");
 
-    const { data: row } = await supabaseAdmin.from("KasIuran").select("status, proofUrl").eq("id", input.id).maybeSingle();
+    const { data: row } = await supabaseAdmin.from("KasIuran").select("userId, period, status, proofUrl").eq("id", input.id).maybeSingle();
     if (!row) return fail("Catatan iuran tidak ditemukan.");
     if (input.status === "MENUNGGU" && !row.proofUrl) return fail("Catatan tanpa bukti tidak bisa diberi status menunggu konfirmasi.");
 
@@ -151,6 +182,15 @@ export async function updateIuranAction(input: { id: string; amount: string | nu
       .eq("id", input.id);
     if (error) return fail("Gagal menyimpan perubahan.");
 
+    await writeLog([
+      {
+        action: "DIUBAH",
+        userId: row.userId,
+        periods: [row.period],
+        amount,
+        note: statusChanged ? `Status diubah menjadi ${input.status === "LUNAS" ? "Sudah Bayar" : "Menunggu Konfirmasi"}` : "Nominal/tanggal/catatan diubah",
+      },
+    ]);
     revalidateKas();
     return ok;
   } catch {
@@ -164,11 +204,12 @@ export async function deleteIuranAction(id: string): Promise<ActionResult> {
 
   try {
     if (typeof id !== "string" || !id) return fail("Data tidak valid.");
-    const { data: row } = await supabaseAdmin.from("KasIuran").select("proofUrl").eq("id", id).maybeSingle();
+    const { data: row } = await supabaseAdmin.from("KasIuran").select("userId, period, amount, proofUrl").eq("id", id).maybeSingle();
     const { error } = await supabaseAdmin.from("KasIuran").delete().eq("id", id);
     if (error) return fail("Gagal membatalkan catatan iuran.");
 
     await removeUnusedProofs([row?.proofUrl]);
+    if (row) await writeLog([{ action: "DIBATALKAN", userId: row.userId, periods: [row.period], amount: row.amount }]);
     revalidateKas();
     return ok;
   } catch {
@@ -262,6 +303,7 @@ export async function submitIuranProofAction(input: { periods: string[]; paidAt:
     }
 
     await removeUnusedProofs(rejected.map((r) => r.proofUrl));
+    await writeLog([{ action: "DIKIRIM", userId: member.userId, periods, amount: amount * periods.length, note }]);
     revalidateKas();
     return ok;
   } catch {
@@ -285,6 +327,7 @@ export async function confirmIuranAction(ids: string[]): Promise<ActionResult> {
     const list = cleanIds(ids);
     if (list.length === 0) return fail("Data tidak valid.");
     // Hanya baris yang masih MENUNGGU yang diubah — klik ganda / data basi tidak mengubah apa pun.
+    const { data: rows } = await supabaseAdmin.from("KasIuran").select("userId, period, amount").in("id", list).eq("status", "MENUNGGU");
     const { error } = await supabaseAdmin
       .from("KasIuran")
       .update({ status: "LUNAS", reviewedAt: new Date().toISOString(), rejectReason: null })
@@ -292,6 +335,7 @@ export async function confirmIuranAction(ids: string[]): Promise<ActionResult> {
       .eq("status", "MENUNGGU");
     if (error) return fail("Gagal mengonfirmasi pembayaran.");
 
+    await writeLog(logPerMember("DIKONFIRMASI", rows ?? []));
     revalidateKas();
     return ok;
   } catch {
@@ -311,7 +355,7 @@ export async function rejectIuranAction(ids: string[], reason: string): Promise<
 
     // Foto bukti yang ditolak tidak disimpan: tautannya dikosongkan di database dan filenya
     // dihapus dari storage. Alasan penolakan tetap tersimpan supaya anggota tahu kenapa ditolak.
-    const { data: rows } = await supabaseAdmin.from("KasIuran").select("proofUrl").in("id", list).eq("status", "MENUNGGU");
+    const { data: rows } = await supabaseAdmin.from("KasIuran").select("userId, period, amount, proofUrl").in("id", list).eq("status", "MENUNGGU");
     const { error } = await supabaseAdmin
       .from("KasIuran")
       .update({ status: "DITOLAK", reviewedAt: new Date().toISOString(), rejectReason, proofUrl: null })
@@ -321,6 +365,7 @@ export async function rejectIuranAction(ids: string[], reason: string): Promise<
 
     // Hanya terhapus kalau tidak ada baris lain yang masih memakai file yang sama.
     await removeUnusedProofs((rows ?? []).map((r) => r.proofUrl));
+    await writeLog(logPerMember("DITOLAK", rows ?? [], rejectReason));
     revalidateKas();
     return ok;
   } catch {

@@ -48,7 +48,7 @@ export function ConfirmModal({
       
       {/* Modal Card */}
       <div 
-        className={`relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 transform transition-all duration-300 border border-slate-100 dark:border-white/5 ${
+        className={`relative w-full max-w-md bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-6 transform transition-all duration-300 border border-slate-200 dark:border-white/10 ${
           isVisible ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-4"
         }`}
       >
