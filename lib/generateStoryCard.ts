@@ -184,18 +184,27 @@ export async function generateStoryCardBlob({
   let imageLoaded = false;
   if (coverImage) {
     try {
-      const mainImg = new Image();
-      mainImg.crossOrigin = "anonymous";
-      mainImg.src = coverImage;
-      await new Promise((resolve) => {
-        mainImg.onload = () => {
-          imageLoaded = true;
-          resolve(null);
-        };
-        mainImg.onerror = resolve;
-      });
+      const loadImage = (src: string) =>
+        new Promise<HTMLImageElement | null>((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img.naturalWidth > 0 ? img : null);
+          img.onerror = () => resolve(null);
+          img.src = src;
+        });
 
-      if (imageLoaded && mainImg.complete) {
+      // Bucket R2/Supabase tidak mengirim header CORS, jadi gambar yang dimuat langsung dari sana
+      // gagal dipakai di canvas (atau membuat canvas "tainted" sehingga toBlob gagal). Gambar
+      // eksternal dimuat lewat optimizer Next.js (/_next/image) yang satu origin dengan situs —
+      // host-nya sudah diizinkan di remotePatterns next.config.ts. URL lokal ("/...") dan blob/data
+      // URL dimuat langsung; kalau proxy gagal, tetap dicoba langsung sebagai cadangan.
+      const isExternal = /^https?:\/\//i.test(coverImage) && !coverImage.startsWith(window.location.origin);
+      const mainImg = isExternal
+        ? (await loadImage(`/_next/image?url=${encodeURIComponent(coverImage)}&w=1080&q=85`)) ?? (await loadImage(coverImage))
+        : await loadImage(coverImage);
+      imageLoaded = !!mainImg;
+
+      if (mainImg) {
         ctx.save();
         ctx.beginPath();
         ctx.roundRect(imgX, imgY, imgW, imgH, imgRadius);
