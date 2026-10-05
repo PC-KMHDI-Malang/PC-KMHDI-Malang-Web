@@ -42,6 +42,9 @@ export async function generateStoryCardBlob({
   ctx.fillRect(0, 0, 1080, 1920);
 
   // 2. Header: Logo & KMHDI Branding
+  // Diturunkan dari tepi atas: ±250px teratas Story tertutup UI Instagram (progress bar, avatar
+  // dan nama akun), jadi header di y≈100 sebelumnya bertumpuk dengan nama pengunggah.
+  const headerY = 270;
   try {
     const logo = new Image();
     logo.crossOrigin = "anonymous";
@@ -51,7 +54,7 @@ export async function generateStoryCardBlob({
       logo.onerror = resolve;
     });
     if (logo.complete && logo.naturalWidth > 0) {
-      ctx.drawImage(logo, 95, 95, 90, 90);
+      ctx.drawImage(logo, 95, headerY, 90, 90);
     }
   } catch {
     // ignore
@@ -59,11 +62,11 @@ export async function generateStoryCardBlob({
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 38px sans-serif";
-  ctx.fillText("PC KMHDI MALANG", 205, 138);
+  ctx.fillText("PC KMHDI MALANG", 205, headerY + 43);
 
   ctx.fillStyle = "rgba(254, 205, 211, 0.85)";
   ctx.font = "600 23px sans-serif";
-  ctx.fillText("PORTAL PUBLIKASI RESMI", 205, 172);
+  ctx.fillText("PORTAL PUBLIKASI RESMI", 205, headerY + 77);
 
   // 3. Measure Content Dimensions to calculate EXACT compact card height (No Dead Space!)
   const imgPad = 32;
@@ -151,7 +154,9 @@ export async function generateStoryCardBlob({
 
   const cardW = imgW + imgPad * 2; // 824
   const cardX = (1080 - cardW) / 2; // 128 (Centered)
-  const cardY = 250 + Math.max(0, (1480 - cardH) / 2); // Center vertically in lower space!
+  // Tengah secara vertikal di antara header (berakhir ±y 360) dan zona bawah (±y 1600) yang
+  // tertutup kolom balasan / stiker tautan Instagram.
+  const cardY = 400 + Math.max(0, (1200 - cardH) / 2);
   const radius = 40;
 
   // 5. Draw Card Background & Shadow
@@ -193,14 +198,13 @@ export async function generateStoryCardBlob({
           img.src = src;
         });
 
-      // Bucket R2/Supabase tidak mengirim header CORS, jadi gambar yang dimuat langsung dari sana
-      // gagal dipakai di canvas (atau membuat canvas "tainted" sehingga toBlob gagal). Gambar
-      // eksternal dimuat lewat optimizer Next.js (/_next/image) yang satu origin dengan situs —
-      // host-nya sudah diizinkan di remotePatterns next.config.ts. URL lokal ("/...") dan blob/data
-      // URL dimuat langsung; kalau proxy gagal, tetap dicoba langsung sebagai cadangan.
+      // Bucket R2/Supabase (dan gambar hotlink dari situs lain) tidak mengirim header CORS, jadi
+      // gambar yang dimuat langsung dari sana gagal dipakai di canvas. Gambar eksternal dimuat
+      // lewat proxy /api/story-image yang satu origin dengan situs. URL lokal ("/...") dimuat
+      // langsung; kalau proxy gagal, tetap dicoba langsung sebagai cadangan.
       const isExternal = /^https?:\/\//i.test(coverImage) && !coverImage.startsWith(window.location.origin);
       const mainImg = isExternal
-        ? (await loadImage(`/_next/image?url=${encodeURIComponent(coverImage)}&w=1080&q=85`)) ?? (await loadImage(coverImage))
+        ? (await loadImage(`/api/story-image?url=${encodeURIComponent(coverImage)}`)) ?? (await loadImage(coverImage))
         : await loadImage(coverImage);
       imageLoaded = !!mainImg;
 
