@@ -17,7 +17,14 @@ export function InArticleAd() {
   const insRef = useRef<HTMLModElement>(null);
 
   useEffect(() => {
-    if (!adsEnabled) return;
+    const ins = insRef.current;
+    if (!adsEnabled || !ins) return;
+    // Satu <ins> hanya boleh di-push sekali. Di dev, StrictMode menjalankan efek ini dua kali
+    // pada elemen yang sama; push kedua membuat AdSense melempar TagError "All 'ins' elements
+    // ... already have ads in them" karena tidak ada slot kosong lagi. Penandanya disimpan di
+    // elemen DOM-nya sendiri, jadi <ins> baru (navigasi ke artikel lain) tetap di-push.
+    if (ins.dataset.adPushed || ins.getAttribute("data-adsbygoogle-status")) return;
+    ins.dataset.adPushed = "true";
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch {
