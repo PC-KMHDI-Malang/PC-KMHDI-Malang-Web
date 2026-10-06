@@ -125,7 +125,7 @@ export default function Footer() {
                 <span className="flex w-5 shrink-0 justify-center">
                   <Mail size={18} className="text-red-500" />
                 </span>
-                <p>info@kmhdimalang.org</p>
+                <p>pc.malang@kmhdi.org</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="flex w-5 shrink-0 justify-center">

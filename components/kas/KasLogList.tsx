@@ -149,7 +149,7 @@ export function KasLogList({ items }: { items: KasLogItem[] }) {
         onClose={() => !isDeleting && setDeleteTarget(null)}
         onConfirm={handleDelete}
         title="Hapus Log Transaksi"
-        description={`Hapus ${deleteTarget?.label ?? "log"}? Hanya catatan aktivitasnya yang dihapus — data iuran anggota tidak berubah. Tindakan ini tidak bisa dibatalkan.`}
+        description={`Hapus ${deleteTarget?.label ?? "log"}? Riwayat pembayaran anggota yang tercatat di log ini ikut terhapus (bulannya kembali Belum Bayar dan foto buktinya dihapus), sehingga total kas dan tunggakan berubah. Tindakan ini tidak bisa dibatalkan.`}
         confirmText="Hapus"
         isLoading={isDeleting}
         offsetSidebar={false}

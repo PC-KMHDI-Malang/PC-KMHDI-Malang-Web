@@ -232,21 +232,44 @@ export async function deleteIuranAction(id: string): Promise<ActionResult> {
   }
 }
 
-// Hapus log transaksi (hanya catatan aktivitasnya — data iuran tidak ikut berubah). ids: satu
-// atau beberapa log; "all": seluruh log.
+// Hapus log transaksi beserta riwayat pembayaran anggota yang dicatat log itu. ids: satu atau
+// beberapa log; "all": seluruh log.
+// Catatan iuran yang ikut dihapus hanya yang statusnya masih sama dengan kejadian di log
+// (DICATAT/DIKONFIRMASI → Sudah Bayar, DIKIRIM → Menunggu, DITOLAK → Ditolak), supaya menghapus
+// log lama tidak ikut menghapus pembayaran baru di bulan yang sama. DIUBAH/DIBATALKAN tidak
+// menghapus iuran apa pun. Foto bukti ikut dihapus kalau sudah tidak dipakai.
+const LOG_ACTION_STATUS: Record<string, string | undefined> = { DICATAT: "LUNAS", DIKONFIRMASI: "LUNAS", DIKIRIM: "MENUNGGU", DITOLAK: "DITOLAK" };
+
 export async function deleteKasLogAction(target: string[] | "all"): Promise<ActionResult> {
   const denied = await guard();
   if (denied) return denied;
 
   try {
-    if (target === "all") {
-      const { error } = await supabaseAdmin.from("KasLog").delete().not("id", "is", null);
-      if (error) return fail("Gagal menghapus log transaksi.");
-    } else {
-      if (!Array.isArray(target) || target.length === 0 || target.length > 500 || target.some((id) => typeof id !== "string" || !id)) return fail("Data tidak valid.");
-      const { error } = await supabaseAdmin.from("KasLog").delete().in("id", target);
+    if (target !== "all" && (!Array.isArray(target) || target.length === 0 || target.length > 500 || target.some((id) => typeof id !== "string" || !id))) return fail("Data tidak valid.");
+
+    let query = supabaseAdmin.from("KasLog").select("id, action, userId, periods");
+    query = target === "all" ? query.limit(5000) : query.in("id", target);
+    const { data: logs, error: readError } = await query;
+    if (readError) return fail("Gagal menghapus log transaksi.");
+
+    const proofUrls: (string | null)[] = [];
+    for (const log of logs ?? []) {
+      const status = LOG_ACTION_STATUS[log.action as string];
+      if (!status || !(log.periods as string[])?.length) continue;
+      const { data: rows } = await supabaseAdmin.from("KasIuran").select("id, proofUrl").eq("userId", log.userId).in("period", log.periods).eq("status", status);
+      if (!rows?.length) continue;
+      const { error } = await supabaseAdmin.from("KasIuran").delete().in("id", rows.map((r) => r.id));
+      if (error) return fail("Gagal menghapus riwayat pembayaran anggota.");
+      proofUrls.push(...rows.map((r) => r.proofUrl as string | null));
+    }
+
+    const ids = (logs ?? []).map((l) => l.id as string);
+    if (ids.length > 0) {
+      const { error } = await supabaseAdmin.from("KasLog").delete().in("id", ids);
       if (error) return fail("Gagal menghapus log transaksi.");
     }
+
+    await removeUnusedProofs(proofUrls);
     revalidateKas();
     return ok;
   } catch {
