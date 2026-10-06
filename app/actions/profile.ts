@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { isPasswordLongEnough, PASSWORD_RULE_TEXT } from "@/lib/password";
 import { revalidatePath } from "next/cache";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
+import { isViewerRole } from "@/lib/roles";
 
 export async function updateNameAction(prevState: unknown, formData: FormData) {
   try {
@@ -16,7 +17,10 @@ export async function updateNameAction(prevState: unknown, formData: FormData) {
 
     // Akun bersama (mis. pcmalang@kmhdi.info) juga tidak boleh diganti namanya sendiri —
     // sama seperti password, supaya identitas akun bersama ini tetap konsisten untuk semua kader.
-    if (isProtectedAccountEmail(session.user.email)) {
+    // Akun Umum (VIEWER) juga dikunci. Role dibaca dari database, bukan sesi, supaya perubahan
+    // role oleh Admin langsung berlaku.
+    const { data: me } = await supabaseAdmin.from("User").select("role").eq("id", session.user.id).maybeSingle();
+    if (isProtectedAccountEmail(session.user.email) || isViewerRole(me?.role)) {
       return { error: "Profil akun ini dikelola langsung oleh pengurus dan tidak bisa diganti sendiri.", success: false };
     }
 
@@ -57,13 +61,13 @@ export async function updatePasswordAction(prevState: unknown, formData: FormDat
       return { error: `Data tidak valid atau password terlalu pendek. ${PASSWORD_RULE_TEXT}`, success: false };
     }
 
-    const { data: user } = await supabaseAdmin.from("User").select("email, password").eq("id", session.user.id).single();
+    const { data: user } = await supabaseAdmin.from("User").select("email, password, role").eq("id", session.user.id).single();
 
     if (!user) return { error: "User tidak ditemukan.", success: false };
 
     // Akun bersama (mis. dipakai banyak kader untuk /informasi-akun) tidak boleh diganti
     // password-nya lewat form ini — kalau boleh, satu kader saja bisa mengunci semua yang lain.
-    if (isProtectedAccountEmail(user.email)) {
+    if (isProtectedAccountEmail(user.email) || isViewerRole(user.role)) {
       return { error: "Password akun ini dikelola langsung oleh pengurus dan tidak bisa diganti sendiri.", success: false };
     }
 

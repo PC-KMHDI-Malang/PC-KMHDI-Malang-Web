@@ -5,6 +5,7 @@ import { CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, History, Settin
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isViewerRole } from "@/lib/roles";
 import { currentPeriod, formatDate, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, memberYearStatus, MONTH_NAMES, memberSetting, parseYearParam, paymentStatus, periodEnd, periodRange, toKasSetting, toMemberPeriod, type IuranPayment, type IuranStatus, type KasSetting } from "@/lib/kas";
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, STATUS_CLASS, STATUS_LABEL, cardClass } from "@/components/kas/KasUi";
@@ -24,6 +25,8 @@ export const metadata: Metadata = {
 export default async function KasPage({ searchParams }: { searchParams: Promise<{ tahun?: string }> }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/kas");
+  // Akun Umum (VIEWER) tidak boleh membuka halaman ini (middleware juga menolaknya).
+  if (isViewerRole(session.user.role)) redirect("/profile");
 
   const isTreasurer = isTreasurerEmail(session.user.email);
   const nowPeriod = currentPeriod();

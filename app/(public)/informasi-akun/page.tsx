@@ -41,13 +41,13 @@ export default async function InformasiAkunPage({ searchParams: searchParamsProm
     const searchParams = await searchParamsPromise;
     query = searchParams?.q?.trim() || "";
 
-    // Akun ADMIN & KONTRIBUTOR sengaja tidak ditampilkan: daftar ini disebar luas ke kader, dan
+    // Akun Umum (VIEWER) juga disembunyikan. Akun ADMIN & KONTRIBUTOR sengaja tidak ditampilkan: daftar ini disebar luas ke kader, dan
     // mengeksposnya berarti menunjukkan akun mana yang paling bernilai untuk disalahgunakan
     // (keduanya punya akses ke panel admin — lihat lib/roles.ts).
     let dbQuery = supabaseAdmin
       .from("User")
       .select("id, name, email, jabatan, bidang")
-      .not("role", "in", "(ADMIN,KONTRIBUTOR)")
+      .not("role", "in", "(ADMIN,KONTRIBUTOR,VIEWER)")
       .order("name", { ascending: true });
 
     if (query) {

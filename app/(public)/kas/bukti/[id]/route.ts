@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isTreasurerEmail } from "@/lib/kas";
+import { isViewerRole } from "@/lib/roles";
 import { getSignedFileUrl } from "@/lib/storage";
 import { KAS_PROOF_BUCKET } from "@/lib/uploadLimits";
 
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const { data: row } = await supabaseAdmin.from("KasIuran").select("userId, proofUrl").eq("id", id).maybeSingle();
-  const allowed = !!row && (row.userId === session.user.id || isTreasurerEmail(session.user.email));
+  const allowed = !!row && !isViewerRole(session.user.role) && (row.userId === session.user.id || isTreasurerEmail(session.user.email));
   if (!allowed || !row?.proofUrl) {
     return new NextResponse("Bukti pembayaran tidak ditemukan.", { status: 404, headers: { "Cache-Control": "private, no-store" } });
   }

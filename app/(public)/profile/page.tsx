@@ -7,6 +7,7 @@ import { ArrowLeft, KeyRound, UserCheck, Shield, Lock, Wallet, ChevronRight } fr
 import { ProfileSettingsForm } from "@/components/profile/ProfileSettingsForm";
 import { UpdatePasswordForm } from "@/components/admin/UpdatePasswordForm";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
+import { isViewerRole } from "@/lib/roles";
 import { isKasMember, isTreasurerEmail } from "@/lib/kas";
 
 export const metadata: Metadata = {
@@ -32,7 +33,7 @@ export default async function ProfilePage() {
   const isTreasurer = isTreasurerEmail(session.user.email);
   // Pintasan kas hanya untuk yang ditagih iuran (anggota) dan bendahara — lihat Navbar.tsx.
   const showKas = isTreasurer || isKasMember({ email: session.user.email, role: session.user.role });
-  const isAccountLocked = isProtectedAccountEmail(session.user.email) || session.user.role === "KONTRIBUTOR";
+  const isAccountLocked = isProtectedAccountEmail(session.user.email) || session.user.role === "KONTRIBUTOR" || isViewerRole(session.user.role);
 
   return (
     <div className="-mt-32 bg-slate-50/70 dark:bg-[#0a0a0c] transition-colors min-h-screen pb-20">

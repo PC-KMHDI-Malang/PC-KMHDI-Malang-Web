@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
 import { supabaseAdmin } from "@/lib/supabase";
-import { canAccessAdminPath, isAdminPanelRole } from "@/lib/roles";
+import { canAccessAdminPath, isAdminPanelRole, isViewerRole } from "@/lib/roles";
 import { isTreasurerEmail } from "@/lib/kas";
 import { checkLock, clearAttempts, clientIpFrom, emailKey, ipKey, recordFailure } from "@/lib/loginRateLimit";
 
@@ -127,6 +127,8 @@ export const {
       // untuk akun bendahara — siapa pun selain itu (termasuk ADMIN) dikembalikan ke /kas.
       if (nextUrl.pathname === "/kas" || nextUrl.pathname.startsWith("/kas/")) {
         if (!isLoggedIn) return false;
+        // Akun Umum (VIEWER) tidak punya urusan dengan uang kas (termasuk foto bukti).
+        if (isViewerRole(role)) return Response.redirect(new URL("/profile", nextUrl));
         if (nextUrl.pathname.startsWith("/kas/kelola") && !isTreasurerEmail(auth?.user?.email)) {
           return Response.redirect(new URL("/kas", nextUrl));
         }

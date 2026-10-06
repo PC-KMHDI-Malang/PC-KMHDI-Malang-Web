@@ -3,6 +3,13 @@
 // Manajemen User, atau Ganti Password/username (lihat app/admin/profile/page.tsx). Dipusatkan di
 // sini supaya middleware (lib/auth.ts), setiap halaman admin, dan menu sidebar (SidebarNav,
 // AdminMobileNav) selalu sepakat soal halaman mana yang boleh diakses role ini.
+// Role "VIEWER" (Akun Umum): akun yang hanya melihat halaman seperti user biasa. Tidak ditagih
+// iuran, tidak bisa membuka Uang Kas (/kas), tidak muncul di daftar kas maupun Informasi Akun,
+// dan tidak bisa mengubah nama/password/profilnya sendiri — semua itu dikelola Admin.
+export function isViewerRole(role: string | null | undefined): boolean {
+  return role === "VIEWER";
+}
+
 export const ADMIN_PANEL_ROLES = ["ADMIN", "KONTRIBUTOR"] as const;
 
 export function isAdminPanelRole(role: string | null | undefined): boolean {

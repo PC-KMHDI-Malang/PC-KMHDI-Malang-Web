@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { isAdminPanelRole, canAccessAdminPath } from "@/lib/roles";
+import { isAdminPanelRole, canAccessAdminPath, isViewerRole } from "@/lib/roles";
 import { looksLikeHtml, stripHtml } from "@/lib/richText";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
 import { absoluteUrl, siteConfig } from "@/lib/site";
@@ -633,5 +633,20 @@ describe("kas — metode pembayaran (rekening & QRIS)", () => {
     });
     assert.equal(setting.banks?.[0].logoUrl, "https://media.kmhdimalang.org/kas-logos/x.png");
     assert.equal(setting.banks?.[1].logoUrl, null);
+  });
+});
+
+describe("role Akun Umum (VIEWER)", () => {
+  it("dikenali hanya untuk role VIEWER", () => {
+    assert.equal(isViewerRole("VIEWER"), true);
+    assert.equal(isViewerRole("USER"), false);
+    assert.equal(isViewerRole("ADMIN"), false);
+    assert.equal(isViewerRole(null), false);
+  });
+
+  it("tidak punya akses panel admin dan bukan anggota iuran", () => {
+    assert.equal(isAdminPanelRole("VIEWER"), false);
+    assert.equal(canAccessAdminPath("VIEWER", "/admin"), false);
+    assert.equal(isKasMember({ email: "info@kmhdimalang.org", role: "VIEWER" }), false);
   });
 });
