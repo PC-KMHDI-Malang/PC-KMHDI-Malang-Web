@@ -10,6 +10,7 @@ import { currentPeriod, formatDate, formatPeriod, formatRupiah, isKasMember, isS
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, STATUS_CLASS, STATUS_LABEL, cardClass } from "@/components/kas/KasUi";
 import { UploadBuktiModal, type ProofPeriodOption } from "@/components/kas/UploadBuktiModal";
+import { ProofViewer } from "@/components/kas/ProofViewer";
 import { PaymentMethods } from "@/components/kas/PaymentMethods";
 
 export const metadata: Metadata = {
@@ -220,9 +221,9 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
                         <div className="flex flex-wrap items-center gap-2">
                           <HistoryBadge status={paymentStatus(p) ?? "LUNAS"} />
                           {p.proofUrl && (
-                            <a href={`/kas/bukti/${p.id}`} target="_blank" rel="noreferrer" className="text-[11px] font-semibold text-red-600 dark:text-rose-400 hover:underline">
+                            <ProofViewer href={`/kas/bukti/${p.id}`} className="text-[11px] font-semibold text-red-600 dark:text-rose-400 hover:underline">
                               Lihat bukti
-                            </a>
+                            </ProofViewer>
                           )}
                         </div>
                         {paymentStatus(p) === "DITOLAK" && proofOptions.some((o) => o.period === p.period) && (

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { CalendarRange, Check, Clock, ExternalLink, Pencil, Search, Trash2 } from "lucide-react";
 
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { ProofViewer } from "@/components/kas/ProofViewer";
 import { KasModal, ModalActions, ModalError } from "@/components/kas/KasModal";
 import { STATUS_CLASS, STATUS_LABEL, dateInputClass, inputClass, labelClass } from "@/components/kas/KasUi";
 import { deleteIuranAction, recordIuranAction, setMemberPeriodAction, updateIuranAction } from "@/app/actions/kas";
@@ -530,15 +531,13 @@ function PaymentDetailModal({ target, onClose }: { target: { member: Member; pay
 
             {/* Bukti dari anggota (kalau iuran ini diunggah lewat /kas). Konfirmasi/tolak ada di tab Konfirmasi. */}
             {shown.payment.proofUrl && (
-              <a
+              <ProofViewer
                 href={`/kas/bukti/${shown.payment.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
               >
                 <ExternalLink size={16} />
                 Lihat Bukti Pembayaran
-              </a>
+              </ProofViewer>
             )}
 
             <div className="flex gap-3 justify-between pt-2">
