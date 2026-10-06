@@ -128,7 +128,9 @@ function AccountDirectory({ kader, query }: { kader: KaderRow[]; query: string }
             <div>
               <p className="text-sm font-bold text-slate-900 dark:text-white">2. Masuk</p>
               <p className="text-xs text-slate-500 dark:text-neutral-400 mt-1 leading-relaxed">
-                Login memakai email tersebut dan kata sandi awal yang dibagikan pengurus.
+                Login memakai email tersebut dan kata sandi awal:{" "}
+                <span className="font-bold text-slate-700 dark:text-slate-200">kmhdi123#</span> atau{" "}
+                <span className="font-bold text-slate-700 dark:text-slate-200">kmhdi1234#</span>.
               </p>
             </div>
           </li>
