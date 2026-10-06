@@ -13,7 +13,7 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 
 export default async function EditNewsPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect("/login?callbackUrl=/admin");
 
   const resolvedParams = await params;
   const id = resolvedParams.id;

@@ -66,7 +66,8 @@ export function IuranMatrix({ members, payments, arrears, setting, memberPeriods
       {members.length === 0 ? (
         <p className="text-sm text-slate-500 dark:text-neutral-400 text-center py-10">Belum ada akun anggota ber-role User. Akun anggota dibuat oleh Admin di panel Manajemen User.</p>
       ) : (
-        <div className="max-h-[60vh] overflow-auto rounded-2xl border border-slate-200 dark:border-white/10">
+        <>
+        <div className="hidden md:block max-h-[60vh] overflow-auto rounded-2xl border border-slate-200 dark:border-white/10">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="sticky top-0 z-20 bg-slate-50 dark:bg-[#18181b] text-[11px] uppercase tracking-wider text-slate-500 dark:text-neutral-400 shadow-[0_1px_0_rgb(226,232,240)] dark:shadow-[0_1px_0_rgba(255,255,255,0.1)]">
@@ -134,6 +135,64 @@ export function IuranMatrix({ members, payments, arrears, setting, memberPeriods
             </tbody>
           </table>
         </div>
+
+        {/* HP: tabel 12 bulan terlalu lebar, jadi tiap anggota ditampilkan sebagai kartu dengan
+            12 bulan dalam grid 4 kolom — tanpa geser kanan-kiri. */}
+        <div className="md:hidden max-h-[70vh] overflow-y-auto space-y-3">
+          {filtered.map((member) => {
+            const memberPeriod = memberPeriods[member.id];
+            return (
+              <div key={member.id} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121215] p-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <button type="button" onClick={() => setPeriodTarget(member)} title="Atur periode iuran anggota ini" className="min-w-0 text-left">
+                    <span className="block font-bold text-slate-800 dark:text-white truncate">{member.name}</span>
+                    {member.jabatan && <span className="block text-[11px] text-slate-500 dark:text-neutral-400 truncate">{member.jabatan}</span>}
+                    {memberPeriod && (
+                      <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                        <CalendarRange size={11} />
+                        {memberPeriod.startPeriod ? shortPeriod(memberPeriod.startPeriod) : "Awal"} – {memberPeriod.endPeriod ? shortPeriod(memberPeriod.endPeriod) : "Akhir"}
+                      </span>
+                    )}
+                  </button>
+                  <div className="shrink-0 text-right">
+                    {arrears[member.id] ? (
+                      <span className="text-xs font-bold text-red-600 dark:text-rose-400">
+                        {arrears[member.id]} bln
+                        <span className="block text-[11px] font-semibold text-slate-500 dark:text-neutral-400">{formatRupiah(arrears[member.id] * setting.monthlyFee)}</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Tidak ada</span>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-4 gap-1.5">
+                  {periods.map((period, i) => {
+                    const payment = paymentMap.get(`${member.id}:${period}`);
+                    const status = monthStatus(period, paymentStatus(payment), memberSetting(setting, memberPeriod), nowPeriod);
+                    return (
+                      <button
+                        key={period}
+                        type="button"
+                        title={`${formatPeriod(period)} — ${STATUS_LABEL[status]}`}
+                        onClick={() => (payment ? setDetailTarget({ member, payment }) : setRecordTarget({ member, period }))}
+                        className={`flex flex-col items-center justify-center gap-0.5 rounded-xl border py-1.5 transition active:scale-95 ${STATUS_CLASS[status]}`}
+                      >
+                        <span className="text-[10px] font-bold uppercase tracking-wide">{MONTH_SHORT[i]}</span>
+                        {status === "MENUNGGU" ? <Clock size={14} strokeWidth={2.5} /> : payment ? <Check size={14} strokeWidth={3} /> : <span className="text-xs leading-[14px]">–</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <p className="text-center text-sm text-slate-500 dark:text-neutral-400 py-8">
+              Tidak ada anggota yang cocok dengan &ldquo;{query}&rdquo;.
+            </p>
+          )}
+        </div>
+        </>
       )}
 
       <RecordIuranModal target={recordTarget} onClose={() => setRecordTarget(null)} setting={setting} memberPeriods={memberPeriods} periodState={periodState} />

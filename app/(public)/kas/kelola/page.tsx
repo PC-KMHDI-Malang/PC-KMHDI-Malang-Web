@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { arrearsPeriods, currentPeriod, formatPeriod, formatRupiah, isKasMember, isSettled, isTreasurerEmail, memberSetting, parseYearParam, periodEnd, toKasSetting, toMemberPeriod, type MemberPeriod, type IuranStatus, type KasSetting } from "@/lib/kas";
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
-import { CardHeading, KasNotice, StatCard, cardClass } from "@/components/kas/KasUi";
+import { CardHeading, KasNotice, StatCard, cardClass as baseCardClass } from "@/components/kas/KasUi";
 import { IuranMatrix, type MemberPeriodState } from "@/components/kas/IuranMatrix";
 import { KasSettingForm } from "@/components/kas/KasSettingForm";
 import { KasPaymentForm } from "@/components/kas/KasPaymentForm";
@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: "Kelola Uang Kas",
   robots: { index: false, follow: false },
 };
+
+// Di HP kartu dibuat lebih rapat (padding 16px) supaya isinya — tabel/daftar anggota — lebih lega.
+const cardClass = baseCardClass.replace("p-6 sm:p-8", "p-4 sm:p-8");
 
 const TABS = [
   { key: "iuran", label: "Iuran Anggota", icon: Users },
@@ -202,13 +205,13 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
               </KasNotice>
             )}
 
-            <nav className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#121215] p-1.5 shadow-xl">
+            <nav className="grid grid-cols-2 sm:flex gap-1 sm:overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#121215] p-1.5 shadow-xl">
               {TABS.map(({ key, label, icon: Icon }) => (
                 <Link
                   key={key}
                   href={`?tab=${key}&tahun=${year}`}
                   scroll={false}
-                  className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+                  className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 sm:px-4 py-2.5 text-[13px] sm:text-sm font-semibold transition-colors ${
                     tab === key
                       ? "bg-red-50 dark:bg-[#1a1414] text-red-600 dark:text-rose-400 border border-red-100 dark:border-rose-900/30"
                       : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent"
@@ -230,7 +233,7 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
                   title={`Iuran Anggota ${year}`}
                   description={`${members.length} anggota · ${totalArrears} bulan tunggakan (${formatRupiah(totalArrears * setting.monthlyFee)}). Klik kotak bulan untuk mencatat atau melihat pembayaran.`}
                   action={
-                    <div className="flex shrink-0 flex-wrap md:flex-nowrap items-center gap-2 self-start sm:self-auto">
+                    <div className="flex w-full sm:w-auto shrink-0 flex-col sm:flex-row sm:flex-wrap md:flex-nowrap sm:items-center gap-3 sm:gap-2">
                       <ExportButtons year={year} />
                       <YearNav tab={tab} year={year} />
                     </div>
@@ -297,9 +300,9 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
 // <a download> biasa, bukan <Link>: hasilnya file, bukan halaman yang dinavigasi.
 function ExportButtons({ year }: { year: number }) {
   const btn =
-    "inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors";
+    "inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors";
   return (
-    <>
+    <div className="grid grid-cols-2 gap-2 sm:flex">
       <a href={`/kas/kelola/export?format=pdf&tahun=${year}`} download className={btn}>
         <FileText size={15} className="text-red-600 dark:text-rose-400" />
         Export PDF
@@ -308,14 +311,14 @@ function ExportButtons({ year }: { year: number }) {
         <FileSpreadsheet size={15} className="text-emerald-600 dark:text-emerald-400" />
         Export Excel
       </a>
-    </>
+    </div>
   );
 }
 
 function YearNav({ tab, year }: { tab: TabKey; year: number }) {
   const btn = "w-9 h-9 flex items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors";
   return (
-    <div className="flex items-center gap-2 self-start sm:self-auto">
+    <div className="flex items-center justify-between sm:justify-start gap-2">
       <Link href={`?tab=${tab}&tahun=${year - 1}`} scroll={false} aria-label={`Tahun ${year - 1}`} className={btn}>
         <ChevronLeft size={16} />
       </Link>

@@ -53,13 +53,13 @@ export function KasLogList({ items }: { items: KasLogItem[] }) {
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari nama anggota..." className={`${inputClass} pl-10 py-2.5 text-sm`} />
         </div>
-        <div className="inline-flex flex-wrap rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-1 text-xs font-bold">
+        <div className="flex w-full lg:w-auto overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-1 text-xs font-bold">
           {FILTERS.map((f) => (
             <button
               key={f.key}
               type="button"
               onClick={() => setFilter(f.key)}
-              className={`px-3.5 py-2 rounded-lg transition-colors ${filter === f.key ? "bg-white dark:bg-[#121215] text-red-600 dark:text-rose-400 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"}`}
+              className={`shrink-0 whitespace-nowrap px-3.5 py-2 rounded-lg transition-colors ${filter === f.key ? "bg-white dark:bg-[#121215] text-red-600 dark:text-rose-400 shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"}`}
             >
               {f.label}
             </button>
@@ -85,8 +85,13 @@ export function KasLogList({ items }: { items: KasLogItem[] }) {
                   </p>
                   <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">{item.periods.map(formatPeriod).join(", ")}</p>
                   {item.note && <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5 italic">&ldquo;{item.note}&rdquo;</p>}
+                  {/* HP: nominal & waktu pindah ke bawah, supaya teks di atasnya tidak sempit. */}
+                  <p className="sm:hidden mt-1 text-[11px] text-slate-500 dark:text-neutral-400">
+                    {item.amount > 0 && <span className="font-bold text-slate-800 dark:text-white">{formatRupiah(item.amount)} · </span>}
+                    {item.time}
+                  </p>
                 </div>
-                <div className="shrink-0 text-right">
+                <div className="hidden sm:block shrink-0 text-right">
                   {item.amount > 0 && <p className="text-sm font-bold text-slate-800 dark:text-white">{formatRupiah(item.amount)}</p>}
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 whitespace-nowrap">{item.time}</p>
                 </div>

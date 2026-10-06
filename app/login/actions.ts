@@ -1,11 +1,13 @@
 "use server";
 
 import { signIn } from "@/lib/auth";
+import { supabaseAdmin } from "@/lib/supabase";
+import { isAdminPanelRole } from "@/lib/roles";
 import { AuthError } from "next-auth";
 
 export async function loginAction(formData: FormData) {
   try {
-    const redirectTo = safeCallbackPath(formData.get("callbackUrl")) ?? "/admin";
+    const callbackPath = safeCallbackPath(formData.get("callbackUrl"));
 
     // redirect: false — tujuan dikembalikan ke halaman login, lalu browser memuat ulang penuh ke
     // sana (lihat app/login/page.tsx). Kalau redirect dilakukan di sini, Next.js berpindah halaman
@@ -16,7 +18,12 @@ export async function loginAction(formData: FormData) {
       password: formData.get("password"),
       redirect: false,
     });
-    return { url: redirectTo };
+    if (callbackPath) return { url: callbackPath };
+
+    // Tanpa tujuan khusus: admin/kontributor ke panel admin, anggota biasa ke halaman profil
+    // (sebelumnya semua ke /admin, lalu anggota dilempar lagi ke /profile).
+    const { data: user } = await supabaseAdmin.from("User").select("role").eq("email", String(formData.get("email"))).maybeSingle();
+    return { url: isAdminPanelRole(user?.role) ? "/admin" : "/profile" };
   } catch (error) {
     if (error instanceof AuthError) {
       return { error: "Email atau password salah." };

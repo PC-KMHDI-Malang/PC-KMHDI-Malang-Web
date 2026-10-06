@@ -21,7 +21,7 @@ export default async function ProfilePage() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    redirect("/login");
+    redirect("/login?callbackUrl=/profile");
   }
 
   const userInitial = session.user.name?.[0]?.toUpperCase() || "U";

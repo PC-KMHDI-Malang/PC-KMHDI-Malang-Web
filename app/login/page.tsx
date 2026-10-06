@@ -44,6 +44,9 @@ function LoginForm() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    // Tujuan dibaca langsung dari URL saat submit (bukan hanya dari input tersembunyi), supaya
+    // tidak pernah kosong dan jatuh ke tujuan bawaan.
+    formData.set("callbackUrl", new URLSearchParams(window.location.search).get("callbackUrl") ?? callbackUrl);
     setError(null);
     startTransition(async () => {
       const result = await loginAction(formData);
