@@ -60,7 +60,7 @@ async function fetchAll<T>(table: string, columns: string, orderBy: string): Pro
 
 export default async function KelolaKasPage({ searchParams }: { searchParams: Promise<{ tab?: string; tahun?: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect("/login?callbackUrl=/kas/kelola");
   // Middleware sudah mengalihkan non-bendahara, tapi halaman ini tetap memeriksa sendiri —
   // data kas seluruh anggota tidak boleh sampai dirender untuk akun lain.
   if (!isTreasurerEmail(session.user.email)) redirect("/kas");

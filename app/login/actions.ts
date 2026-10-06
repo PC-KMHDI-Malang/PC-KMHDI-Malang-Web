@@ -7,11 +7,16 @@ export async function loginAction(formData: FormData) {
   try {
     const redirectTo = safeCallbackPath(formData.get("callbackUrl")) ?? "/admin";
 
+    // redirect: false — tujuan dikembalikan ke halaman login, lalu browser memuat ulang penuh ke
+    // sana (lihat app/login/page.tsx). Kalau redirect dilakukan di sini, Next.js berpindah halaman
+    // tanpa memuat ulang: cookie sesi yang baru dibuat belum ikut terbaca, sehingga pengguna bisa
+    // mendarat di halaman lain (mis. /admin berisi halaman profil) dan navbar masih "Login".
     await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
-      redirectTo,
+      redirect: false,
     });
+    return { url: redirectTo };
   } catch (error) {
     if (error instanceof AuthError) {
       return { error: "Email atau password salah." };

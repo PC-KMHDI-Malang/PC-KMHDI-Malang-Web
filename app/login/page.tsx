@@ -49,6 +49,9 @@ function LoginForm() {
       const result = await loginAction(formData);
       if (result?.error) {
         setError(result.error);
+      } else if (result?.url) {
+        // Muat ulang penuh supaya sesi baru langsung terbaca di server maupun navbar.
+        window.location.assign(result.url);
       }
     });
   };

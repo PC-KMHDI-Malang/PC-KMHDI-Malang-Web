@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 // Konfirmasi"; status "Sudah Bayar" hanya bisa diberikan bendahara lewat /kas/kelola.
 export default async function KasPage({ searchParams }: { searchParams: Promise<{ tahun?: string }> }) {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect("/login?callbackUrl=/kas");
 
   const isTreasurer = isTreasurerEmail(session.user.email);
   const nowPeriod = currentPeriod();
@@ -139,7 +139,7 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
                   icon={Receipt}
                   title="Bayar Iuran"
                   description={proofOptions.length ? "Sudah transfer atau membayar? Unggah buktinya, lalu tunggu konfirmasi bendahara." : "Semua iuran periode ini sudah dibayar atau sedang dikonfirmasi."}
-                  action={<UploadBuktiModal options={proofOptions} monthlyFee={setting.monthlyFee} payment={payment} />}
+                  action={<UploadBuktiModal options={proofOptions} monthlyFee={setting.monthlyFee} />}
                 />
                 {summary.pendingCount > 0 ? (
                   <div className="flex gap-3 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/25 p-4">
@@ -223,7 +223,7 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
                           )}
                         </div>
                         {paymentStatus(p) === "DITOLAK" && proofOptions.some((o) => o.period === p.period) && (
-                          <UploadBuktiModal options={proofOptions} monthlyFee={setting.monthlyFee} payment={payment} preselect={p.period} variant="inline" />
+                          <UploadBuktiModal options={proofOptions} monthlyFee={setting.monthlyFee} preselect={p.period} variant="inline" />
                         )}
                       </div>
 
