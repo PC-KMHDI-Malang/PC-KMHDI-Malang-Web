@@ -7,13 +7,14 @@ import { requireTreasurer } from "@/lib/guard";
 import { supabaseAdmin } from "@/lib/supabase";
 import { isR2Configured } from "@/lib/r2";
 import { createR2UploadUrl, deleteFromBucketByUrl, resolveStoredUrl, uploadToBucket } from "@/lib/storage";
-import { KAS_PROOF_BUCKET, KAS_PROOF_TYPES, MAX_PROOF_MB, SERVER_UPLOAD_MAX_BYTES } from "@/lib/uploadLimits";
+import { KAS_BANK_LOGO_BUCKET, KAS_PROOF_BUCKET, KAS_PROOF_TYPES, KAS_QRIS_BUCKET, MAX_PROOF_MB, SERVER_UPLOAD_MAX_BYTES } from "@/lib/uploadLimits";
 import {
   addMonths,
   formatPeriod,
   isKasMember,
   isValidDate,
   isValidPeriod,
+  KAS_MAX_BANKS,
   KAS_PERIOD_MAX_MONTHS,
   memberSetting,
   parseRupiahInput,
@@ -419,6 +420,100 @@ export async function setMemberPeriodAction(input: { userId: string; startPeriod
 
     const describe = startPeriod || endPeriod ? `Periode iuran anggota: ${startPeriod ? formatPeriod(startPeriod) : "awal periode"} – ${endPeriod ? formatPeriod(endPeriod) : "akhir periode"}` : "Periode iuran anggota dikembalikan ke periode umum";
     await writeLog([{ action: "DIUBAH", userId: input.userId, periods: [], amount: 0, note: describe }]);
+    revalidateKas();
+    return ok;
+  } catch {
+    return fail("Terjadi kesalahan sistem.");
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Metode pembayaran (rekening, logo bank & QRIS) — Kelola Kas → Pengaturan
+// ---------------------------------------------------------------------------------------------
+
+const KAS_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+// Gambar yang diunggah bendahara untuk metode pembayaran: QRIS, dan logo bank per rekening.
+// Keduanya di storage publik (memang ditampilkan ke anggota), di folder masing-masing.
+export type KasAssetKind = "qris" | "logo";
+const ASSET_BUCKET: Record<KasAssetKind, string> = { qris: KAS_QRIS_BUCKET, logo: KAS_BANK_LOGO_BUCKET };
+const ASSET_LABEL: Record<KasAssetKind, string> = { qris: "Gambar QRIS", logo: "Logo bank" };
+
+function validateAsset(kind: unknown, contentType: unknown, size: unknown): string | null {
+  if (kind !== "qris" && kind !== "logo") return "Jenis gambar tidak dikenal.";
+  if (typeof contentType !== "string" || !KAS_IMAGE_TYPES.has(contentType)) return `${ASSET_LABEL[kind]} harus JPG, PNG, atau WebP.`;
+  if (typeof size !== "number" || !Number.isFinite(size) || size <= 0) return "File tidak valid.";
+  if (size > MAX_PROOF_MB * 1024 * 1024) return `Ukuran ${ASSET_LABEL[kind].toLowerCase()} maksimal ${MAX_PROOF_MB} MB.`;
+  return null;
+}
+
+// Link upload sementara (khusus bendahara) — bentuknya sama dengan upload bukti pembayaran.
+export async function createKasAssetUploadUrlAction(input: { kind: KasAssetKind; fileName: string; contentType: string; size: number }): Promise<ProofUploadTarget> {
+  const denied = await guard();
+  if (denied) return { mode: "error", error: denied.error ?? "Tidak diizinkan." };
+  const invalid = validateAsset(input?.kind, input?.contentType, input?.size);
+  if (invalid) return { mode: "error", error: invalid };
+  if (!isR2Configured()) return { mode: "server" };
+  return { mode: "direct", ...(await createR2UploadUrl(ASSET_BUCKET[input.kind], String(input.fileName || ""), input.contentType, input.size)) };
+}
+
+export async function uploadKasAssetAction(formData: FormData): Promise<{ url: string | null; error: string | null }> {
+  const denied = await guard();
+  if (denied) return { url: null, error: denied.error };
+  const kind = formData.get("kind");
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { url: null, error: "File tidak valid." };
+  const invalid = validateAsset(kind, file.type, file.size);
+  if (invalid) return { url: null, error: invalid };
+  if (file.size > SERVER_UPLOAD_MAX_BYTES) return { url: null, error: "File terlalu besar untuk diunggah lewat server." };
+  try {
+    return { url: await uploadToBucket(ASSET_BUCKET[kind as KasAssetKind], file), error: null };
+  } catch {
+    return { url: null, error: "Gagal mengunggah gambar." };
+  }
+}
+
+// Simpan daftar rekening (+ logo masing-masing) dan QRIS sekaligus. Daftar kosong dan QRIS kosong =
+// kartu Metode Pembayaran tidak ditampilkan ke anggota. Gambar lama (QRIS/logo) yang diganti atau
+// dihapus ikut dibuang dari storage.
+export async function updateKasPaymentAction(input: { accounts: { bank: string; number: string; holder: string; logoUrl?: string | null }[]; qrisUrl: string | null }): Promise<ActionResult> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  try {
+    const clean = (v: unknown, max: number) => (typeof v === "string" ? v.trim().replace(/\s+/g, " ").slice(0, max) : "");
+    // Gambar hanya diterima kalau memang diunggah lewat form ini (folder yang benar di storage).
+    const asset = (kind: KasAssetKind, v: unknown) => (typeof v === "string" && v && resolveStoredUrl(ASSET_BUCKET[kind], v) ? v : null);
+
+    const raw = Array.isArray(input.accounts) ? input.accounts : [];
+    const accounts = raw
+      .map((a) => ({ bank: clean(a?.bank, 40), number: clean(a?.number, 34), holder: clean(a?.holder, 80), logoUrl: asset("logo", a?.logoUrl) }))
+      // Baris yang benar-benar kosong diabaikan (mis. baris baru yang belum diisi).
+      .filter((a) => a.bank || a.number || a.holder || a.logoUrl);
+
+    if (accounts.length > KAS_MAX_BANKS) return fail(`Maksimal ${KAS_MAX_BANKS} rekening.`);
+    for (const [i, a] of accounts.entries()) {
+      const label = `Rekening ${i + 1}`;
+      if (!a.bank) return fail(`${label}: nama bank wajib diisi.`);
+      if (!/^[0-9][0-9 -]{4,33}$/.test(a.number)) return fail(`${label}: nomor rekening hanya boleh berisi angka (boleh dipisah spasi/tanda hubung).`);
+      if (a.holder.length < 3) return fail(`${label}: nama pemilik rekening wajib diisi.`);
+    }
+
+    const rawQris = typeof input.qrisUrl === "string" && input.qrisUrl ? input.qrisUrl : null;
+    const qrisUrl = asset("qris", rawQris);
+    if (rawQris && !qrisUrl) return fail("Gambar QRIS tidak valid. Unggah ulang gambarnya.");
+
+    const { data: current } = await supabaseAdmin.from("KasSetting").select("*").eq("id", 1).maybeSingle();
+    const { error } = await supabaseAdmin.from("KasSetting").update({ bankAccounts: accounts, qrisUrl, updatedAt: new Date().toISOString() }).eq("id", 1);
+    if (error) return fail("Gagal menyimpan metode pembayaran. Pastikan migrasi 031 sudah dijalankan.");
+
+    // Bersihkan gambar lama yang sudah tidak dipakai.
+    const oldQris = typeof current?.qrisUrl === "string" ? current.qrisUrl : null;
+    if (oldQris && oldQris !== qrisUrl) await deleteFromBucketByUrl(KAS_QRIS_BUCKET, oldQris).catch(() => {});
+    const oldLogos = Array.isArray(current?.bankAccounts) ? (current.bankAccounts as { logoUrl?: unknown }[]).map((a) => a?.logoUrl).filter((u): u is string => typeof u === "string") : [];
+    const keptLogos = new Set(accounts.map((a) => a.logoUrl).filter(Boolean));
+    for (const url of oldLogos) if (!keptLogos.has(url)) await deleteFromBucketByUrl(KAS_BANK_LOGO_BUCKET, url).catch(() => {});
+
     revalidateKas();
     return ok;
   } catch {

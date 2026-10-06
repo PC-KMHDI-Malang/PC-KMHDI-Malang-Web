@@ -22,6 +22,15 @@ const r2PublicHost = (() => {
   }
 })();
 
+// Domain sistem (NEXT_PUBLIC_APP_URL, mis. apps.kmhdimalang.org) — lihat lib/appHost.ts.
+const appHost = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : null;
+  } catch {
+    return null;
+  }
+})();
+
 const nextConfig: NextConfig = {
   // Library pembuat laporan PDF/Excel kas (lib/kasExport.ts) dipakai apa adanya dari node_modules,
   // tidak di-bundle: jspdf punya build khusus Node yang hanya terpilih kalau di-require langsung.
@@ -57,6 +66,12 @@ const nextConfig: NextConfig = {
       },
       ...(r2PublicHost ? [{ protocol: "https" as const, hostname: r2PublicHost }] : []),
     ],
+  },
+  // Domain sistem (apps.kmhdimalang.org, lihat lib/appHost.ts) tidak boleh muncul di mesin
+  // pencari — semua halamannya diberi X-Robots-Tag noindex. Domain publik tidak terpengaruh.
+  async headers() {
+    if (!appHost) return [];
+    return [{ source: "/:path*", has: [{ type: "host", value: appHost }], headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }];
   },
 };
 

@@ -41,13 +41,19 @@ export function useModalTransition(isOpen: boolean) {
   return { isRendered, isVisible };
 }
 
-// Halaman di belakang modal tidak boleh ikut ter-scroll selama modal terbuka.
+// Halaman di belakang modal tidak boleh ikut ter-scroll selama modal terbuka. Dihitung (bukan
+// sekadar hidup/mati) karena modal bisa bertumpuk — mis. popup QRIS di dalam form Upload Bukti:
+// menutup popup atas tidak boleh membuka kunci scroll selama modal di bawahnya masih terbuka.
+let openLocks = 0;
+
 export function useBodyScrollLock(isOpen: boolean) {
   useEffect(() => {
     if (!isOpen) return;
+    openLocks += 1;
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "unset";
+      openLocks = Math.max(0, openLocks - 1);
+      if (openLocks === 0) document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 }

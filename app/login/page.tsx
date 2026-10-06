@@ -3,6 +3,7 @@
 import { Suspense, useState, useTransition } from "react";
 import { loginAction } from "./actions";
 import Link from "next/link";
+import { siteUrl } from "@/lib/appHost";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
@@ -60,7 +61,7 @@ function LoginForm() {
     <main className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors px-4 py-10">
       <div className="w-full max-w-md">
         <Link
-          href="/"
+          href={siteUrl("/")}
           className="mb-5 inline-flex items-center gap-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md px-5 py-2.5 rounded-full shadow-sm hover:shadow-md transition-all border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-semibold hover:text-red-700 dark:hover:text-white hover:border-red-200 dark:hover:border-white/20 group"
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />

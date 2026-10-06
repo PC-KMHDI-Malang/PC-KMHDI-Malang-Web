@@ -9,6 +9,7 @@ import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, New
 import type { LucideIcon } from "lucide-react";
 import { isAdminPanelRole } from "@/lib/roles";
 import { isKasMember, isTreasurerEmail } from "@/lib/kas";
+import { appUrl, siteUrl } from "@/lib/appHost";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
 
@@ -108,12 +109,12 @@ export default function Navbar() {
   // jadi tautan akun & pintasan "Panel Admin" di bawah pakai ini, bukan isAdmin yang ketat —
   // beda dengan label "ADMINISTRATOR"/badge yang memang sengaja cuma untuk role ADMIN.
   const hasAdminAccess = isAdminPanelRole(user?.role);
-  const accountLink = hasAdminAccess ? "/admin" : "/profile";
+  const accountLink = appUrl(hasAdminAccess ? "/admin" : "/profile");
   // Akun bendahara langsung diarahkan ke halaman kelola kas; akun lain ke catatan iurannya sendiri.
   // Menu kas cuma untuk yang memang berurusan dengan iuran: anggota (role USER) dan bendahara.
   // ADMIN/KONTRIBUTOR/akun bersama tidak ditagih iuran, jadi tidak diberi menu yang buntu.
   const showKas = isTreasurerEmail(user?.email) || isKasMember({ email: user?.email, role: user?.role });
-  const kasLink = isTreasurerEmail(user?.email) ? "/kas/kelola" : "/kas";
+  const kasLink = appUrl(isTreasurerEmail(user?.email) ? "/kas/kelola" : "/kas");
   const kasLabel = isTreasurerEmail(user?.email) ? "Kelola Uang Kas" : "Uang Kas Saya";
   const firstName = user?.name ? user.name.split(" ")[0] : "Akun";
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
@@ -224,7 +225,7 @@ export default function Navbar() {
             `}
           >
             {/* 1. Logo Brand */}
-            <Link href="/" className="flex items-center gap-3.5 transition hover:opacity-90 flex-shrink-0">
+            <Link href={siteUrl("/")} className="flex items-center gap-3.5 transition hover:opacity-90 flex-shrink-0">
               {/* Tanpa "unoptimized": file sumbernya 187 KB tapi tampil cuma ~48px di sini, jadi
                   Next.js perlu meresize/mengompresnya dulu — kalau "unoptimized" dipasang, browser
                   men-download file 187 KB itu utuh di SETIAP halaman (dengan priority pula). */}
@@ -244,7 +245,7 @@ export default function Navbar() {
                 return (
                   <div key={menu.title} className="relative group">
                     <Link 
-                      href={menu.href} 
+                      href={siteUrl(menu.href)}
                       className={`flex items-center gap-1.5 py-2 text-sm sm:text-base font-semibold transition-all relative ${
                         isActive ? "text-white" : "text-white/80 hover:text-white"
                       }`}
@@ -261,7 +262,7 @@ export default function Navbar() {
                             return (
                               <Link
                                 key={sub.title}
-                                href={sub.href}
+                                href={siteUrl(sub.href)}
                                 onClick={(e) => handleAnchorClick(e, sub.href)}
                                 className="group/sub flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/10 transition-colors z-10"
                               >
@@ -321,13 +322,13 @@ export default function Navbar() {
                       {/* Dropdown Links */}
                       <div className="py-1.5 flex flex-col gap-0.5">
                         {hasAdminAccess && (
-                          <Link href="/admin" onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
+                          <Link href={appUrl("/admin")} onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
                             <Shield size={14} className="text-red-400" />
                             <span>Panel Admin</span>
                           </Link>
                         )}
 
-                        <Link href="/profile" onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
+                        <Link href={appUrl("/profile")} onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
                           <User size={14} className="text-rose-400" />
                           <span>Profil &amp; Sandi</span>
                         </Link>
@@ -453,7 +454,7 @@ export default function Navbar() {
                       return (
                         <div key={menu.title} className="flex flex-col">
                           <Link
-                            href={hasSub ? "#" : menu.href}
+                            href={hasSub ? "#" : siteUrl(menu.href)}
                             onClick={hasSub ? (e) => toggleMobileMenu(menu.title, e) : () => setMobileOpen(false)}
                             className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition group ${
                               isExpanded ? "bg-white/10 text-white" : "text-slate-200 hover:text-white hover:bg-white/10"
@@ -482,7 +483,7 @@ export default function Navbar() {
                                 {menu.submenus!.map((sub) => (
                                   <Link
                                     key={sub.title}
-                                    href={sub.href}
+                                    href={siteUrl(sub.href)}
                                     onClick={(e) => {
                                       setMobileOpen(false);
                                       handleAnchorClick(e, sub.href);
@@ -506,12 +507,12 @@ export default function Navbar() {
                   {isLoggedIn ? (
                     <>
                       {hasAdminAccess ? (
-                        <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
+                        <Link href={appUrl("/admin")} onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
                           <Shield size={16} className="text-red-400" />
                           <span>Masuk Panel Admin</span>
                         </Link>
                       ) : (
-                        <Link href="/profile" onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
+                        <Link href={appUrl("/profile")} onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
                           <User size={16} className="text-rose-400" />
                           <span>Atur Profil &amp; Sandi</span>
                         </Link>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { siteUrl } from "@/lib/appHost";
 import Image from "next/image";
 import { Menu, X, ArrowLeft, LogOut } from "lucide-react";
 import { SidebarNav } from "./SidebarNav";
@@ -97,7 +98,7 @@ export function AdminMobileNav({ role }: AdminMobileNavProps) {
               <ThemeToggle />
 
               <Link
-                href="/"
+                href={siteUrl("/")}
                 onClick={() => setIsOpen(false)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-[#141417] hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-white rounded-xl transition-colors border border-slate-200 dark:border-white/10 font-semibold text-xs"
               >

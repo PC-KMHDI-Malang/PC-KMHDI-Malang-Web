@@ -25,6 +25,24 @@ export const {
     maxAge: 2 * 60 * 60, // 2 Jam
   },
 
+  // Login dilakukan di apps.kmhdimalang.org, tapi status login juga dibutuhkan di domain publik
+  // kmhdimalang.org (tombol suka, membaca PDF e-book, nama di navbar) — lihat lib/appHost.ts.
+  // Dengan AUTH_COOKIE_DOMAIN=".kmhdimalang.org", cookie sesi berlaku untuk kedua domain. Namanya
+  // sengaja dibedakan dari cookie bawaan supaya tidak bentrok dengan cookie lama (yang hanya
+  // berlaku di satu domain) — akibatnya pengguna cukup login ulang sekali setelah ini aktif.
+  // Tidak dipakai di deployment Preview Vercel (*.vercel.app): browser menolak cookie bertanda
+  // ".kmhdimalang.org" dari domain lain, sehingga login di Preview akan gagal total.
+  ...(process.env.AUTH_COOKIE_DOMAIN && process.env.VERCEL_ENV !== "preview"
+    ? {
+        cookies: {
+          sessionToken: {
+            name: "__Secure-kmhdi.session-token",
+            options: { domain: process.env.AUTH_COOKIE_DOMAIN, httpOnly: true, sameSite: "lax" as const, path: "/", secure: true },
+          },
+        },
+      }
+    : {}),
+
   providers: [
     Credentials({
       name: "Credentials",

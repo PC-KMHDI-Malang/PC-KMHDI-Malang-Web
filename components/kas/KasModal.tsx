@@ -10,12 +10,14 @@ interface KasModalProps {
   title: string;
   description?: string;
   disableClose?: boolean;
+  /** false = isi modal tidak pernah di-scroll (mis. popup QRIS); isinya wajib muat sendiri. */
+  scrollable?: boolean;
   children: React.ReactNode;
 }
 
 // Kerangka modal yang sama dengan modal panel admin (mis. AddPartnerModal), tapi tanpa geseran
 // md:left-64 — halaman kas berada di layout publik yang tidak punya sidebar admin.
-export function KasModal({ isOpen, onClose, title, description, disableClose, children }: KasModalProps) {
+export function KasModal({ isOpen, onClose, title, description, disableClose, scrollable = true, children }: KasModalProps) {
   const { isRendered, isVisible } = useModalTransition(isOpen);
   if (!isRendered) return null;
 
@@ -24,7 +26,7 @@ export function KasModal({ isOpen, onClose, title, description, disableClose, ch
       <div className={`absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity duration-300 ${isVisible ? "opacity-100" : "opacity-0"}`} onClick={disableClose ? undefined : onClose} />
 
       <div
-        className={`relative w-full max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden overscroll-contain bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-6 sm:p-8 transform transition-all duration-300 border border-slate-200 dark:border-white/10 ${
+        className={`relative w-full max-w-lg max-h-[90vh] ${scrollable ? "overflow-y-auto overflow-x-hidden overscroll-contain" : "overflow-hidden"} bg-white dark:bg-[#111114] rounded-3xl shadow-2xl p-6 sm:p-8 transform transition-all duration-300 border border-slate-200 dark:border-white/10 ${
           isVisible ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-4"
         }`}
       >

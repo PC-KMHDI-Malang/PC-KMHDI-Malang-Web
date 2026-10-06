@@ -1,5 +1,5 @@
 import { createUploadUrlAction, uploadFileAction } from "@/lib/actions";
-import { createKasProofUploadUrlAction, uploadKasProofAction } from "@/app/actions/kas";
+import { createKasAssetUploadUrlAction, createKasProofUploadUrlAction, uploadKasAssetAction, uploadKasProofAction, type KasAssetKind } from "@/app/actions/kas";
 import { SERVER_UPLOAD_MAX_BYTES } from "@/lib/uploadLimits";
 
 // Satu pintu upload untuk semua komponen admin (ImagePicker, FilePicker, RichTextEditor, modal
@@ -58,5 +58,34 @@ export async function uploadKasProof(file: File): Promise<string> {
   }
 
   if (!response.ok) throw new Error(`Upload bukti gagal (HTTP ${response.status}).`);
+  return target.fileUrl;
+}
+
+// Gambar metode pembayaran iuran (khusus bendahara, Kelola Kas → Pengaturan): QRIS atau logo bank.
+// Alurnya sama dengan uploadKasProof di atas, hanya action-nya khusus bendahara dan disimpan di
+// storage publik.
+export async function uploadKasAsset(file: File, kind: KasAssetKind): Promise<string> {
+  const viaServer = async () => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("kind", kind);
+    const result = await uploadKasAssetAction(formData);
+    if (!result.url) throw new Error(result.error ?? "Gagal mengunggah gambar.");
+    return result.url;
+  };
+
+  const target = await createKasAssetUploadUrlAction({ kind, fileName: file.name, contentType: file.type, size: file.size });
+  if (target.mode === "error") throw new Error(target.error);
+  if (target.mode === "server") return viaServer();
+
+  let response: Response;
+  try {
+    response = await fetch(target.uploadUrl, { method: "PUT", headers: target.headers, body: file });
+  } catch {
+    if (file.size <= SERVER_UPLOAD_MAX_BYTES) return viaServer();
+    throw new Error("Koneksi ke storage terputus. Coba lagi.");
+  }
+
+  if (!response.ok) throw new Error(`Upload gambar gagal (HTTP ${response.status}).`);
   return target.fileUrl;
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, History, Settings2, Wallet, AlertTriangle, CheckCircle2, Receipt, Clock } from "lucide-react";
+import { CalendarCheck, CalendarDays, ChevronLeft, ChevronRight, History, Settings2, Wallet, AlertTriangle, CheckCircle2, Receipt, Clock, Landmark } from "lucide-react";
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -9,6 +9,7 @@ import { currentPeriod, formatDate, formatPeriod, formatRupiah, isKasMember, isS
 import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, STATUS_CLASS, STATUS_LABEL, cardClass } from "@/components/kas/KasUi";
 import { UploadBuktiModal, type ProofPeriodOption } from "@/components/kas/UploadBuktiModal";
+import { PaymentMethods } from "@/components/kas/PaymentMethods";
 
 export const metadata: Metadata = {
   title: "Uang Kas",
@@ -41,6 +42,9 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
   const generalSetting: KasSetting = toKasSetting(settingRow);
   // Semua perhitungan di halaman ini memakai periode efektif anggota ini.
   const setting: KasSetting = memberSetting(generalSetting, toMemberPeriod(memberRow));
+  // Metode pembayaran dari Pengaturan bendahara: daftar rekening + QRIS.
+  const payment = { banks: generalSetting.banks ?? [], qrisUrl: generalSetting.qrisUrl ?? null };
+  const hasPayment = payment.banks.length > 0 || !!payment.qrisUrl;
   const payments: IuranPayment[] = paymentRows ?? [];
   const summary = memberYearStatus(payments, year, setting, nowPeriod);
   const isMember = isKasMember({ email: session.user.email, role: session.user.role });
@@ -120,14 +124,22 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
               !setting.startPeriod && <KasNotice title="Anda tidak sedang dalam masa iuran.">Tidak ada bulan iuran yang ditagihkan kepada Anda pada periode ini.</KasNotice>
             )}
 
-            {/* Bayar iuran: unggah bukti untuk dikonfirmasi bendahara */}
+            {/* Langkah bayar: (1) transfer lewat metode pembayaran, (2) unggah bukti. Dua kartu
+                terpisah selebar halaman, berurutan sesuai langkahnya. */}
+            {setting.startPeriod && hasPayment && (
+              <div className={cardClass}>
+                <CardHeading icon={Landmark} title="Metode Pembayaran" description="Bayar iuran lewat salah satu metode berikut, lalu unggah buktinya di bawah." />
+                <PaymentMethods banks={payment.banks} qrisUrl={payment.qrisUrl} layout="split" />
+              </div>
+            )}
+
             {setting.startPeriod && (
               <div className={cardClass}>
                 <CardHeading
                   icon={Receipt}
                   title="Bayar Iuran"
-                  description={proofOptions.length ? "Sudah transfer atau membayar? Unggah buktinya di sini, lalu tunggu konfirmasi bendahara." : "Semua iuran periode ini sudah dibayar atau sedang dikonfirmasi."}
-                  action={<UploadBuktiModal options={proofOptions} monthlyFee={setting.monthlyFee} />}
+                  description={proofOptions.length ? "Sudah transfer atau membayar? Unggah buktinya, lalu tunggu konfirmasi bendahara." : "Semua iuran periode ini sudah dibayar atau sedang dikonfirmasi."}
+                  action={<UploadBuktiModal options={proofOptions} monthlyFee={setting.monthlyFee} payment={payment} />}
                 />
                 {summary.pendingCount > 0 ? (
                   <div className="flex gap-3 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/25 p-4">
@@ -211,7 +223,7 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
                           )}
                         </div>
                         {paymentStatus(p) === "DITOLAK" && proofOptions.some((o) => o.period === p.period) && (
-                          <UploadBuktiModal options={proofOptions} monthlyFee={setting.monthlyFee} preselect={p.period} variant="inline" />
+                          <UploadBuktiModal options={proofOptions} monthlyFee={setting.monthlyFee} payment={payment} preselect={p.period} variant="inline" />
                         )}
                       </div>
 

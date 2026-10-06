@@ -10,6 +10,7 @@ import { formatViewCount } from "@/lib/views";
 import { lockDurationFor, nextAttemptState, lockStateOf, emailKey, ipKey, clientIpFrom, type AttemptRecord } from "@/lib/loginRateLimit";
 import { isPasswordLongEnough, MIN_PASSWORD_LENGTH, PASSWORD_RULE_TEXT } from "@/lib/password";
 import { orFilterLiteral, containsPattern } from "@/lib/search";
+import { isAppPath } from "@/lib/appHost";
 import {
   isTreasurerEmail,
   isKasMember,
@@ -543,9 +544,11 @@ describe("kas — akhir periode diatur bendahara", () => {
   });
 
   it("membaca baris pengaturan dari database dengan aman (kolom baru boleh belum ada)", () => {
-    assert.deepEqual(toKasSetting({ monthlyFee: 10000, startPeriod: "2025-07" }), { monthlyFee: 10000, startPeriod: "2025-07", endPeriod: null });
-    assert.deepEqual(toKasSetting({ monthlyFee: 10000, startPeriod: "2025-07", endPeriod: "2027-06" }).endPeriod, "2027-06");
-    assert.deepEqual(toKasSetting(null), { monthlyFee: 0, startPeriod: null, endPeriod: null });
+    const a = toKasSetting({ monthlyFee: 10000, startPeriod: "2025-07" });
+    assert.deepEqual([a.monthlyFee, a.startPeriod, a.endPeriod], [10000, "2025-07", null]);
+    assert.equal(toKasSetting({ monthlyFee: 10000, startPeriod: "2025-07", endPeriod: "2027-06" }).endPeriod, "2027-06");
+    const empty = toKasSetting(null);
+    assert.deepEqual([empty.monthlyFee, empty.startPeriod, empty.endPeriod], [0, null, null]);
   });
 });
 
@@ -580,5 +583,55 @@ describe("kas — anggota masuk/keluar di tengah periode", () => {
     const own = memberSetting(setting, { startPeriod: null, endPeriod: "2025-01" });
     assert.equal(own.startPeriod, null);
     assert.equal(arrearsPeriods([], own, "2026-10").length, 0);
+  });
+});
+
+describe("domain — halaman sistem (apps.kmhdimalang.org)", () => {
+  it("mengenali halaman sistem", () => {
+    for (const p of ["/admin", "/admin/news/abc", "/kas", "/kas/kelola", "/kas/bukti/123", "/login", "/profile", "/informasi-akun"]) {
+      assert.equal(isAppPath(p), true, p);
+    }
+  });
+
+  it("halaman publik & API tetap di domain utama / bisa dari dua domain", () => {
+    for (const p of ["/", "/berita", "/e-book", "/e-book/file/buku-x", "/galeri", "/mitra", "/profil", "/program", "/api/auth/session", "/kasus-artikel", "/administrasi-kegiatan", "/loginx"]) {
+      assert.equal(isAppPath(p), false, p);
+    }
+  });
+});
+
+describe("kas — metode pembayaran (rekening & QRIS)", () => {
+  it("membaca daftar rekening (bisa lebih dari satu), membuang yang tanpa nomor", () => {
+    const setting = toKasSetting({
+      bankAccounts: [
+        { bank: "SeaBank", number: "901643108142", holder: "Ni Luh Putu Kayla Padma Dewi" },
+        { bank: "BRI", number: "1234 5678 90", holder: "Bendahara" },
+        { bank: "Kosong", number: "", holder: "x" },
+      ],
+      qrisUrl: "https://media.kmhdimalang.org/kas-qris/a.png",
+    });
+    assert.equal(setting.banks?.length, 2);
+    assert.equal(setting.banks?.[1].bank, "BRI");
+    assert.equal(setting.qrisUrl, "https://media.kmhdimalang.org/kas-qris/a.png");
+  });
+
+  it("daftar rekening kosong = tidak ada rekening", () => {
+    assert.deepEqual(toKasSetting({ bankAccounts: [], qrisUrl: null }).banks, []);
+  });
+
+  it("belum migrasi 031: memakai rekening tunggal migrasi 030, atau rekening bawaan", () => {
+    assert.deepEqual(toKasSetting({ bankName: "BRI", bankAccountNumber: "123456", bankAccountHolder: "A" }).banks, [{ bank: "BRI", number: "123456", holder: "A" }]);
+    assert.equal(toKasSetting({ monthlyFee: 10000 }).banks?.[0].bank, "SeaBank");
+  });
+
+  it("membaca logo bank yang diunggah bendahara (opsional)", () => {
+    const setting = toKasSetting({
+      bankAccounts: [
+        { bank: "SeaBank", number: "901643108142", holder: "A", logoUrl: "https://media.kmhdimalang.org/kas-logos/x.png" },
+        { bank: "BRI", number: "123456", holder: "B" },
+      ],
+    });
+    assert.equal(setting.banks?.[0].logoUrl, "https://media.kmhdimalang.org/kas-logos/x.png");
+    assert.equal(setting.banks?.[1].logoUrl, null);
   });
 });

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
+import { siteUrl } from "@/lib/appHost";
 import { redirect } from "next/navigation";
 import { ArrowLeft, KeyRound, UserCheck, Shield, Lock, Wallet, ChevronRight } from "lucide-react";
 import { ProfileSettingsForm } from "@/components/profile/ProfileSettingsForm";
@@ -41,7 +42,7 @@ export default async function ProfilePage() {
         <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-rose-400/10 blur-3xl pointer-events-none" />
 
         <div className="relative mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-red-100/80 hover:text-white transition-colors mb-6">
+          <Link href={siteUrl("/")} className="inline-flex items-center gap-2 text-sm font-semibold text-red-100/80 hover:text-white transition-colors mb-6">
             <ArrowLeft size={16} />
             Kembali ke Beranda
           </Link>

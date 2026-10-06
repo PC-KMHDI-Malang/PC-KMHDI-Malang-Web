@@ -10,8 +10,9 @@ import { dateInputClass, inputClass, labelClass } from "@/components/kas/KasUi";
 import { submitIuranProofAction } from "@/app/actions/kas";
 import { uploadKasProof } from "@/lib/uploadClient";
 import { KAS_PROOF_TYPES, MAX_PROOF_MB } from "@/lib/uploadLimits";
-import { todayInJakarta } from "@/lib/kas";
+import { todayInJakarta, type KasBankAccount } from "@/lib/kas";
 import { PeriodPicker, PeriodTotal, togglePeriod, type PeriodOption } from "@/components/kas/PeriodPicker";
+import { PaymentMethods } from "@/components/kas/PaymentMethods";
 
 export type ProofPeriodOption = PeriodOption;
 
@@ -22,12 +23,14 @@ interface UploadBuktiModalProps {
   preselect?: string;
   /** "primary" = tombol utama di kartu Bayar Iuran; "inline" = tautan kecil "Upload ulang" di riwayat. */
   variant?: "primary" | "inline";
+  /** Metode pembayaran (Pengaturan bendahara), ditampilkan di atas form supaya bisa disalin/dipindai. */
+  payment?: { banks: KasBankAccount[]; qrisUrl: string | null };
 }
 
 
 // Anggota mengunggah foto bukti transfer/pembayaran untuk satu atau beberapa bulan sekaligus.
 // Status bulan-bulan itu jadi "Menunggu Konfirmasi" sampai bendahara mengonfirmasi atau menolak.
-export function UploadBuktiModal({ options, monthlyFee, preselect, variant = "primary" }: UploadBuktiModalProps) {
+export function UploadBuktiModal({ options, monthlyFee, preselect, variant = "primary", payment }: UploadBuktiModalProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -115,6 +118,8 @@ export function UploadBuktiModal({ options, monthlyFee, preselect, variant = "pr
       <KasModal isOpen={isOpen} onClose={() => setIsOpen(false)} disableClose={isSubmitting} title="Upload Bukti Pembayaran" description="Bukti akan diperiksa bendahara sebelum iuran dinyatakan sudah bayar.">
         <form onSubmit={handleSubmit} className="space-y-5">
           <ModalError message={error} onDismiss={() => setError(null)} />
+
+          {payment && (payment.banks.length > 0 || payment.qrisUrl) && <PaymentMethods banks={payment.banks} qrisUrl={payment.qrisUrl} />}
 
           <PeriodPicker options={options} selected={selected} onToggle={toggle} hint="Pilih beberapa bulan sekaligus kalau membayar rapel dengan satu bukti." />
 

@@ -47,3 +47,10 @@ export const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/we
 export const KAS_PROOF_BUCKET = "kas-proofs";
 export const MAX_PROOF_MB = MAX_IMAGE_MB;
 export const KAS_PROOF_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+// Gambar QRIS pembayaran iuran, diunggah bendahara (Kelola Kas → Pengaturan). Disimpan di bucket
+// R2 PUBLIK — QRIS memang untuk dibagikan ke anggota.
+export const KAS_QRIS_BUCKET = "kas-qris";
+
+// Logo bank per rekening, diunggah bendahara (Kelola Kas → Pengaturan). Publik, seperti QRIS.
+export const KAS_BANK_LOGO_BUCKET = "kas-logos";

@@ -21,6 +21,20 @@ export function isKasMember(user: { email: string | null | undefined; role: stri
   return !isTreasurerEmail(user.email) && !isProtectedAccountEmail(user.email);
 }
 
+// Rekening tujuan pembayaran iuran — diatur bendahara di Kelola Kas → Pengaturan (migrasi 030)
+// dan ditampilkan ke anggota di halaman Uang Kas (kartu Rekening Pembayaran & form Upload Bukti).
+export type KasBankAccount = {
+  bank: string;
+  number: string;
+  holder: string;
+  /** Logo yang diunggah bendahara; kosong = nama bank yang ditampilkan. */
+  logoUrl?: string | null;
+};
+
+// Dipakai hanya selama kolom rekening (migrasi 030) belum ada di database, supaya kartu rekening
+// tidak hilang sebelum migrasi dijalankan. Setelah itu, nilai di Pengaturan yang dipakai.
+const DEFAULT_KAS_BANK: KasBankAccount = { bank: "SeaBank", number: "901643108142", holder: "Ni Luh Putu Kayla Padma Dewi" };
+
 export const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 export const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
@@ -99,6 +113,11 @@ export type KasSetting = {
   startPeriod: string | null;
   /** Akhir periode (inklusif) yang diatur bendahara; kosong = default 2 tahun dari startPeriod. */
   endPeriod?: string | null;
+  /** Rekening tujuan pembayaran; null = tidak ditampilkan. */
+  /** Rekening tujuan pembayaran (urutan = urutan tampil). Kosong = tidak ada rekening. */
+  banks?: KasBankAccount[];
+  /** Gambar QRIS untuk pembayaran; null = tidak ada. */
+  qrisUrl?: string | null;
 };
 
 // Baris KasSetting dari database → KasSetting. Dibaca dengan select("*") supaya halaman kas tetap
@@ -108,7 +127,27 @@ export function toKasSetting(row: Record<string, unknown> | null | undefined): K
     monthlyFee: typeof row?.monthlyFee === "number" ? row.monthlyFee : 0,
     startPeriod: isValidPeriod(row?.startPeriod) ? row.startPeriod : null,
     endPeriod: isValidPeriod(row?.endPeriod) ? row.endPeriod : null,
+    banks: toBankAccounts(row),
+    qrisUrl: typeof row?.qrisUrl === "string" && row.qrisUrl.trim() ? row.qrisUrl.trim() : null,
   };
+}
+
+export const KAS_MAX_BANKS = 5;
+
+function toBankAccounts(row: Record<string, unknown> | null | undefined): KasBankAccount[] {
+  const text = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  // Daftar rekening (migrasi 031).
+  if (row && Array.isArray(row.bankAccounts)) {
+    return (row.bankAccounts as unknown[])
+      .map((a) => (a && typeof a === "object" ? (a as Record<string, unknown>) : {}))
+      .map((a) => ({ bank: text(a.bank) || "Bank", number: text(a.number), holder: text(a.holder), logoUrl: text(a.logoUrl) || null }))
+      .filter((a) => a.number)
+      .slice(0, KAS_MAX_BANKS);
+  }
+  // Belum migrasi 031: rekening tunggal dari migrasi 030, atau rekening bawaan kalau 030 pun belum.
+  if (!row || !("bankAccountNumber" in row)) return [DEFAULT_KAS_BANK];
+  const number = text(row.bankAccountNumber);
+  return number ? [{ bank: text(row.bankName) || "Bank", number, holder: text(row.bankAccountHolder) }] : [];
 }
 
 // Status satu baris KasIuran di database (lihat migrasi 026). Baris tanpa status (data lama /

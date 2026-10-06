@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { SubmitWithConfirm } from "@/components/ui/SubmitWithConfirm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl } from "@/lib/storage";
 import { generateUniqueEbookSlug } from "@/lib/slug";
+import { siteUrl } from "@/lib/appHost";
 
 import { Pagination } from "@/components/ui/Pagination";
 
@@ -227,7 +228,7 @@ export default async function EbooksPage({ searchParams: searchParamsPromise }: 
                         jadi alamat storage tidak pernah terlihat. */}
                     {ebook.pdfUrl && ebook.slug ? (
                       <a
-                        href={`/e-book/file/${ebook.slug}`}
+                        href={siteUrl(`/e-book/file/${ebook.slug}`)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center justify-center bg-slate-800 dark:bg-slate-700 text-white font-bold py-2 px-4 rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 transition-colors shadow-sm text-sm gap-2"

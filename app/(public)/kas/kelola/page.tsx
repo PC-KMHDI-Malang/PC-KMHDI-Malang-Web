@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, CalendarCheck, ChevronLeft, ChevronRight, ClipboardCheck, Clock, FileSpreadsheet, FileText, History, Settings2, Users, Wallet } from "lucide-react";
+import { AlertTriangle, CalendarCheck, ChevronLeft, ChevronRight, ClipboardCheck, Clock, FileSpreadsheet, FileText, History, Landmark, Settings2, Users, Wallet } from "lucide-react";
 
 import { auth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -10,6 +10,7 @@ import { KasPageHeader } from "@/components/kas/KasPageHeader";
 import { CardHeading, KasNotice, StatCard, cardClass } from "@/components/kas/KasUi";
 import { IuranMatrix, type MemberPeriodState } from "@/components/kas/IuranMatrix";
 import { KasSettingForm } from "@/components/kas/KasSettingForm";
+import { KasPaymentForm } from "@/components/kas/KasPaymentForm";
 import { KonfirmasiList, type PendingProof } from "@/components/kas/KonfirmasiList";
 import { KasLogList, type KasLogAction, type KasLogItem } from "@/components/kas/KasLogList";
 
@@ -275,6 +276,14 @@ export default async function KelolaKasPage({ searchParams }: { searchParams: Pr
                 <div className="mt-6">
                   <KasNotice title="Catatan:">Mengubah nominal tidak mengubah pembayaran yang sudah tercatat — riwayat tetap menyimpan nominal saat dibayar.</KasNotice>
                 </div>
+              </div>
+            )}
+
+            {/* Kartu terpisah: metode pembayaran (rekening & QRIS) yang ditampilkan ke anggota. */}
+            {tab === "pengaturan" && (
+              <div className={cardClass}>
+                <CardHeading icon={Landmark} title="Metode Pembayaran" description="Rekening tujuan dan QRIS untuk membayar iuran. Ditampilkan ke anggota di halaman Uang Kas." />
+                <KasPaymentForm banks={setting.banks ?? []} qrisUrl={setting.qrisUrl ?? null} />
               </div>
             )}
           </>

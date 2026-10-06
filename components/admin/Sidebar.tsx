@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { siteUrl } from "@/lib/appHost";
 import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { logoutAction } from "@/app/actions/auth";
@@ -34,7 +35,7 @@ export default async function Sidebar() {
           <ThemeToggle />
 
           <Link
-            href="/"
+            href={siteUrl("/")}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 dark:bg-[#141417] hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-white rounded-2xl transition-colors border border-slate-200 dark:border-white/10 text-xs font-bold"
           >
             <ArrowLeft size={16} />
