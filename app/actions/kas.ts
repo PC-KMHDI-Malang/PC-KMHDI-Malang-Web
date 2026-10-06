@@ -232,6 +232,28 @@ export async function deleteIuranAction(id: string): Promise<ActionResult> {
   }
 }
 
+// Hapus log transaksi (hanya catatan aktivitasnya — data iuran tidak ikut berubah). ids: satu
+// atau beberapa log; "all": seluruh log.
+export async function deleteKasLogAction(target: string[] | "all"): Promise<ActionResult> {
+  const denied = await guard();
+  if (denied) return denied;
+
+  try {
+    if (target === "all") {
+      const { error } = await supabaseAdmin.from("KasLog").delete().not("id", "is", null);
+      if (error) return fail("Gagal menghapus log transaksi.");
+    } else {
+      if (!Array.isArray(target) || target.length === 0 || target.length > 500 || target.some((id) => typeof id !== "string" || !id)) return fail("Data tidak valid.");
+      const { error } = await supabaseAdmin.from("KasLog").delete().in("id", target);
+      if (error) return fail("Gagal menghapus log transaksi.");
+    }
+    revalidateKas();
+    return ok;
+  } catch {
+    return fail("Terjadi kesalahan sistem.");
+  }
+}
+
 // ---------------------------------------------------------------------------------------------
 // Bukti pembayaran dari anggota
 // ---------------------------------------------------------------------------------------------

@@ -1,10 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Ban, CheckCircle2, HandCoins, Pencil, Search, Upload, XCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Ban, CheckCircle2, HandCoins, Pencil, Search, Trash2, Upload, XCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { inputClass } from "@/components/kas/KasUi";
+import { deleteKasLogAction } from "@/app/actions/kas";
 import { formatPeriod, formatRupiah } from "@/lib/kas";
 
 export type KasLogAction = "DICATAT" | "DIKIRIM" | "DIKONFIRMASI" | "DITOLAK" | "DIUBAH" | "DIBATALKAN";
@@ -39,6 +43,24 @@ const FILTERS: { key: string; label: string; actions: KasLogAction[] | null }[] 
 export function KasLogList({ items }: { items: KasLogItem[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("semua");
+  const router = useRouter();
+  // Yang sedang dikonfirmasi untuk dihapus: satu log, atau semuanya.
+  const [deleteTarget, setDeleteTarget] = useState<{ ids: string[] | "all"; label: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    const result = await deleteKasLogAction(deleteTarget.ids);
+    setIsDeleting(false);
+    if (!result.success) {
+      toast.error(result.error ?? "Gagal menghapus log");
+      return;
+    }
+    toast.success(deleteTarget.ids === "all" ? "Semua log transaksi dihapus." : "Log transaksi dihapus.");
+    setDeleteTarget(null);
+    router.refresh();
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -66,6 +88,19 @@ export function KasLogList({ items }: { items: KasLogItem[] }) {
           ))}
         </div>
       </div>
+
+      {items.length > 0 && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setDeleteTarget({ ids: "all", label: "semua log transaksi" })}
+            className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold text-red-600 dark:text-rose-400 bg-red-50 dark:bg-rose-950/30 hover:bg-red-100 dark:hover:bg-rose-950/50 transition-colors"
+          >
+            <Trash2 size={14} />
+            Hapus Semua Log
+          </button>
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <p className="text-sm text-slate-500 dark:text-neutral-400 text-center py-10">{items.length === 0 ? "Belum ada transaksi tercatat." : "Tidak ada log yang cocok dengan pencarian/filter."}</p>
@@ -95,11 +130,30 @@ export function KasLogList({ items }: { items: KasLogItem[] }) {
                   {item.amount > 0 && <p className="text-sm font-bold text-slate-800 dark:text-white">{formatRupiah(item.amount)}</p>}
                   <p className="text-[11px] text-slate-500 dark:text-neutral-400 mt-0.5 whitespace-nowrap">{item.time}</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget({ ids: [item.id], label: "log ini" })}
+                  aria-label="Hapus log"
+                  title="Hapus log"
+                  className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-rose-400 hover:bg-red-50 dark:hover:bg-rose-950/30 transition-colors"
+                >
+                  <Trash2 size={15} />
+                </button>
               </div>
             );
           })}
         </div>
       )}
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => !isDeleting && setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Hapus Log Transaksi"
+        description={`Hapus ${deleteTarget?.label ?? "log"}? Hanya catatan aktivitasnya yang dihapus — data iuran anggota tidak berubah. Tindakan ini tidak bisa dibatalkan.`}
+        confirmText="Hapus"
+        isLoading={isDeleting}
+        offsetSidebar={false}
+      />
       <p className="text-[11px] text-slate-500 dark:text-neutral-400">Menampilkan {Math.min(filtered.length, items.length)} dari {items.length} aktivitas terbaru.</p>
     </div>
   );
