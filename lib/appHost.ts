@@ -16,7 +16,9 @@ export const APP_URL = isPreview ? "" : (process.env.NEXT_PUBLIC_APP_URL ?? "").
 
 // Halaman yang tinggal di domain sistem. "/api" sengaja tidak termasuk: route API (login,
 // sesi, file e-book, dll.) harus bisa dipanggil dari kedua domain.
-const APP_PATH_PREFIXES = ["/admin", "/kas", "/login", "/profile", "/informasi-akun", "/dashboard"];
+// "/agenda" (kalender + halaman sekretaris) khusus anggota yang login, jadi tinggal di domain
+// sistem bersama /kas — tidak ada halaman agenda di domain publik.
+const APP_PATH_PREFIXES = ["/admin", "/kas", "/login", "/profile", "/informasi-akun", "/dashboard", "/agenda"];
 
 export function isAppPath(pathname: string): boolean {
   return APP_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

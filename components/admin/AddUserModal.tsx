@@ -7,6 +7,7 @@ import { useModalTransition } from "@/components/ui/useModalTransition";
 import { X, UserPlus, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { BIDANG_SELECT_OPTIONS } from "@/lib/bidang";
 
 interface AddUserModalProps {
   action: (formData: FormData) => Promise<{ error?: string; success?: boolean; message?: string }>;
@@ -158,14 +159,11 @@ export function AddUserModal({ action }: AddUserModalProps) {
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all text-slate-700 font-medium cursor-pointer"
                   >
                     <option value="">-- Pilih Bidang --</option>
-                    <option value="Organisasi">Organisasi</option>
-                    <option value="Kaderisasi">Kaderisasi</option>
-                    <option value="Data dan Informasi">Data dan Informasi</option>
-                    <option value="Sosial Masyarakat">Sosial Masyarakat</option>
-                    <option value="Kajian dan Isu">Kajian dan Isu</option>
-                    <option value="Litbang">Litbang</option>
-                    <option value="Hubungan Masyarakat">Hubungan Masyarakat</option>
-                    <option value="Tidak Ada">Tidak Ada</option>
+                    {BIDANG_SELECT_OPTIONS.map((bidang) => (
+                      <option key={bidang} value={bidang}>
+                        {bidang}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

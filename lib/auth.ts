@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "@/lib/supabase";
 import { canAccessAdminPath, isAdminPanelRole, isViewerRole } from "@/lib/roles";
 import { isTreasurerEmail } from "@/lib/kas";
+import { isSecretaryEmail } from "@/lib/agenda";
 import { checkLock, clearAttempts, clientIpFrom, emailKey, ipKey, recordFailure } from "@/lib/loginRateLimit";
 
 export const {
@@ -131,6 +132,18 @@ export const {
         if (isViewerRole(role)) return Response.redirect(new URL("/profile", nextUrl));
         if (nextUrl.pathname.startsWith("/kas/kelola") && !isTreasurerEmail(auth?.user?.email)) {
           return Response.redirect(new URL("/kas", nextUrl));
+        }
+        return true;
+      }
+
+      // /agenda: khusus anggota yang login, tidak dibuka ke publik. Akun Umum (VIEWER) tidak ikut,
+      // sama seperti /kas. /agenda/kelola cuma untuk akun sekretaris — siapa pun selain itu
+      // (termasuk ADMIN) dikembalikan ke kalender.
+      if (nextUrl.pathname === "/agenda" || nextUrl.pathname.startsWith("/agenda/")) {
+        if (!isLoggedIn) return false;
+        if (isViewerRole(role)) return Response.redirect(new URL("/profile", nextUrl));
+        if ((nextUrl.pathname === "/agenda/kelola" || nextUrl.pathname.startsWith("/agenda/kelola/")) && !isSecretaryEmail(auth?.user?.email)) {
+          return Response.redirect(new URL("/agenda", nextUrl));
         }
         return true;
       }

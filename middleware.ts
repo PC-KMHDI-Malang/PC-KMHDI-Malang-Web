@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/site";
 // Halaman yang wajib login — pemeriksaannya tetap lewat authorized() di lib/auth.ts, sama seperti
 // sebelumnya. /informasi-akun sengaja tidak dicantumkan: halaman itu menahan datanya sendiri di
 // server dan menampilkan popup login di tempat, bukan dialihkan ke /login.
-const PROTECTED_PREFIXES = ["/profile", "/dashboard", "/admin", "/kas"];
+const PROTECTED_PREFIXES = ["/profile", "/dashboard", "/admin", "/kas", "/agenda"];
 const needsAuth = (pathname: string) => PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
 // auth() dari NextAuth bisa dipanggil langsung sebagai middleware (dulu file ini cuma

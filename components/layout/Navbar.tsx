@@ -5,13 +5,15 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
-import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText, Handshake, ClipboardList, Loader2, Wallet } from "lucide-react";
+import { Menu as MenuIcon, X, User, Shield, LogOut, ChevronDown, Home, Info, Newspaper, BookOpen, Image as ImageIcon, ChevronRight, History, Target, Users2, FileText, Handshake, ClipboardList, Loader2, Wallet, CalendarDays, CalendarCog } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { isAdminPanelRole } from "@/lib/roles";
+import { isAdminPanelRole, isViewerRole } from "@/lib/roles";
 import { isKasMember, isTreasurerEmail } from "@/lib/kas";
+import { isSecretaryEmail } from "@/lib/agenda";
 import { appUrl, siteUrl } from "@/lib/appHost";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 type SubMenu = {
   title: string;
@@ -116,6 +118,13 @@ export default function Navbar() {
   const showKas = isTreasurerEmail(user?.email) || isKasMember({ email: user?.email, role: user?.role });
   const kasLink = appUrl(isTreasurerEmail(user?.email) ? "/kas/kelola" : "/kas");
   const kasLabel = isTreasurerEmail(user?.email) ? "Kelola Uang Kas" : "Uang Kas Saya";
+  // Agenda khusus anggota yang login (bukan Akun Umum), jadi menunya ada di menu akun, bukan di
+  // menu utama yang dilihat semua orang. Seluruh /agenda tinggal di domain sistem (appUrl).
+  // Halaman kelolanya cuma untuk akun sekretaris.
+  const showAgenda = isLoggedIn && !isViewerRole(user?.role);
+  const isSecretary = isSecretaryEmail(user?.email);
+  const agendaLink = appUrl("/agenda");
+  const agendaManageLink = appUrl("/agenda/kelola");
   const firstName = user?.name ? user.name.split(" ")[0] : "Akun";
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
@@ -291,6 +300,8 @@ export default function Navbar() {
                 // pun, jadi tidak ada apa-apa yang bisa "salah kedip" begitu sesi datang.
                 <div className="h-10 w-32 rounded-full bg-white/10 animate-pulse" />
               ) : isLoggedIn ? (
+                <>
+                {showAgenda && <NotificationBell />}
                 <div className="relative" ref={dropdownRef}>
                   <button
                     type="button"
@@ -339,6 +350,20 @@ export default function Navbar() {
                             <span>{kasLabel}</span>
                           </Link>
                         )}
+
+                        {showAgenda && (
+                          <Link href={agendaLink} onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
+                            <CalendarDays size={14} className="text-sky-400" />
+                            <span>Kalender Kegiatan</span>
+                          </Link>
+                        )}
+
+                        {isSecretary && (
+                          <Link href={agendaManageLink} onClick={() => setUserDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 rounded-xl transition">
+                            <CalendarCog size={14} className="text-amber-400" />
+                            <span>Kelola Kalender</span>
+                          </Link>
+                        )}
                       </div>
 
                       {/* Logout Action */}
@@ -378,6 +403,7 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
+                </>
               ) : (
                 <button
                   type="button"
@@ -391,6 +417,7 @@ export default function Navbar() {
 
             {/* 4. Mobile Controls (Theme Toggle & Hamburger) */}
             <div className="flex items-center gap-2 lg:hidden">
+              {showAgenda && <NotificationBell />}
               <ThemeToggle iconOnly />
 
               <button
@@ -522,6 +549,20 @@ export default function Navbar() {
                         <Link href={kasLink} onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
                           <Wallet size={16} className="text-emerald-400" />
                           <span>{kasLabel}</span>
+                        </Link>
+                      )}
+
+                      {showAgenda && (
+                        <Link href={agendaLink} onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
+                          <CalendarDays size={16} className="text-sky-400" />
+                          <span>Kalender Kegiatan</span>
+                        </Link>
+                      )}
+
+                      {isSecretary && (
+                        <Link href={agendaManageLink} onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/20">
+                          <CalendarCog size={16} className="text-amber-400" />
+                          <span>Kelola Kalender</span>
                         </Link>
                       )}
 

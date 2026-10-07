@@ -1,4 +1,10 @@
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
+import { MONTH_NAMES, MONTH_SHORT, todayInJakarta } from "@/lib/date";
+
+// Helper tanggal WIB kini tinggal di lib/date.ts karena agenda memakainya juga. Di-re-export
+// dari sini supaya seluruh pemanggil lama (yang mengimpor MONTH_NAMES / MONTH_SHORT /
+// todayInJakarta dari "@/lib/kas") tetap jalan tanpa diubah.
+export { MONTH_NAMES, MONTH_SHORT, todayInJakarta };
 
 // Logika murni fitur uang kas (tanpa akses database) supaya bisa dipakai bersama oleh halaman
 // anggota (/kas), halaman bendahara (/kas/kelola), Server Action di app/actions/kas.ts, dan
@@ -35,8 +41,6 @@ export type KasBankAccount = {
 // tidak hilang sebelum migrasi dijalankan. Setelah itu, nilai di Pengaturan yang dipakai.
 const DEFAULT_KAS_BANK: KasBankAccount = { bank: "SeaBank", number: "901643108142", holder: "Ni Luh Putu Kayla Padma Dewi" };
 
-export const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-export const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
 const PERIOD_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const DATE_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
@@ -49,12 +53,8 @@ export function isValidDate(date: unknown): date is string {
   return typeof date === "string" && DATE_RE.test(date) && !Number.isNaN(Date.parse(date));
 }
 
-// Periode & tanggal "hari ini" dihitung di zona waktu WIB, bukan zona waktu server (Vercel
-// berjalan di UTC) — tanpa ini, antara pukul 00.00–07.00 WIB tanggal 1 bulan baru, bulan itu
-// belum dianggap jatuh tempo.
-export function todayInJakarta(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
-}
+// Periode & tanggal "hari ini" dihitung di zona waktu WIB, bukan zona waktu server — lihat
+// lib/date.ts untuk alasannya. todayInJakarta() diimpor dari sana dan di-re-export di atas.
 
 export function currentPeriod(now: Date = new Date()): string {
   return todayInJakarta(now).slice(0, 7);
