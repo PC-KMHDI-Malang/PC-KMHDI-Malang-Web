@@ -110,8 +110,9 @@ export default async function KasPage({ searchParams }: { searchParams: Promise<
         ) : (
           <>
             {/* Ringkasan */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <StatCard icon={Wallet} label="Iuran per Bulan" value={setting.startPeriod ? formatRupiah(setting.monthlyFee) : "-"} hint={setting.startPeriod && endPeriod ? `Periode ${formatPeriod(setting.startPeriod)} – ${formatPeriod(endPeriod)}` : "Belum diatur bendahara"} />
+              <StatCard icon={Receipt} label="Total Dibayar" value={formatRupiah(summary.totalPaid)} hint={`${payments.filter((p) => paymentStatus(p) === "LUNAS").length} bulan lunas, semua tahun`} tone="good" />
               <StatCard icon={CalendarCheck} label={`Dibayar ${year}`} value={formatRupiah(summary.yearPaid)} hint={`${summary.months.filter((m) => m.status === "LUNAS").length} bulan lunas`} tone="good" />
               <StatCard
                 icon={summary.arrearsCount > 0 ? AlertTriangle : CheckCircle2}
