@@ -23,6 +23,13 @@ interface User {
   createdAt: string;
 }
 
+// Data yang dibawa modal ubah. Dipakai di DUA tempat (kartu di layar kecil dan baris tabel di desktop)
+// — harus satu fungsi, bukan literal yang disalin. Pernah salah satu salinan ketinggalan satu kolom:
+// modal terbuka dengan kolom itu kosong, dan menekan Simpan menimpa nilai aslinya dengan kosong.
+function editableUser(u: User) {
+  return { id: u.id, name: u.name, email: u.email, role: u.role, jabatan: u.jabatan, bidang: u.bidang, notifyEmail: u.notifyEmail };
+}
+
 interface UserTableProps {
   users: User[];
   editAction: (formData: FormData) => Promise<{ error?: string; success?: boolean; message?: string }>;
@@ -197,15 +204,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
               {/* Aksi */}
               <div className="pt-2 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-end gap-2">
                 <EditUserModal
-                  user={{
-                    id: u.id,
-                    name: u.name,
-                    email: u.email,
-                    role: u.role,
-                    jabatan: u.jabatan,
-                    bidang: u.bidang,
-                    notifyEmail: u.notifyEmail,
-                  }}
+                  user={editableUser(u)}
                   action={editAction}
                 />
 
@@ -288,14 +287,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         <EditUserModal
-                          user={{
-                            id: u.id,
-                            name: u.name,
-                            email: u.email,
-                            role: u.role,
-                            jabatan: u.jabatan,
-                            bidang: u.bidang,
-                          }}
+                          user={editableUser(u)}
                           action={editAction}
                         />
 

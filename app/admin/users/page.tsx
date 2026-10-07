@@ -76,6 +76,9 @@ export default async function UsersPage() {
       const role = formData.get("role") as string;
       const jabatan = (formData.get("jabatan") as string) || null;
       const bidang = (formData.get("bidang") as string) || null;
+      // Kolom yang TIDAK dikirim form berarti "jangan disentuh", bukan "kosongkan". Mengosongkan
+      // email notifikasi hanya terjadi kalau kolomnya ada dan sengaja dikosongkan admin.
+      const notifyProvided = formData.has("notifyEmail");
       const notify = parseNotifyEmail(formData.get("notifyEmail"));
       if (!notify.ok) return { error: notify.error };
 
@@ -101,7 +104,7 @@ export default async function UsersPage() {
         updateData.password = await bcrypt.hash(password, 10);
       }
 
-      let { error } = await supabaseAdmin.from("User").update({ ...updateData, notifyEmail: notify.value }).eq("id", id);
+      let { error } = await supabaseAdmin.from("User").update(notifyProvided ? { ...updateData, notifyEmail: notify.value } : updateData).eq("id", id);
       if (error?.code === "42703") {
         // Migrasi 037 belum dijalankan. Mengosongkan/menyimpan field lain tetap harus bisa; hanya
         // kalau admin benar-benar mengisi email notifikasi kita menolak, supaya tidak hilang diam-diam.
