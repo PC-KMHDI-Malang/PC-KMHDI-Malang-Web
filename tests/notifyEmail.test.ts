@@ -55,7 +55,19 @@ describe("notifyEmail — kanal email hanya memakai email asli", () => {
   };
   let requests: { url: string; body: unknown }[] = [];
 
-  const agenda = { id: "a1", slug: "rapat-abcde" } as Agenda;
+  const agenda = {
+    id: "a1",
+    title: "Rapat",
+    slug: "rapat-abcde",
+    kind: "RAPAT",
+    startAt: "2026-10-10T12:00:00.000Z",
+    endAt: null,
+    allDay: false,
+    location: "Sekretariat",
+    status: "PUBLISHED",
+    sendNotification: true,
+    audience: "SEMUA",
+  } as Agenda;
   const payload: NotifyPayload = { agenda, reason: "CREATED", title: "Agenda baru: Rapat", body: "Rapat · 19.00 WIB", path: "/agenda/rapat-abcde" };
 
   const withReal: NotifiableUser = { id: "u1", name: "Budi Santoso", email: "budi.login@kmhdimalang.org", notifyEmail: "budi.asli@gmail.com", role: "USER" };

@@ -33,7 +33,7 @@ export function buildNotificationContent(agenda: Pick<Agenda, "title" | "kind" |
 
   if (reason === "UPDATED") return { title: `Agenda diperbarui: ${agenda.title}`, body };
   if (reason === "REMINDER_H1") return { title: `Besok: ${agenda.title}`, body };
-  return { title: `Agenda Baru: ${agenda.title}`, body };
+  return { title: `Agenda baru: ${agenda.title}`, body };
 }
 
 function sameInstant(a: string | null | undefined, b: string | null | undefined): boolean {

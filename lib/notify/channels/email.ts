@@ -1,9 +1,11 @@
 import { Resend } from "resend";
 
+import { siteConfig } from "@/lib/site";
 import { absoluteAppLink } from "@/lib/notify/links";
 import { buildEmail } from "@/lib/notify/emailTemplate";
+import { buildEmailDetails } from "@/lib/notify/emailDetails";
 import type { ChannelResult, NotificationChannel, NotifyPayload } from "@/lib/notify/types";
-import type { NotifiableUser } from "@/lib/agenda";
+import { AGENDA_KIND_LABEL, type NotifiableUser } from "@/lib/agenda";
 
 // Kanal email lewat Resend. Aktif hanya kalau RESEND_API_KEY dan RESEND_FROM terisi — tanpa
 // keduanya, kanal ini dilewati diam-diam (bukan error), jadi lonceng tetap jalan sebelum
@@ -27,6 +29,11 @@ export const emailChannel: NotificationChannel = {
 
     const resend = new Resend(apiKey);
     const url = absoluteAppLink(payload.path);
+    // Sama untuk semua penerima, jadi dihitung sekali di luar loop.
+    const details = buildEmailDetails(payload.agenda);
+    // Logo diambil dari domain situs publik (bukan domain sistem): berkas statis itu terbuka tanpa login.
+    const logoUrl = `${siteConfig.url}/image/logo-192.png`;
+    const profileUrl = absoluteAppLink("/profile");
     // Alamat tujuan = notifyEmail (email asli), BUKAN User.email (nama login yang sering bukan
     // kotak masuk sungguhan dan akan memantul). Dispatcher sudah menyaring lewat canReach, ini
     // pengaman kedua kalau kanal dipanggil langsung.
@@ -35,7 +42,18 @@ export const emailChannel: NotificationChannel = {
     for (let i = 0; i < withEmail.length; i += BATCH_SIZE) {
       const chunk = withEmail.slice(i, i + BATCH_SIZE);
       const emails = chunk.map((user) => {
-        const content = buildEmail({ title: payload.title, body: payload.body, url, recipientName: user.name });
+        const content = buildEmail({
+          title: payload.title,
+          summary: payload.body,
+          url,
+          recipientName: user.name,
+          reason: payload.reason,
+          kindLabel: AGENDA_KIND_LABEL[payload.agenda.kind],
+          details,
+          changes: payload.changes,
+          logoUrl,
+          profileUrl,
+        });
         return { from, to: user.notifyEmail, subject: content.subject, html: content.html, text: content.text };
       });
 

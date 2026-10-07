@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { resolveAudience, type Agenda, type NotifiableUser } from "@/lib/agenda";
 import { agendaPath, buildNotificationContent, reasonKey, type NotifyReason } from "@/lib/notify/content";
+import { describeChanges } from "@/lib/notify/emailDetails";
 import { emailChannel } from "@/lib/notify/channels/email";
 import { inAppChannel } from "@/lib/notify/channels/inapp";
 import type { ChannelName, NotificationChannel, NotifyPayload } from "@/lib/notify/types";
@@ -119,7 +120,14 @@ async function settle(agendaId: string, channel: ChannelName, key: string, sent:
   }
 }
 
-export async function dispatchAgendaNotification(agenda: Agenda, reason: NotifyReason, channels: NotificationChannel[] = defaultChannels()): Promise<DispatchSummary> {
+// `options.before` = versi agenda SEBELUM diubah; dipakai hanya untuk reason "UPDATED", supaya
+// email bisa menampilkan apa yang berubah (mis. "19.00 → 20.00").
+export async function dispatchAgendaNotification(
+  agenda: Agenda,
+  reason: NotifyReason,
+  channels: NotificationChannel[] = defaultChannels(),
+  options: { before?: Agenda } = {},
+): Promise<DispatchSummary> {
   const dryRun = flag(process.env.NOTIFY_DRY_RUN);
   const testRecipient = process.env.NOTIFY_TEST_RECIPIENT?.trim();
   const mode: DispatchSummary["mode"] = dryRun ? "dry-run" : testRecipient ? "test" : "live";
@@ -135,7 +143,8 @@ export async function dispatchAgendaNotification(agenda: Agenda, reason: NotifyR
     if (!agenda.sendNotification) return { ...summary, skipped: "Agenda ini tidak memakai notifikasi." };
 
     const content = buildNotificationContent(agenda, reason);
-    const payloadBase = { agenda, reason, path: agendaPath(agenda) };
+    const changes = reason === "UPDATED" && options.before ? describeChanges(options.before, agenda) : undefined;
+    const payloadBase = { agenda, reason, path: agendaPath(agenda), changes };
     const recipients = resolveAudience(agenda, await fetchUsers());
     summary.recipients = recipients.length;
 

@@ -1,5 +1,6 @@
 import type { Agenda, NotifiableUser } from "@/lib/agenda";
 import type { NotifyReason } from "@/lib/notify/content";
+import type { EmailChange } from "@/lib/notify/emailDetails";
 
 // Kontrak kanal notifikasi. Menambah kanal baru = satu file yang mengimplementasi
 // NotificationChannel + satu entri di defaultChannels() (lib/notify/dispatch.ts). Dispatcher yang
@@ -16,6 +17,8 @@ export type NotifyPayload = {
   body: string;
   /** Path relatif halaman agenda; domain ditentukan kanal masing-masing. */
   path: string;
+  /** Yang berubah antara versi lama dan baru — hanya terisi untuk reason "UPDATED". */
+  changes?: EmailChange[];
 };
 
 export type ChannelResult = {

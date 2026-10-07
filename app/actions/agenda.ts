@@ -38,10 +38,10 @@ async function guard(): Promise<{ error: ActionResult } | { userId: string | nul
 // puluhan email terkirim, dan kegagalan pengiriman tidak pernah membuat penyimpanan agenda
 // terlihat gagal. dispatchAgendaNotification sendiri tidak melempar; try/catch ini hanya jaring
 // pengaman kalau after() dipanggil di luar konteks request.
-function notifyAfter(agenda: Agenda, reason: NotifyReason) {
+function notifyAfter(agenda: Agenda, reason: NotifyReason, before?: Agenda) {
   try {
     after(async () => {
-      await dispatchAgendaNotification(agenda, reason);
+      await dispatchAgendaNotification(agenda, reason, undefined, { before });
     });
   } catch (error) {
     console.error("[agenda] gagal menjadwalkan notifikasi:", error);
@@ -135,7 +135,7 @@ export async function updateAgendaAction(id: string, input: AgendaInput): Promis
   // notifikasinya mati; pengumuman pertama kalau notifikasi baru dinyalakan; "diperbarui" kalau
   // jadwal/tempat/judul berubah. Koreksi kecil (mis. typo deskripsi) tidak membanjiri anggota.
   const next = decideUpdateNotification(before as Agenda, updated);
-  if (next) notifyAfter(updated, next);
+  if (next) notifyAfter(updated, next, before as Agenda);
   return ok;
 }
 
