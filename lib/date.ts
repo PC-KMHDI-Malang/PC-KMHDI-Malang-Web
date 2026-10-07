@@ -22,9 +22,17 @@ export function isValidDateOnly(date: unknown): date is string {
   return typeof date === "string" && DATE_ONLY_RE.test(date) && !Number.isNaN(Date.parse(date));
 }
 
+// Intl.DateTimeFormat mahal dibuat (puluhan–ratusan mikrodetik, membaca data locale) tapi murah
+// dipakai. Dibuat SEKALI di sini, bukan di setiap pemanggilan: fungsi-fungsi di bawah dipanggil
+// untuk setiap agenda/iuran di setiap render, jadi membuatnya berulang membuat daftar yang panjang
+// melambat (diukur: 500 agenda butuh ±53 ms hanya untuk menentukan status waktunya).
+const DATE_FORMAT = new Intl.DateTimeFormat("en-CA", { timeZone: JAKARTA_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" });
+const TIME_FORMAT = new Intl.DateTimeFormat("id-ID", { timeZone: JAKARTA_TIME_ZONE, hour: "2-digit", minute: "2-digit" });
+const TIME_INPUT_FORMAT = new Intl.DateTimeFormat("en-GB", { timeZone: JAKARTA_TIME_ZONE, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+
 // "Hari ini" di WIB, format YYYY-MM-DD. en-CA dipilih karena formatnya memang YYYY-MM-DD.
 export function todayInJakarta(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: JAKARTA_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  return DATE_FORMAT.format(now);
 }
 
 // Tanggal WIB (YYYY-MM-DD) dari sebuah timestamp — mis. kolom TIMESTAMPTZ dari database.
@@ -38,7 +46,7 @@ export function dateInJakarta(value: Date | string): string {
 export function timeInJakarta(value: Date | string): string {
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("id-ID", { timeZone: JAKARTA_TIME_ZONE, hour: "2-digit", minute: "2-digit" }).format(date);
+  return TIME_FORMAT.format(date);
 }
 
 // Jam WIB dalam format "HH:mm" (pemisah titik dua) — format yang diminta <input type="time">,
@@ -47,7 +55,7 @@ export function timeInJakarta(value: Date | string): string {
 export function timeInputInJakarta(value: Date | string): string {
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("en-GB", { timeZone: JAKARTA_TIME_ZONE, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date);
+  return TIME_INPUT_FORMAT.format(date);
 }
 
 // Geser tanggal YYYY-MM-DD sebanyak `days` hari. Dihitung lewat UTC murni (bukan zona waktu

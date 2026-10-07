@@ -30,6 +30,17 @@ async function currentMemberId(): Promise<string | null> {
   return session.user.id;
 }
 
+// Hanya JUMLAH belum dibaca (satu query ringan, tanpa isi) — dipakai lonceng setiap kali halaman
+// dimuat. Daftar lengkapnya baru diambil (getMyNotificationsAction) saat lonceng DIBUKA, jadi
+// kebanyakan kunjungan halaman tidak membayar query kedua yang tidak pernah dilihat.
+export async function getMyUnreadCountAction(): Promise<number> {
+  const userId = await currentMemberId();
+  if (!userId) return 0;
+
+  const { count, error } = await supabaseAdmin.from("Notification").select("id", { count: "exact", head: true }).eq("userId", userId).is("readAt", null);
+  return error ? 0 : (count ?? 0);
+}
+
 // Gagal membaca (mis. tabel belum dimigrasi) dianggap "tidak ada notifikasi": lonceng bukan
 // fitur kritis, dan tidak boleh memunculkan error di setiap halaman yang memuat navbar.
 export async function getMyNotificationsAction(): Promise<MyNotifications> {
@@ -52,6 +63,8 @@ export async function markNotificationsReadAction(ids?: string[]): Promise<{ suc
 
   let query = supabaseAdmin.from("Notification").update({ readAt: new Date().toISOString() }).eq("userId", userId).is("readAt", null);
 
+  // Server Action = endpoint publik: argumennya bisa berupa apa saja, bukan hanya yang dikirim UI.
+  if (ids !== undefined && !Array.isArray(ids)) return { success: false };
   if (ids !== undefined) {
     const valid = ids.filter((id): id is string => typeof id === "string" && id.length > 0).slice(0, 50);
     if (valid.length === 0) return { success: true };

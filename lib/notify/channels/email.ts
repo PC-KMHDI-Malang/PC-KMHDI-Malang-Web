@@ -1,5 +1,3 @@
-import { Resend } from "resend";
-
 import { siteConfig } from "@/lib/site";
 import { absoluteAppLink } from "@/lib/notify/links";
 import { buildEmail } from "@/lib/notify/emailTemplate";
@@ -27,6 +25,10 @@ export const emailChannel: NotificationChannel = {
     const from = process.env.RESEND_FROM;
     if (!apiKey || !from) return result;
 
+    // Diimpor saat dibutuhkan, bukan di puncak berkas: modul ini ikut dimuat oleh setiap Server Action
+    // agenda (menyimpan, menerbitkan, menghapus), dan sebagian besar di antaranya tidak mengirim
+    // email — jadi pustaka Resend tidak ikut memperlambat start dingin yang tidak butuh.
+    const { Resend } = await import("resend");
     const resend = new Resend(apiKey);
     const url = absoluteAppLink(payload.path);
     // Sama untuk semua penerima, jadi dihitung sekali di luar loop.

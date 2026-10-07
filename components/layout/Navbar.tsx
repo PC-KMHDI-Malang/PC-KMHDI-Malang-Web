@@ -13,7 +13,11 @@ import { isSecretaryEmail } from "@/lib/agenda";
 import { appUrl, siteUrl } from "@/lib/appHost";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { LoginModal } from "@/components/auth/LoginModal";
-import { NotificationBell } from "@/components/layout/NotificationBell";
+import dynamic from "next/dynamic";
+
+// Lonceng hanya dirender untuk anggota yang login (showAgenda), jadi kodenya tidak perlu ikut
+// diunduh pengunjung biasa — yang merupakan sebagian besar lalu lintas situs publik.
+const NotificationBell = dynamic(() => import("@/components/layout/NotificationBell").then((mod) => mod.NotificationBell), { ssr: false });
 
 type SubMenu = {
   title: string;

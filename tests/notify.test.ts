@@ -50,7 +50,7 @@ describe("notify — kunci idempotensi (reasonKey)", () => {
 
 describe("notify — isi notifikasi", () => {
   it("membedakan judul untuk baru, diperbarui, dan pengingat", () => {
-    assert.equal(buildNotificationContent(agenda, "CREATED").title, "Agenda Baru: Rapat Pleno");
+    assert.equal(buildNotificationContent(agenda, "CREATED").title, "Agenda baru: Rapat Pleno");
     assert.equal(buildNotificationContent(agenda, "UPDATED").title, "Agenda diperbarui: Rapat Pleno");
     assert.equal(buildNotificationContent(agenda, "REMINDER_H1").title, "Besok: Rapat Pleno");
   });
@@ -113,7 +113,8 @@ const full = {
   locationDetail: "https://meet.example/ruang",
   internalNote: "Bawa laptop",
   status: "PUBLISHED",
-  sendNotification: true,
+  remindH1: true,
+  announcedAt: null,
   audience: "SEMUA",
   audienceBidang: null,
 } as Agenda;
@@ -208,7 +209,7 @@ describe("notify — apa yang berubah", () => {
 });
 
 describe("notify — templat email", () => {
-  const base = { title: "Agenda Baru: Rapat Pleno", summary: "ringkasan", url: "https://apps.kmhdimalang.org/agenda/rapat-pleno-abcde", details: buildEmailDetails(full) };
+  const base = { title: "Agenda baru: Rapat Pleno", summary: "ringkasan", url: "https://apps.kmhdimalang.org/agenda/rapat-pleno-abcde", details: buildEmailDetails(full) };
 
   it("meng-escape karakter HTML", () => {
     assert.equal(escapeHtml(`<b>"A" & 'B'</b>`), "&lt;b&gt;&quot;A&quot; &amp; &#39;B&#39;&lt;/b&gt;");
@@ -281,7 +282,7 @@ describe("notify — templat email", () => {
 
   it("subjek = judul; versi teks memuat rincian dan tautan", () => {
     const email = buildEmail({ ...base, changes: [{ label: "Lokasi", from: "A", to: "B" }], reason: "UPDATED" });
-    assert.equal(email.subject, "Agenda Baru: Rapat Pleno");
+    assert.equal(email.subject, "Agenda baru: Rapat Pleno");
     for (const needle of ["Sabtu, 10 Oktober 2026", "19.00 – 21.00 WIB", "Sekretariat", "https://meet.example/ruang", "Semua anggota", "Lokasi: A -> B", "Evaluasi program kerja.", "Bawa laptop", base.url]) {
       assert.equal(email.text.includes(needle), true, needle);
     }

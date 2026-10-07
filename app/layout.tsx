@@ -147,7 +147,11 @@ export default function RootLayout({
             async
             src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5436747793264342"
             crossOrigin="anonymous"
-            strategy="afterInteractive"
+            // lazyOnload: dimuat setelah halaman selesai dan browser menganggur, bukan berebut
+            // dengan hidrasi. Skrip iklan itu berat dan tidak dibutuhkan untuk isi halaman; iklan
+            // di artikel (InArticleAd) memakai antrean adsbygoogle sehingga tetap tampil begitu
+            // skripnya siap.
+            strategy="lazyOnload"
           />
         )}
       </head>

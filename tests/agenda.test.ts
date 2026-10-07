@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isAppPath } from "@/lib/appHost";
-import { decideUpdateNotification } from "@/lib/notify/content";
+import { hasPendingChange } from "@/lib/notify/content";
 import { addDays, dateInJakarta, jakartaDayRange, timeInputInJakarta, todayInJakarta, tomorrowInJakarta } from "@/lib/date";
 import { BIDANG_OPTIONS, isSameBidang, isTargetableBidang } from "@/lib/bidang";
 import { currentPeriod, isKasMember, isTreasurerEmail } from "@/lib/kas";
 import {
   SECRETARY_EMAIL,
   agendaStatus,
+  canAnnounceAgenda,
   canViewAgenda,
   describeAudience,
   formatAgendaRange,
@@ -22,6 +23,7 @@ import {
   resolveMonthParam,
   shiftMonthParam,
   slugifyAgenda,
+  takeSnapshot,
   type Agenda,
 } from "@/lib/agenda";
 
@@ -38,7 +40,9 @@ const baseAgenda: Agenda = {
   locationDetail: "https://meet.example/ruang",
   internalNote: "Bawa laptop",
   status: "PUBLISHED",
-  sendNotification: true,
+  remindH1: true,
+  announcedAt: null,
+  notifiedSnapshot: null,
   audience: "BIDANG",
   audienceBidang: ["Kaderisasi"],
   createdBy: "u-sekretaris",
@@ -321,19 +325,17 @@ describe("agenda — parser input form", () => {
 
   it("menolak enum yang tidak dikenal", () => {
     assert.equal(parseAgendaInput({ ...valid, kind: "RAHASIA" }).ok, false);
-    // Audiens hanya dihitung kalau notifikasi menyala.
-    assert.equal(parseAgendaInput({ ...valid, sendNotification: true, audience: "SEMUA-ORANG" }).ok, false);
+    assert.equal(parseAgendaInput({ ...valid, audience: "SEMUA-ORANG" }).ok, false);
   });
 
   it("audiens BIDANG wajib punya minimal satu bidang yang dikenal", () => {
-    const on = { ...valid, sendNotification: true };
-    assert.equal(parseAgendaInput({ ...on, audience: "BIDANG", audienceBidang: [] }).ok, false);
-    assert.equal(parseAgendaInput({ ...on, audience: "BIDANG", audienceBidang: ["Bidang Palsu"] }).ok, false);
-    assert.equal(parseAgendaInput({ ...on, audience: "BIDANG", audienceBidang: ["Tidak Ada"] }).ok, false);
+    assert.equal(parseAgendaInput({ ...valid, audience: "BIDANG", audienceBidang: [] }).ok, false);
+    assert.equal(parseAgendaInput({ ...valid, audience: "BIDANG", audienceBidang: ["Bidang Palsu"] }).ok, false);
+    assert.equal(parseAgendaInput({ ...valid, audience: "BIDANG", audienceBidang: ["Tidak Ada"] }).ok, false);
   });
 
   it("menormalkan ejaan bidang ke bentuk baku dan membuang duplikat", () => {
-    const r = parseAgendaInput({ ...valid, sendNotification: true, audience: "BIDANG", audienceBidang: ["kaderisasi", " KADERISASI ", "litbang", "Entah"] });
+    const r = parseAgendaInput({ ...valid, audience: "BIDANG", audienceBidang: ["kaderisasi", " KADERISASI ", "litbang", "Entah"] });
     assert.equal(r.ok, true);
     if (!r.ok) return;
     assert.deepEqual(r.value.audienceBidang, ["Kaderisasi", "Litbang"]);
@@ -435,77 +437,99 @@ describe("agenda — daftar Akan Datang menyertakan yang sedang berlangsung", ()
   });
 });
 
-describe("agenda — toggle kirim notifikasi", () => {
+describe("agenda — pengingat H-1 dan pengumuman", () => {
   const valid = { title: "Rapat", kind: "RAPAT", startDate: "2026-10-10", startTime: "19:00", endTime: "21:00" };
 
-  it("mati secara default: tanpa isian, agenda tidak memakai notifikasi", () => {
-    const r = parseAgendaInput(valid);
-    assert.equal(r.ok, true);
-    if (!r.ok) return;
-    assert.equal(r.value.sendNotification, false);
-  });
-
-  it("menyala hanya untuk nilai yang jelas (true / 'true' / 'on')", () => {
+  it("pengingat H-1 hanya menyala untuk nilai yang jelas (true / 'true' / 'on')", () => {
     for (const value of [true, "true", "on"]) {
-      const r = parseAgendaInput({ ...valid, sendNotification: value });
-      assert.equal(r.ok && r.value.sendNotification, true, String(value));
+      const r = parseAgendaInput({ ...valid, remindH1: value });
+      assert.equal(r.ok && r.value.remindH1, true, String(value));
     }
     for (const value of [false, "false", "off", "", 0, null, undefined, "yes", 1]) {
-      const r = parseAgendaInput({ ...valid, sendNotification: value });
-      assert.equal(r.ok && r.value.sendNotification, false, String(value));
+      const r = parseAgendaInput({ ...valid, remindH1: value });
+      assert.equal(r.ok && r.value.remindH1, false, String(value));
     }
   });
 
-  it("notifikasi mati: pilihan audiens sisa di form diabaikan, tidak menggagalkan penyimpanan", () => {
-    // Sekretaris sempat memilih 'Bidang tertentu' tanpa mencentang bidang, lalu mematikan toggle.
-    const r = parseAgendaInput({ ...valid, sendNotification: false, audience: "BIDANG", audienceBidang: [] });
-    assert.equal(r.ok, true);
-    if (!r.ok) return;
-    assert.equal(r.value.audience, "SEMUA");
-    assert.equal(r.value.audienceBidang, null);
+  it("penerima selalu diperiksa, karena dipakai pengumuman maupun pengingat", () => {
+    assert.equal(parseAgendaInput({ ...valid, remindH1: false, audience: "ASAL" }).ok, false);
+    assert.equal(parseAgendaInput({ ...valid, remindH1: false, audience: "BIDANG", audienceBidang: [] }).ok, false);
   });
 
-  it("notifikasi mati: audiens sampah pun tidak ditolak", () => {
-    assert.equal(parseAgendaInput({ ...valid, sendNotification: false, audience: "ASAL" }).ok, true);
+  it("form tidak bisa menyelundupkan penanda pengumuman atau snapshot", () => {
+    const r = parseAgendaInput({ ...valid, announcedAt: "2026-01-01T00:00:00Z", notifiedSnapshot: { title: "x" } } as never);
+    assert.equal(r.ok, true);
+    if (!r.ok) return;
+    assert.equal("announcedAt" in r.value, false);
+    assert.equal("notifiedSnapshot" in r.value, false);
+  });
+
+  it("agenda hanya bisa diumumkan kalau terbit dan belum lewat", () => {
+    const now = new Date("2026-10-10T10:00:00.000Z"); // 17.00 WIB tgl 10
+    const published = { status: "PUBLISHED" as const, startAt: "2026-10-10T12:00:00.000Z", endAt: "2026-10-10T14:00:00.000Z", allDay: false };
+    assert.equal(canAnnounceAgenda(published, now), true);
+    assert.equal(canAnnounceAgenda({ ...published, status: "DRAFT" }, now), false);
+    // sudah selesai
+    assert.equal(canAnnounceAgenda(published, new Date("2026-10-10T15:00:00.000Z")), false);
+    // sedang berlangsung masih boleh
+    assert.equal(canAnnounceAgenda(published, new Date("2026-10-10T13:00:00.000Z")), true);
   });
 });
 
-describe("agenda — keputusan notifikasi setelah agenda diubah", () => {
-  const base = {
-    status: "PUBLISHED" as const,
-    sendNotification: true,
-    title: "Rapat Pleno",
-    startAt: "2026-10-10T12:00:00.000Z",
-    endAt: "2026-10-10T14:00:00.000Z",
-    allDay: false,
-    location: "Sekretariat",
-    locationDetail: null as string | null,
+describe("agenda — status 'ada perubahan' setelah diumumkan", () => {
+  const announced = {
+    ...baseAgenda,
+    announcedAt: "2026-10-01T03:00:00.000Z",
+    notifiedSnapshot: takeSnapshot(baseAgenda),
   };
 
-  it("draft tidak pernah memicu notifikasi", () => {
-    assert.equal(decideUpdateNotification(base, { ...base, status: "DRAFT", location: "Aula" }), null);
+  it("snapshot memuat tepat kolom yang dianggap perubahan penting", () => {
+    assert.deepEqual(Object.keys(takeSnapshot(baseAgenda)).sort(), ["allDay", "endAt", "location", "locationDetail", "startAt", "title"]);
   });
 
-  it("notifikasi mati tidak memicu apa pun, walau jadwalnya berubah", () => {
-    const off = { ...base, sendNotification: false };
-    assert.equal(decideUpdateNotification(off, { ...off, startAt: "2026-10-11T12:00:00.000Z" }), null);
+  it("belum diumumkan = tidak pernah 'ada perubahan'", () => {
+    assert.equal(hasPendingChange({ ...baseAgenda, location: "Aula" }), false);
+    assert.equal(hasPendingChange({ ...announced, announcedAt: null, location: "Aula" }), false);
   });
 
-  it("notifikasi baru DINYALAKAN pada agenda terbit = pengumuman pertama", () => {
-    assert.equal(decideUpdateNotification({ ...base, sendNotification: false }, base), "CREATED");
+  it("tanpa snapshot (data lama) tidak dianggap berubah", () => {
+    assert.equal(hasPendingChange({ ...announced, notifiedSnapshot: null, location: "Aula" }), false);
   });
 
-  it("notifikasi sudah menyala + jadwal/tempat/judul berubah = diperbarui", () => {
-    assert.equal(decideUpdateNotification(base, { ...base, startAt: "2026-10-11T12:00:00.000Z" }), "UPDATED");
-    assert.equal(decideUpdateNotification(base, { ...base, location: "Aula" }), "UPDATED");
-    assert.equal(decideUpdateNotification(base, { ...base, title: "Rapat Pleno II" }), "UPDATED");
+  it("sudah diumumkan dan tidak ada yang berubah = tidak ada perubahan", () => {
+    assert.equal(hasPendingChange(announced), false);
   });
 
-  it("notifikasi sudah menyala tapi tidak ada perubahan berarti = tidak ada", () => {
-    assert.equal(decideUpdateNotification(base, { ...base }), null);
+  it("jadwal, tempat, judul, atau tautan yang berubah = ada perubahan", () => {
+    assert.equal(hasPendingChange({ ...announced, startAt: "2026-10-10T13:00:00.000Z" }), true);
+    assert.equal(hasPendingChange({ ...announced, endAt: null }), true);
+    assert.equal(hasPendingChange({ ...announced, allDay: true }), true);
+    assert.equal(hasPendingChange({ ...announced, location: "Aula" }), true);
+    assert.equal(hasPendingChange({ ...announced, locationDetail: "https://meet.example/lain" }), true);
+    assert.equal(hasPendingChange({ ...announced, title: "Rapat Pleno II" }), true);
   });
 
-  it("notifikasi DIMATIKAN pada agenda yang sudah diumumkan tidak mengirim apa pun", () => {
-    assert.equal(decideUpdateNotification(base, { ...base, sendNotification: false }), null);
+  it("koreksi deskripsi/catatan/penerima/pengingat bukan perubahan", () => {
+    const corrected = { ...announced, description: "Teks baru", internalNote: "Lain", remindH1: false, audience: "SEMUA" as const };
+    assert.equal(hasPendingChange(corrected), false);
+  });
+
+  it("beberapa kali edit tetap satu perubahan, dan dikembalikan seperti semula = tidak ada perubahan", () => {
+    const edited = { ...announced, location: "Aula" };
+    const editedAgain = { ...edited, startAt: "2026-10-10T13:00:00.000Z" };
+    assert.equal(hasPendingChange(edited), true);
+    assert.equal(hasPendingChange(editedAgain), true);
+    // dikembalikan persis seperti yang diketahui anggota
+    assert.equal(hasPendingChange({ ...editedAgain, location: baseAgenda.location, startAt: baseAgenda.startAt }), false);
+  });
+
+  it("format timestamp berbeda untuk waktu yang sama bukan perubahan", () => {
+    assert.equal(hasPendingChange({ ...announced, startAt: "2026-10-10T12:00:00+00:00", endAt: "2026-10-10T14:00:00+00:00" }), false);
+  });
+
+  it("setelah pembaruan dikirim (snapshot dimajukan), status kembali bersih", () => {
+    const changed = { ...announced, location: "Aula" };
+    assert.equal(hasPendingChange(changed), true);
+    assert.equal(hasPendingChange({ ...changed, notifiedSnapshot: takeSnapshot(changed) }), false);
   });
 });

@@ -4,12 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, CheckCheck } from "lucide-react";
 
-import { getMyNotificationsAction, markNotificationsReadAction, type MyNotifications } from "@/app/actions/notification";
+import { getMyNotificationsAction, getMyUnreadCountAction, markNotificationsReadAction, type MyNotifications } from "@/app/actions/notification";
 import { appUrl } from "@/lib/appHost";
 
-// Lonceng notifikasi agenda di navbar. Datanya diambil lewat Server Action saat komponen muncul,
-// saat dibuka, dan saat tab kembali difokuskan — tanpa polling terus-menerus. Hanya dirender
-// untuk anggota (lihat showAgenda di Navbar); action-nya sendiri juga menolak non-anggota.
+// Lonceng notifikasi agenda di navbar. Saat komponen muncul dan saat tab kembali difokuskan hanya
+// JUMLAH belum dibaca yang diambil (satu query ringan); isi daftarnya baru diambil saat lonceng
+// DIBUKA. Tanpa polling terus-menerus. Hanya dirender untuk anggota (lihat showAgenda di Navbar);
+// action-nya sendiri juga menolak non-anggota.
 
 function timeAgo(iso: string, now: number = Date.now()): string {
   const seconds = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 1000));
@@ -28,6 +29,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
+  // Daftar lengkap + jumlah (dipakai saat lonceng dibuka).
   const refresh = useCallback(async () => {
     try {
       setData(await getMyNotificationsAction());
@@ -36,27 +38,37 @@ export function NotificationBell() {
     }
   }, []);
 
+  // Hanya jumlahnya; daftar yang sudah dimuat dibiarkan apa adanya.
+  const refreshCount = useCallback(async () => {
+    try {
+      const unread = await getMyUnreadCountAction();
+      setData((prev) => (prev.unread === unread ? prev : { ...prev, unread }));
+    } catch {
+      // diam, lihat catatan di atas
+    }
+  }, []);
+
   useEffect(() => {
     // Pembacaan awal. `cancelled` mencegah setState setelah komponen sudah dilepas (mis. pindah
     // halaman sebelum jawaban server datang).
     let cancelled = false;
-    getMyNotificationsAction()
-      .then((next) => {
-        if (!cancelled) setData(next);
+    getMyUnreadCountAction()
+      .then((unread) => {
+        if (!cancelled) setData((prev) => ({ ...prev, unread }));
       })
       .catch(() => {
         // Lonceng bukan fitur kritis: gagal memuat dibiarkan diam.
       });
 
     const onVisible = () => {
-      if (document.visibilityState === "visible") void refresh();
+      if (document.visibilityState === "visible") void refreshCount();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [refresh]);
+  }, [refreshCount]);
 
   useEffect(() => {
     if (!open) return;

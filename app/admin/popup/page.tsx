@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/guard";
 import { supabaseAdmin } from "@/lib/supabase";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { AlertCircle, Megaphone } from "lucide-react";
 import { PopupAdForm } from "@/components/admin/PopupAdForm";
 import { STORAGE_BUCKETS, deleteFromBucketByUrl } from "@/lib/storage";
@@ -26,6 +26,9 @@ export default async function AdminPopupPage() {
       await deleteFromBucketByUrl(STORAGE_BUCKETS.popupAds, popup.imageUrl);
     }
 
+    // Layout publik membaca popup lewat cache lintas-request (lib/queries.ts getPopupAd) — bersihkan
+    // supaya perubahan langsung terlihat, bukan menunggu pengaman 5 menit.
+    updateTag("popup-ad");
     revalidatePath("/admin/popup");
     // Pop-up ini dibaca di app/(public)/layout.tsx dan tampil di semua halaman publik. Halaman
     // yang sudah di-cache statis (lihat catatan "Di-cache" di masing-masing file) tidak ikut

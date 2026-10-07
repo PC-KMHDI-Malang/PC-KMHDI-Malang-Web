@@ -56,18 +56,16 @@ export function hasMeaningfulChange(before: Pick<Agenda, "title" | "startAt" | "
   );
 }
 
-// Notifikasi apa (kalau ada) yang harus dikirim setelah sebuah agenda DIUBAH. Dipisah jadi fungsi
-// murni supaya semua kombinasi toggle "Kirim notifikasi" teruji:
-//  - belum terbit, atau notifikasi mati       -> tidak ada;
-//  - notifikasi baru DINYALAKAN pada agenda   -> "CREATED": itulah pengumuman pertamanya
-//    yang sudah terbit                           (kunci idempotensi mencegah ganda kalau pernah);
-//  - notifikasi sudah menyala dan jadwal/tempat/judul berubah -> "UPDATED";
-//  - selain itu (mis. typo di deskripsi)      -> tidak ada.
-export function decideUpdateNotification(
-  before: Pick<Agenda, "sendNotification" | "title" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail">,
-  after: Pick<Agenda, "status" | "sendNotification" | "title" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail">,
-): NotifyReason | null {
-  if (after.status !== "PUBLISHED" || !after.sendNotification) return null;
-  if (!before.sendNotification) return "CREATED";
-  return hasMeaningfulChange(before, after) ? "UPDATED" : null;
+// Apakah agenda yang SUDAH diumumkan berubah (judul/jadwal/tempat/tautan) sejak keadaan terakhir
+// yang diberitahukan ke anggota? Dihitung dari perbandingan dengan snapshot, bukan dari bendera
+// yang dipasang saat edit — jadi:
+//  - beberapa kali edit berturut-turut tetap SATU "ada perubahan" (dan satu pembaruan dengan selisih
+//    bersihnya);
+//  - edit yang dikembalikan seperti semula otomatis tidak lagi dianggap perubahan;
+//  - koreksi kecil (typo di deskripsi) tidak pernah dianggap perubahan.
+// Agenda yang belum diumumkan tidak punya "perubahan": anggota belum tahu apa-apa tentangnya.
+// Pembaruan TIDAK dikirim otomatis; sekretaris menekan "Kirim pembaruan".
+export function hasPendingChange(agenda: Pick<Agenda, "announcedAt" | "notifiedSnapshot" | "title" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail">): boolean {
+  if (!agenda.announcedAt || !agenda.notifiedSnapshot) return false;
+  return hasMeaningfulChange(agenda.notifiedSnapshot, agenda);
 }

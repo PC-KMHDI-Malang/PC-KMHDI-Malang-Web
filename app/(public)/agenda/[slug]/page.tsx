@@ -76,11 +76,9 @@ export default async function AgendaDetailPage({ params }: { params: Promise<Par
                 )}
               </Row>
             )}
-            {agenda.sendNotification && (
-              <Row icon={Users} label="Peserta">
-                {describeAudience(agenda)}
-              </Row>
-            )}
+            <Row icon={Users} label="Peserta">
+              {describeAudience(agenda)}
+            </Row>
           </dl>
 
           {agenda.description && (

@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, User as UserIcon } from "lucide-react";
 import { SafeImage } from "@/components/ui/SafeImage";
-import { stripHtml } from "@/lib/richText";
 
 type FeaturedNews = {
   id: string;
   slug: string;
   title: string;
-  content: string;
+  /** Cuplikan teks polos (sudah dibuat di server). */
+  snippet: string;
   coverImage: string;
   publishedAt: string | null;
   createdAt: string;
@@ -80,7 +80,7 @@ export function FeaturedNewsSlider({ items }: { items: FeaturedNews[] }) {
                   <div className="p-8 lg:p-10 flex flex-col justify-center h-full bg-white dark:bg-[#1A1A1A]">
                     <span className="inline-flex self-start rounded-full bg-red-100 dark:bg-red-900/30 px-3 py-1 text-xs font-bold text-red-700 dark:text-red-400 uppercase tracking-wide mb-4">{item.Category?.name || "UMUM"}</span>
                     <h2 className="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white leading-snug group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-3">{item.title}</h2>
-                    {item.content && <p className="mt-4 text-slate-600 dark:text-neutral-400 leading-relaxed line-clamp-3 text-sm lg:text-base">{stripHtml(item.content)}</p>}
+                    {item.snippet && <p className="mt-4 text-slate-600 dark:text-neutral-400 leading-relaxed line-clamp-3 text-sm lg:text-base">{item.snippet}</p>}
                     <div className="mt-6 flex items-center gap-5 text-sm text-slate-500 dark:text-neutral-500">
                       <span className="inline-flex items-center gap-1.5">
                         <UserIcon size={14} />

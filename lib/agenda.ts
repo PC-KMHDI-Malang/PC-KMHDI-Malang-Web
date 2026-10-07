@@ -41,6 +41,31 @@ export type AgendaStatus = (typeof AGENDA_STATUSES)[number];
 export const AGENDA_AUDIENCES = ["SEMUA", "BIDANG"] as const;
 export type AgendaAudience = (typeof AGENDA_AUDIENCES)[number];
 
+/**
+ * Keadaan agenda yang TERAKHIR diberitahukan ke anggota: persis kolom-kolom yang dianggap "perubahan
+ * penting" (lihat hasMeaningfulChange di lib/notify/content.ts). Disimpan saat pengumuman dan setiap
+ * kali pembaruan dikirim, lalu dibandingkan dengan keadaan sekarang untuk status "Ada perubahan".
+ */
+export type AgendaSnapshot = {
+  title: string;
+  startAt: string;
+  endAt?: string | null;
+  allDay: boolean;
+  location?: string | null;
+  locationDetail?: string | null;
+};
+
+export function takeSnapshot(agenda: Pick<Agenda, "title" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail">): AgendaSnapshot {
+  return {
+    title: agenda.title,
+    startAt: agenda.startAt,
+    endAt: agenda.endAt ?? null,
+    allDay: agenda.allDay,
+    location: agenda.location ?? null,
+    locationDetail: agenda.locationDetail ?? null,
+  };
+}
+
 /** Satu baris tabel Agenda, apa adanya dari database. */
 export type Agenda = {
   id: string;
@@ -57,8 +82,12 @@ export type Agenda = {
   /** Catatan untuk peserta. */
   internalNote?: string | null;
   status: AgendaStatus;
-  /** false = hanya tampil di kalender: tanpa lonceng, email, maupun pengingat H-1. */
-  sendNotification: boolean;
+  /** true = anggota diingatkan sehari sebelum acara (otomatis). Berdiri sendiri dari pengumuman. */
+  remindH1: boolean;
+  /** Kapan sekretaris mengumumkan agenda ini ke anggota. null/kosong = belum diumumkan. */
+  announcedAt?: string | null;
+  /** Keadaan yang terakhir diberitahukan ke anggota; pembandingnya adalah keadaan sekarang. */
+  notifiedSnapshot?: AgendaSnapshot | null;
   audience: AgendaAudience;
   audienceBidang?: string[] | null;
   coverImage?: string | null;
@@ -210,6 +239,12 @@ export function pickUpcoming<T extends Pick<Agenda, "startAt" | "endAt" | "allDa
     .slice(0, limit);
 }
 
+// Agenda hanya bisa diumumkan kalau sudah terbit dan belum lewat: mengumumkan kegiatan yang sudah
+// selesai tidak berguna dan hanya membingungkan anggota.
+export function canAnnounceAgenda(agenda: Pick<Agenda, "status" | "startAt" | "endAt" | "allDay">, now: Date = new Date()): boolean {
+  return agenda.status === "PUBLISHED" && agendaStatus(agenda, now) !== "SELESAI";
+}
+
 export const AGENDA_STATUS_LABEL: Record<AgendaTimeStatus, string> = {
   AKAN_DATANG: "Akan datang",
   BERLANGSUNG: "Berlangsung",
@@ -318,7 +353,7 @@ export type AgendaInput = {
   location?: unknown;
   locationDetail?: unknown;
   internalNote?: unknown;
-  sendNotification?: unknown;
+  remindH1?: unknown;
   audience?: unknown;
   audienceBidang?: unknown;
 };
@@ -326,7 +361,7 @@ export type AgendaInput = {
 /** Field Agenda yang siap ditulis ke database (tanpa id/slug/status/createdBy). */
 export type ParsedAgenda = Pick<
   Agenda,
-  "title" | "description" | "kind" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail" | "internalNote" | "sendNotification" | "audience" | "audienceBidang"
+  "title" | "description" | "kind" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail" | "internalNote" | "remindH1" | "audience" | "audienceBidang"
 >;
 
 export type ParseResult = { ok: true; value: ParsedAgenda } | { ok: false; error: string };
@@ -360,11 +395,10 @@ export function parseAgendaInput(input: AgendaInput): ParseResult {
   const kind = input.kind ?? "KEGIATAN";
   if (!isAgendaKind(kind)) return { ok: false, error: "Jenis agenda tidak valid." };
 
-  const sendNotification = input.sendNotification === true || input.sendNotification === "true" || input.sendNotification === "on";
+  const remindH1 = input.remindH1 === true || input.remindH1 === "true" || input.remindH1 === "on";
 
-  // Tanpa notifikasi, "penerima" tidak berarti apa-apa: dipaksa SEMUA (dan tanpa daftar bidang)
-  // supaya sisa pilihan lama di form tidak membuat validasi gagal atau menyimpan data tak terpakai.
-  const audience = sendNotification ? (input.audience ?? "SEMUA") : "SEMUA";
+  // Penerima selalu bermakna: dipakai pengumuman maupun pengingat, jadi selalu divalidasi.
+  const audience = input.audience ?? "SEMUA";
   if (!isAgendaAudience(audience)) return { ok: false, error: "Penerima notifikasi tidak valid." };
 
   const allDay = input.allDay === true || input.allDay === "true" || input.allDay === "on";
@@ -432,7 +466,7 @@ export function parseAgendaInput(input: AgendaInput): ParseResult {
       location: text(input.location, AGENDA_LIMITS.location),
       locationDetail: text(input.locationDetail, AGENDA_LIMITS.locationDetail),
       internalNote: text(input.internalNote, AGENDA_LIMITS.internalNote),
-      sendNotification,
+      remindH1,
       audience,
       audienceBidang,
     },

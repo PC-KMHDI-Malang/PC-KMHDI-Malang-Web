@@ -40,8 +40,19 @@ export function SessionAutoLogout({ timeoutMinutes = 120 }: SessionAutoLogoutPro
 
     const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"];
 
+    // mousemove dan scroll bisa menyala puluhan sampai ratusan kali per detik; mengulang timer di
+    // setiap kejadian itu pekerjaan sia-sia (clearTimeout + setTimeout berulang) tanpa mengubah
+    // hasil apa pun, karena batasnya berjam-jam. Cukup sekali per detik.
+    let lastReset = 0;
+    const onActivity = () => {
+      const now = Date.now();
+      if (now - lastReset < 1000) return;
+      lastReset = now;
+      resetTimer();
+    };
+
     events.forEach((event) => {
-      window.addEventListener(event, resetTimer, { passive: true });
+      window.addEventListener(event, onActivity, { passive: true });
     });
 
     resetTimer();
@@ -51,7 +62,7 @@ export function SessionAutoLogout({ timeoutMinutes = 120 }: SessionAutoLogoutPro
         clearTimeout(timerRef.current);
       }
       events.forEach((event) => {
-        window.removeEventListener(event, resetTimer);
+        window.removeEventListener(event, onActivity);
       });
     };
   }, [isLoggedIn, timeoutMinutes]);

@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 
 import { supabaseAdmin } from "@/lib/supabase";
 import { containsPattern } from "@/lib/search";
+import { stripHtml } from "@/lib/richText";
 
 // supabase-js memakai fetch-nya sendiri dan tidak ikut deduplikasi request bawaan Next.js,
 // jadi query yang persis sama di beberapa komponen benar-benar jalan berkali-kali ke database
@@ -18,9 +19,32 @@ export const getStatisticSection = cache(async () => {
 // Dibaca di app/(public)/layout.tsx — dipakai di SEMUA halaman publik, jadi tabelnya belum
 // dibuat (migrasi 024 belum dijalankan) tidak boleh membuat layout gagal render; kembalikan
 // null (pop-up tidak tampil) daripada melempar error.
+//
+// DI-CACHE ANTAR-REQUEST (bukan cuma React cache()): layout publik membungkus setiap halaman, dan
+// halaman yang dirender dinamis (berita, e-book, profil, ...) menjalankan layout itu di SETIAP
+// kunjungan. Tanpa cache lintas-request, tiap kunjungan menunggu satu query Supabase (±170–250 ms)
+// hanya untuk membaca satu baris yang hampir tidak pernah berubah. Dibersihkan langsung lewat
+// updateTag("popup-ad") saat admin menyimpan popup; revalidate 5 menit hanya pengaman.
+//
+// Kegagalan SENGAJA tidak ikut di-cache: kalau query gagal, fungsi dalam melempar (unstable_cache
+// tidak menyimpan hasil yang melempar) dan pembungkus di bawah mengubahnya jadi null untuk
+// kunjungan itu saja — popup tidak "hilang" 5 menit gara-gara satu gangguan sesaat.
+const fetchPopupAd = unstable_cache(
+  async () => {
+    const { data, error } = await supabaseAdmin.from("PopupAd").select("*").eq("id", 1).maybeSingle();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  ["popup-ad"],
+  { revalidate: 300, tags: ["popup-ad"] },
+);
+
 export const getPopupAd = cache(async () => {
-  const { data } = await supabaseAdmin.from("PopupAd").select("*").eq("id", 1).maybeSingle();
-  return data;
+  try {
+    return await fetchPopupAd();
+  } catch {
+    return null;
+  }
 });
 
 // Kolom untuk tampilan daftar/kartu artikel: sengaja tanpa "content", karena kartu cuma
@@ -78,7 +102,7 @@ export interface BeritaListParams {
 export interface BeritaListData {
   categories: string[];
   showSlider: boolean;
-  featuredWithContent: (NewsCard & { content: string })[];
+  featuredWithContent: (NewsCard & { snippet: string })[];
   displayGridNews: NewsCard[];
   totalPages: number;
   fallbackUsed: boolean;
@@ -128,9 +152,9 @@ async function fetchBeritaListData({ query, sortFilter, categoryFilter, currentP
         "id",
         featuredItems.map((i) => i.id),
       );
-    for (const row of contents || []) featuredContent.set(row.id, row.content || "");
+    for (const row of contents || []) featuredContent.set(row.id, makeSnippet(row.content));
   }
-  const featuredWithContent = featuredItems.map((i) => ({ ...i, content: featuredContent.get(i.id) || "" }));
+  const featuredWithContent = featuredItems.map((i) => ({ ...i, snippet: featuredContent.get(i.id) || "" }));
 
   let displayGridNews = gridResult.data || [];
   let fallbackUsed = false;
@@ -152,6 +176,16 @@ async function fetchBeritaListData({ query, sortFilter, categoryFilter, currentP
   }
 
   return { categories, showSlider, featuredWithContent, displayGridNews, totalPages, fallbackUsed };
+}
+
+// Cuplikan teks polos untuk kartu slider (line-clamp 3 baris ≈ <300 karakter). Dibuat DI SINI,
+// di dalam query yang di-cache, bukan di komponen: dulu isi HTML lengkap artikel (bisa puluhan KB
+// per artikel) ikut tersimpan di cache, diserialisasi ke payload halaman, dan dikirim ke browser
+// hanya untuk dipangkas jadi tiga baris.
+const SNIPPET_LENGTH = 320;
+
+function makeSnippet(html: string | null | undefined): string {
+  return stripHtml(html).slice(0, SNIPPET_LENGTH);
 }
 
 // Query daftar /berita di-cache per kombinasi filter (kosong/kategori/urutan/halaman) — beban

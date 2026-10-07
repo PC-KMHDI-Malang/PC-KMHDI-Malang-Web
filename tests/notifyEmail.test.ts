@@ -65,7 +65,8 @@ describe("notifyEmail — kanal email hanya memakai email asli", () => {
     allDay: false,
     location: "Sekretariat",
     status: "PUBLISHED",
-    sendNotification: true,
+    remindH1: true,
+  announcedAt: null,
     audience: "SEMUA",
   } as Agenda;
   const payload: NotifyPayload = { agenda, reason: "CREATED", title: "Agenda baru: Rapat", body: "Rapat · 19.00 WIB", path: "/agenda/rapat-abcde" };

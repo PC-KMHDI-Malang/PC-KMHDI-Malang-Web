@@ -138,9 +138,11 @@ export async function dispatchAgendaNotification(
     // pemanggil yang lupa memeriksa status.
     if (agenda.status !== "PUBLISHED") return { ...summary, error: "Agenda belum terbit; notifikasi tidak dikirim." };
 
-    // Sekretaris memilih per agenda apakah anggota diberi tahu. Ini penjaga TERAKHIR: setiap
-    // pemanggil (action maupun cron) sudah menyaring, tapi yang boleh menentukan hanya satu tempat.
-    if (!agenda.sendNotification) return { ...summary, skipped: "Agenda ini tidak memakai notifikasi." };
+    // Penjaga TERAKHIR per jenis notifikasi (setiap pemanggil sudah menyaring, tapi yang boleh
+    // menentukan hanya satu tempat). CREATED = pengumuman manual dari tombol "Kirim notifikasi",
+    // jadi tidak butuh penjaga di sini.
+    if (reason === "REMINDER_H1" && !agenda.remindH1) return { ...summary, skipped: "Pengingat H-1 dimatikan untuk agenda ini." };
+    if (reason === "UPDATED" && !agenda.announcedAt) return { ...summary, skipped: "Agenda ini belum diumumkan, jadi tidak ada yang perlu diperbarui." };
 
     const content = buildNotificationContent(agenda, reason);
     const changes = reason === "UPDATED" && options.before ? describeChanges(options.before, agenda) : undefined;

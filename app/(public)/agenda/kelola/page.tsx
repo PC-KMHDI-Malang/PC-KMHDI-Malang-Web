@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+const ARCHIVE_LIMIT = 50;
+
 type Tab = "mendatang" | "arsip" | "draft";
 const TABS: { id: Tab; label: string }[] = [
   { id: "mendatang", label: "Mendatang" },
@@ -45,7 +47,10 @@ export default async function KelolaAgendaPage({ searchParams }: { searchParams:
 
   // Mendatang: yang terdekat dulu. Arsip & draft: yang terbaru dulu (query sudah menurun).
   const upcomingAsc = [...upcoming].sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
-  const shown = tab === "mendatang" ? upcomingAsc : tab === "draft" ? drafts : archive;
+  // Arsip tumbuh terus (tahun demi tahun), dan setiap baris membawa tombol serta modal di sisi klien:
+  // tampilkan yang terbaru saja supaya halaman tetap ringan. Query sudah mengurutkan terbaru dulu.
+  const archiveShown = archive.slice(0, ARCHIVE_LIMIT);
+  const shown = tab === "mendatang" ? upcomingAsc : tab === "draft" ? drafts : archiveShown;
 
   return (
     <div className="-mt-32 bg-slate-50/70 dark:bg-[#0a0a0c] transition-colors min-h-screen pb-20">
