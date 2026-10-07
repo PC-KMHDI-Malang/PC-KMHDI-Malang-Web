@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase";
-import { jakartaDayRange } from "@/lib/date";
-import { monthGrid, monthParamToParts, type Agenda } from "@/lib/agenda";
+import { jakartaDayRange, todayInJakarta } from "@/lib/date";
+import { monthGrid, monthParamToParts, pickUpcoming, type Agenda } from "@/lib/agenda";
 
 // Query database untuk fitur Agenda. Dipisah dari lib/agenda.ts supaya modul itu tetap murni
 // (tanpa Supabase) dan bisa diuji unit. Semua baca/tulis lewat supabaseAdmin: tabelnya RLS tanpa
@@ -34,18 +34,31 @@ export async function getPublishedAgendaForMonth(month: string): Promise<AgendaQ
   return { data: (data ?? []) as Agenda[], tableMissing: false };
 }
 
-// Agenda PUBLISHED berikutnya (dan yang sedang berlangsung hari ini), untuk daftar "Akan datang".
+// Agenda PUBLISHED yang sedang berlangsung atau belum mulai, untuk daftar "Akan Datang".
+//
+// Query hanya MENYEMPITKAN kandidat; keputusan akhir (masih berlangsung atau sudah selesai) ada di
+// pickUpcoming() lewat agendaStatus(), supaya sama dengan badge "Sedang berlangsung". Kandidatnya:
+//  - mulai sejak awal hari ini (WIB) — mencakup agenda hari ini yang jam mulainya sudah lewat
+//    tapi belum punya jam selesai (dianggap berlangsung sampai akhir hari), atau agenda sepanjang
+//    hari; dan yang mulai besok dst.
+//  - atau jam selesainya masih di depan — agenda lintas hari yang mulai sebelum hari ini.
+// Batas waktu ditulis dengan toISOString() ("...Z"): tanda "+" pada offset "+07:00" bisa terbaca
+// sebagai spasi di dalam filter or() dan merusak query.
 export async function getUpcomingAgenda(limit = 5): Promise<AgendaQueryResult<Agenda[]>> {
+  const now = new Date();
+  const startOfToday = new Date(jakartaDayRange(todayInJakarta(now)).start).toISOString();
+
   const { data, error } = await supabaseAdmin
     .from("Agenda")
     .select("*")
     .eq("status", "PUBLISHED")
-    .or(`startAt.gte.${new Date().toISOString()},endAt.gte.${new Date().toISOString()}`)
+    .or(`startAt.gte.${startOfToday},endAt.gte.${now.toISOString()}`)
     .order("startAt", { ascending: true })
-    .limit(limit);
+    // Sisakan ruang untuk yang ternyata sudah selesai hari ini dan disaring pickUpcoming().
+    .limit(limit * 4);
 
   if (error) return { data: [], tableMissing: isMissingTable(error) };
-  return { data: (data ?? []) as Agenda[], tableMissing: false };
+  return { data: pickUpcoming((data ?? []) as Agenda[], now, limit), tableMissing: false };
 }
 
 export async function getAgendaBySlug(slug: string): Promise<AgendaQueryResult<Agenda | null>> {

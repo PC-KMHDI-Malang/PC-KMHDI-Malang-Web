@@ -57,6 +57,8 @@ export type Agenda = {
   /** Catatan untuk peserta. */
   internalNote?: string | null;
   status: AgendaStatus;
+  /** false = hanya tampil di kalender: tanpa lonceng, email, maupun pengingat H-1. */
+  sendNotification: boolean;
   audience: AgendaAudience;
   audienceBidang?: string[] | null;
   coverImage?: string | null;
@@ -197,6 +199,17 @@ export function agendaStatus(agenda: Pick<Agenda, "startAt" | "endAt" | "allDay"
   return "SELESAI";
 }
 
+// Daftar "Akan Datang": agenda yang SEDANG berlangsung ditambah yang belum mulai, terdekat dulu.
+// Memakai agendaStatus() — bukan perbandingan startAt/endAt mentah — supaya aturannya sama persis
+// dengan badge "Sedang berlangsung": agenda tanpa jam selesai tetap dianggap berlangsung sampai
+// akhir harinya (WIB), jadi tidak lenyap dari daftar begitu jam mulainya lewat.
+export function pickUpcoming<T extends Pick<Agenda, "startAt" | "endAt" | "allDay">>(items: T[], now: Date = new Date(), limit = 5): T[] {
+  return items
+    .filter((item) => agendaStatus(item, now) !== "SELESAI")
+    .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+    .slice(0, limit);
+}
+
 export const AGENDA_STATUS_LABEL: Record<AgendaTimeStatus, string> = {
   AKAN_DATANG: "Akan datang",
   BERLANGSUNG: "Berlangsung",
@@ -305,6 +318,7 @@ export type AgendaInput = {
   location?: unknown;
   locationDetail?: unknown;
   internalNote?: unknown;
+  sendNotification?: unknown;
   audience?: unknown;
   audienceBidang?: unknown;
 };
@@ -312,7 +326,7 @@ export type AgendaInput = {
 /** Field Agenda yang siap ditulis ke database (tanpa id/slug/status/createdBy). */
 export type ParsedAgenda = Pick<
   Agenda,
-  "title" | "description" | "kind" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail" | "internalNote" | "audience" | "audienceBidang"
+  "title" | "description" | "kind" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail" | "internalNote" | "sendNotification" | "audience" | "audienceBidang"
 >;
 
 export type ParseResult = { ok: true; value: ParsedAgenda } | { ok: false; error: string };
@@ -346,7 +360,11 @@ export function parseAgendaInput(input: AgendaInput): ParseResult {
   const kind = input.kind ?? "KEGIATAN";
   if (!isAgendaKind(kind)) return { ok: false, error: "Jenis agenda tidak valid." };
 
-  const audience = input.audience ?? "SEMUA";
+  const sendNotification = input.sendNotification === true || input.sendNotification === "true" || input.sendNotification === "on";
+
+  // Tanpa notifikasi, "penerima" tidak berarti apa-apa: dipaksa SEMUA (dan tanpa daftar bidang)
+  // supaya sisa pilihan lama di form tidak membuat validasi gagal atau menyimpan data tak terpakai.
+  const audience = sendNotification ? (input.audience ?? "SEMUA") : "SEMUA";
   if (!isAgendaAudience(audience)) return { ok: false, error: "Penerima notifikasi tidak valid." };
 
   const allDay = input.allDay === true || input.allDay === "true" || input.allDay === "on";
@@ -414,6 +432,7 @@ export function parseAgendaInput(input: AgendaInput): ParseResult {
       location: text(input.location, AGENDA_LIMITS.location),
       locationDetail: text(input.locationDetail, AGENDA_LIMITS.locationDetail),
       internalNote: text(input.internalNote, AGENDA_LIMITS.internalNote),
+      sendNotification,
       audience,
       audienceBidang,
     },

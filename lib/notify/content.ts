@@ -33,7 +33,7 @@ export function buildNotificationContent(agenda: Pick<Agenda, "title" | "kind" |
 
   if (reason === "UPDATED") return { title: `Agenda diperbarui: ${agenda.title}`, body };
   if (reason === "REMINDER_H1") return { title: `Besok: ${agenda.title}`, body };
-  return { title: `Agenda baru: ${agenda.title}`, body };
+  return { title: `: ${agenda.title}`, body };
 }
 
 function sameInstant(a: string | null | undefined, b: string | null | undefined): boolean {
@@ -45,10 +45,7 @@ function sameInstant(a: string | null | undefined, b: string | null | undefined)
 
 // Hanya perubahan yang menyangkut JADWAL atau TEMPAT yang layak memicu notifikasi "diperbarui".
 // Mengoreksi typo di deskripsi atau mengganti audiens tidak boleh membanjiri notifikasi anggota.
-export function hasMeaningfulChange(
-  before: Pick<Agenda, "title" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail">,
-  after: Pick<Agenda, "title" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail">,
-): boolean {
+export function hasMeaningfulChange(before: Pick<Agenda, "title" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail">, after: Pick<Agenda, "title" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail">): boolean {
   return (
     before.title !== after.title ||
     !sameInstant(before.startAt, after.startAt) ||
@@ -57,4 +54,20 @@ export function hasMeaningfulChange(
     (before.location ?? "") !== (after.location ?? "") ||
     (before.locationDetail ?? "") !== (after.locationDetail ?? "")
   );
+}
+
+// Notifikasi apa (kalau ada) yang harus dikirim setelah sebuah agenda DIUBAH. Dipisah jadi fungsi
+// murni supaya semua kombinasi toggle "Kirim notifikasi" teruji:
+//  - belum terbit, atau notifikasi mati       -> tidak ada;
+//  - notifikasi baru DINYALAKAN pada agenda   -> "CREATED": itulah pengumuman pertamanya
+//    yang sudah terbit                           (kunci idempotensi mencegah ganda kalau pernah);
+//  - notifikasi sudah menyala dan jadwal/tempat/judul berubah -> "UPDATED";
+//  - selain itu (mis. typo di deskripsi)      -> tidak ada.
+export function decideUpdateNotification(
+  before: Pick<Agenda, "sendNotification" | "title" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail">,
+  after: Pick<Agenda, "status" | "sendNotification" | "title" | "startAt" | "endAt" | "allDay" | "location" | "locationDetail">,
+): NotifyReason | null {
+  if (after.status !== "PUBLISHED" || !after.sendNotification) return null;
+  if (!before.sendNotification) return "CREATED";
+  return hasMeaningfulChange(before, after) ? "UPDATED" : null;
 }

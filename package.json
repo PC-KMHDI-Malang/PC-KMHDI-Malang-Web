@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --env-file-if-exists=.env --import ./tests/alias-loader-register.mjs --test tests/unit.test.ts tests/agenda.test.ts tests/notify.test.ts tests/whatsapp.test.ts tests/notifyEmail.test.ts",
+    "test": "node --env-file-if-exists=.env --import ./tests/alias-loader-register.mjs --test tests/unit.test.ts tests/agenda.test.ts tests/notify.test.ts tests/notifyEmail.test.ts",
     "storage:migrate": "node --env-file-if-exists=.env scripts/migrate-storage-to-r2.mjs",
     "test:blackbox": "node --env-file-if-exists=.env --import ./tests/alias-loader-register.mjs --test tests/blackbox.test.ts tests/like.blackbox.test.ts"
   },

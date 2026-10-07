@@ -38,6 +38,8 @@ export async function GET(request: Request) {
     .from("Agenda")
     .select("*")
     .eq("status", "PUBLISHED")
+    // Hanya agenda yang notifikasinya dinyalakan sekretaris.
+    .eq("sendNotification", true)
     .gte("startAt", range.start)
     .lte("startAt", range.end)
     .order("startAt", { ascending: true });

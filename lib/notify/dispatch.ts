@@ -1,10 +1,9 @@
 import { supabaseAdmin } from "@/lib/supabase";
-import { describeAudience, resolveAudience, type Agenda, type NotifiableUser } from "@/lib/agenda";
+import { resolveAudience, type Agenda, type NotifiableUser } from "@/lib/agenda";
 import { agendaPath, buildNotificationContent, reasonKey, type NotifyReason } from "@/lib/notify/content";
 import { emailChannel } from "@/lib/notify/channels/email";
 import { inAppChannel } from "@/lib/notify/channels/inapp";
-import { whatsappChannel } from "@/lib/notify/channels/whatsapp";
-import type { BroadcastChannel, ChannelName, NotificationChannel, NotifyPayload } from "@/lib/notify/types";
+import type { ChannelName, NotificationChannel, NotifyPayload } from "@/lib/notify/types";
 
 // Satu pintu untuk semua notifikasi agenda: tentukan penerima, "klaim" pengiriman di tabel
 // NotificationDelivery supaya tidak pernah dobel, lalu kirim lewat tiap kanal yang aktif.
@@ -21,17 +20,13 @@ export type DispatchSummary = {
   recipients: number;
   mode: "live" | "dry-run" | "test";
   channels: Partial<Record<ChannelName, ChannelSummary>>;
+  /** Alasan tidak ada yang dikirim bukan karena error (mis. agenda ini memang tanpa notifikasi). */
+  skipped?: string;
   error?: string;
 };
 
-// Kanal per anggota (satu pengiriman per penerima).
 export function defaultChannels(): NotificationChannel[] {
   return [inAppChannel, emailChannel];
-}
-
-// Kanal siaran (satu pesan untuk banyak orang, mis. grup WhatsApp).
-export function defaultBroadcastChannels(): BroadcastChannel[] {
-  return [whatsappChannel];
 }
 
 const flag = (value: string | undefined) => value === "1" || value?.toLowerCase() === "true";
@@ -124,48 +119,10 @@ async function settle(agendaId: string, channel: ChannelName, key: string, sent:
   }
 }
 
-// Padanan claim() untuk kanal siaran: satu baris per (agenda, kanal, kunci kejadian) di tabel
-// NotificationBroadcast. true = proses ini yang berhak mengirim.
-async function claimBroadcast(agendaId: string, channel: ChannelName, key: string): Promise<boolean> {
-  const { data: inserted, error: insertError } = await supabaseAdmin
-    .from("NotificationBroadcast")
-    .upsert([{ agendaId, channel, reason: key, status: "PENDING" }], { onConflict: "agendaId,channel,reason", ignoreDuplicates: true })
-    .select("id");
-  if (insertError) throw new Error(insertError.message);
-  if ((inserted ?? []).length > 0) return true;
-
-  const staleBefore = new Date(Date.now() - STALE_PENDING_MS).toISOString();
-  const { data: retried, error: retryError } = await supabaseAdmin
-    .from("NotificationBroadcast")
-    .update({ status: "PENDING", error: null, createdAt: new Date().toISOString() })
-    .eq("agendaId", agendaId)
-    .eq("channel", channel)
-    .eq("reason", key)
-    .or(`status.eq.FAILED,and(status.eq.PENDING,createdAt.lt.${staleBefore})`)
-    .select("id");
-  if (retryError) throw new Error(retryError.message);
-  return (retried ?? []).length > 0;
-}
-
-async function settleBroadcast(agendaId: string, channel: ChannelName, key: string, result: { ok: true } | { ok: false; error: string }) {
-  await supabaseAdmin
-    .from("NotificationBroadcast")
-    .update(result.ok ? { status: "SENT", error: null, sentAt: new Date().toISOString() } : { status: "FAILED", error: result.error.slice(0, 500) })
-    .eq("agendaId", agendaId)
-    .eq("channel", channel)
-    .eq("reason", key);
-}
-
-export async function dispatchAgendaNotification(
-  agenda: Agenda,
-  reason: NotifyReason,
-  channels: NotificationChannel[] = defaultChannels(),
-  broadcastChannels: BroadcastChannel[] = defaultBroadcastChannels(),
-): Promise<DispatchSummary> {
+export async function dispatchAgendaNotification(agenda: Agenda, reason: NotifyReason, channels: NotificationChannel[] = defaultChannels()): Promise<DispatchSummary> {
   const dryRun = flag(process.env.NOTIFY_DRY_RUN);
   const testRecipient = process.env.NOTIFY_TEST_RECIPIENT?.trim();
-  const testWaTarget = process.env.NOTIFY_TEST_WA_TARGET?.trim();
-  const mode: DispatchSummary["mode"] = dryRun ? "dry-run" : testRecipient || testWaTarget ? "test" : "live";
+  const mode: DispatchSummary["mode"] = dryRun ? "dry-run" : testRecipient ? "test" : "live";
   const summary: DispatchSummary = { agendaId: agenda.id, reason, recipients: 0, mode, channels: {} };
 
   try {
@@ -173,38 +130,26 @@ export async function dispatchAgendaNotification(
     // pemanggil yang lupa memeriksa status.
     if (agenda.status !== "PUBLISHED") return { ...summary, error: "Agenda belum terbit; notifikasi tidak dikirim." };
 
+    // Sekretaris memilih per agenda apakah anggota diberi tahu. Ini penjaga TERAKHIR: setiap
+    // pemanggil (action maupun cron) sudah menyaring, tapi yang boleh menentukan hanya satu tempat.
+    if (!agenda.sendNotification) return { ...summary, skipped: "Agenda ini tidak memakai notifikasi." };
+
     const content = buildNotificationContent(agenda, reason);
     const payloadBase = { agenda, reason, path: agendaPath(agenda) };
     const recipients = resolveAudience(agenda, await fetchUsers());
     summary.recipients = recipients.length;
 
-    // Mode uji: kirim SATU contoh ke alamat/nomor uji saja (email ke NOTIFY_TEST_RECIPIENT, WhatsApp
-    // ke NOTIFY_TEST_WA_TARGET), tanpa menyentuh lonceng, grup, maupun buku catatan — untuk
-    // mencoba tampilan pesan tanpa mengganggu anggota.
-    if (mode === "test") {
-      const audienceLabel = describeAudience(agenda);
+    // Mode uji: kirim SATU email contoh ke NOTIFY_TEST_RECIPIENT saja, tanpa menyentuh lonceng
+    // maupun buku catatan — untuk mencoba tampilan email tanpa mengganggu anggota.
+    if (mode === "test" && testRecipient) {
       const testPayload: NotifyPayload = { ...payloadBase, title: `[TES] ${content.title}`, body: `${content.body} (akan dikirim ke ${recipients.length} penerima)` };
-
-      if (testRecipient) {
-        const tester: NotifiableUser = { id: "test-recipient", name: "Penguji", email: testRecipient, notifyEmail: testRecipient, role: "USER" };
-        const channel = channels.find((c) => c.name === "EMAIL");
-        if (channel?.isEnabled()) {
-          const result = await channel.send(testPayload, [tester]);
-          summary.channels.EMAIL = { enabled: true, claimed: 1, sent: result.sent.length, failed: result.failed.length, error: result.failed[0]?.error };
-        } else {
-          summary.channels.EMAIL = { enabled: false, claimed: 0, sent: 0, failed: 0 };
-        }
-      }
-
-      if (testWaTarget) {
-        const channel = broadcastChannels.find((c) => c.name === "WHATSAPP");
-        // Cukup token: tujuan uji bukan grup, jadi FONNTE_GROUP_ID tidak wajib untuk mencoba.
-        if (channel && process.env.FONNTE_TOKEN) {
-          const result = await channel.send(testPayload, audienceLabel, testWaTarget);
-          summary.channels.WHATSAPP = { enabled: true, claimed: 1, sent: result.ok ? 1 : 0, failed: result.ok ? 0 : 1, error: result.ok ? undefined : result.error };
-        } else {
-          summary.channels.WHATSAPP = { enabled: false, claimed: 0, sent: 0, failed: 0 };
-        }
+      const tester: NotifiableUser = { id: "test-recipient", name: "Penguji", email: testRecipient, notifyEmail: testRecipient, role: "USER" };
+      const channel = channels.find((c) => c.name === "EMAIL");
+      if (channel?.isEnabled()) {
+        const result = await channel.send(testPayload, [tester]);
+        summary.channels.EMAIL = { enabled: true, claimed: 1, sent: result.sent.length, failed: result.failed.length, error: result.failed[0]?.error };
+      } else {
+        summary.channels.EMAIL = { enabled: false, claimed: 0, sent: 0, failed: 0 };
       }
       return summary;
     }
@@ -243,37 +188,6 @@ export async function dispatchAgendaNotification(
         await settle(agenda.id, channel.name, key, result.sent, result.failed);
       } catch (error) {
         // Satu kanal rusak (mis. tabel belum dimigrasi) tidak menghentikan kanal berikutnya.
-        channelSummary.error = error instanceof Error ? error.message : String(error);
-        console.error(`[notify] kanal ${channel.name} gagal untuk agenda ${agenda.id}:`, channelSummary.error);
-      }
-    }
-
-    // Kanal siaran: satu pesan per kejadian, bukan per anggota. Audiens (semua / bidang) hanya
-    // dicantumkan di teks pesan — grup tidak bisa disaring per bidang.
-    const audienceLabel = describeAudience(agenda);
-    for (const channel of broadcastChannels) {
-      const enabled = channel.isEnabled();
-      const channelSummary: ChannelSummary = { enabled, claimed: 0, sent: 0, failed: 0 };
-      summary.channels[channel.name] = channelSummary;
-      if (!enabled) continue;
-
-      if (dryRun) {
-        channelSummary.claimed = 1;
-        console.info(`[notify:dry-run] ${channel.name} ${reason} "${agenda.title}" -> 1 pesan siaran`);
-        continue;
-      }
-
-      try {
-        if (!(await claimBroadcast(agenda.id, channel.name, key))) continue;
-        channelSummary.claimed = 1;
-
-        const result = await channel.send(payload, audienceLabel);
-        channelSummary.sent = result.ok ? 1 : 0;
-        channelSummary.failed = result.ok ? 0 : 1;
-        if (!result.ok) channelSummary.error = result.error;
-
-        await settleBroadcast(agenda.id, channel.name, key, result);
-      } catch (error) {
         channelSummary.error = error instanceof Error ? error.message : String(error);
         console.error(`[notify] kanal ${channel.name} gagal untuk agenda ${agenda.id}:`, channelSummary.error);
       }

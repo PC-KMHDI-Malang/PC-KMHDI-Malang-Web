@@ -63,7 +63,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
             </div>
 
             <div className={cardClass}>
-              <CardHeading icon={CalendarDays} title="Akan Datang" description="Agenda terdekat yang sudah dijadwalkan." />
+              <CardHeading icon={CalendarDays} title="Akan Datang" description="Agenda yang sedang berlangsung dan yang terdekat." />
 
               {upcoming.length === 0 ? (
                 <p className="text-sm text-slate-500 dark:text-neutral-400">Belum ada agenda yang dijadwalkan.</p>

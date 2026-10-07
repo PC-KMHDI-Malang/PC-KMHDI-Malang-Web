@@ -29,6 +29,7 @@ type FormState = {
   locationDetail: string;
   internalNote: string;
   description: string;
+  sendNotification: boolean;
   audience: "SEMUA" | "BIDANG";
   audienceBidang: string[];
 };
@@ -45,6 +46,8 @@ const EMPTY_FORM: FormState = {
   locationDetail: "",
   internalNote: "",
   description: "",
+  // Mati secara default: mengumumkan ke seluruh anggota harus pilihan sadar sekretaris.
+  sendNotification: false,
   audience: "SEMUA",
   audienceBidang: [],
 };
@@ -63,6 +66,7 @@ function formFromAgenda(agenda: Agenda): FormState {
     locationDetail: agenda.locationDetail ?? "",
     internalNote: agenda.internalNote ?? "",
     description: agenda.description ?? "",
+    sendNotification: !!agenda.sendNotification,
     audience: agenda.audience,
     audienceBidang: agenda.audienceBidang ?? [],
   };
@@ -146,7 +150,7 @@ export function AgendaManager({ items }: { items: Agenda[] }) {
                       <MapPin size={13} /> {agenda.location}
                     </span>
                   )}
-                  <span>Notifikasi: {describeAudience(agenda)}</span>
+                  <span>{agenda.sendNotification ? `Notifikasi: ${describeAudience(agenda)}` : "Tanpa notifikasi"}</span>
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -289,6 +293,21 @@ function AgendaFormModal({ mode, agenda, onClose }: { mode: "create" | "edit"; a
           <textarea value={form.internalNote} onChange={(e) => set("internalNote", e.target.value)} maxLength={2000} rows={2} className={inputClass} />
         </div>
 
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-4">
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Kirim notifikasi ke anggota</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={form.sendNotification}
+            aria-label="Kirim notifikasi ke anggota"
+            onClick={() => set("sendNotification", !form.sendNotification)}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors cursor-pointer ${form.sendNotification ? "bg-red-600 dark:bg-rose-600" : "bg-slate-300 dark:bg-white/20"}`}
+          >
+            <span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.sendNotification ? "translate-x-5" : ""}`} />
+          </button>
+        </div>
+
+        {form.sendNotification && (
         <div>
           <label className={labelClass}>Penerima notifikasi</label>
           <select value={form.audience} onChange={(e) => set("audience", e.target.value as FormState["audience"])} className={`${inputClass} cursor-pointer`}>
@@ -306,6 +325,7 @@ function AgendaFormModal({ mode, agenda, onClose }: { mode: "create" | "edit"; a
             </div>
           )}
         </div>
+        )}
 
         {mode === "edit" ? (
           <ModalActions onCancel={onClose} isSubmitting={pending} submitLabel="Simpan Perubahan" />

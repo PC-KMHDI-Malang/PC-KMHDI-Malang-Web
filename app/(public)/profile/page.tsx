@@ -3,9 +3,8 @@ import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { siteUrl } from "@/lib/appHost";
 import { redirect } from "next/navigation";
-import { ArrowLeft, KeyRound, UserCheck, Shield, Lock, Wallet, ChevronRight, Mail } from "lucide-react";
+import { ArrowLeft, KeyRound, UserCheck, Shield, Lock, Wallet, ChevronRight } from "lucide-react";
 import { ProfileSettingsForm } from "@/components/profile/ProfileSettingsForm";
-import { NotifyEmailForm } from "@/components/profile/NotifyEmailForm";
 import { supabaseAdmin } from "@/lib/supabase";
 import { UpdatePasswordForm } from "@/components/admin/UpdatePasswordForm";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
@@ -35,15 +34,15 @@ export default async function ProfilePage() {
   const isTreasurer = isTreasurerEmail(session.user.email);
   // Pintasan kas hanya untuk yang ditagih iuran (anggota) dan bendahara — lihat Navbar.tsx.
   const showKas = isTreasurer || isKasMember({ email: session.user.email, role: session.user.role });
-  const isAccountLocked = isProtectedAccountEmail(session.user.email) || session.user.role === "KONTRIBUTOR" || isViewerRole(session.user.role);
+  // Akun bersama dan Akun Umum sepenuhnya dikunci (tidak ada yang bisa diubah sendiri). KONTRIBUTOR
+  // hanya terkunci namanya — email notifikasinya tetap bisa diisi sendiri, lihat updateProfileAction.
+  const isAccountLocked = isProtectedAccountEmail(session.user.email) || isViewerRole(session.user.role);
+  const isNameLocked = session.user.role === "KONTRIBUTOR";
 
-  // Email notifikasi: lebih longgar dari kunci akun di atas — KONTRIBUTOR (mis. sekretaris) tetap
-  // boleh mengisi. Hanya akun bersama dan Akun Umum yang tidak menerima notifikasi. Kolomnya baru
-  // ada setelah migrasi 037; kalau belum, bagian ini disembunyikan, bukan error.
-  const canSetNotifyEmail = !isProtectedAccountEmail(session.user.email) && !isViewerRole(session.user.role);
-  const notifyRow = canSetNotifyEmail ? await supabaseAdmin.from("User").select("notifyEmail").eq("id", session.user.id).maybeSingle() : null;
-  const showNotifyEmail = canSetNotifyEmail && !!notifyRow && !notifyRow.error;
-  const notifyEmail = (notifyRow?.data?.notifyEmail as string | null | undefined) ?? "";
+  // Email notifikasi: kolomnya baru ada setelah migrasi 037; kalau belum, isiannya disembunyikan,
+  // bukan error. Akun yang terkunci penuh tidak menerima notifikasi, jadi tidak perlu dibaca.
+  const notifyRow = isAccountLocked ? null : await supabaseAdmin.from("User").select("notifyEmail").eq("id", session.user.id).maybeSingle();
+  const showNotifyEmail = !!notifyRow && !notifyRow.error;
 
   return (
     <div className="-mt-32 bg-slate-50/70 dark:bg-[#0a0a0c] transition-colors min-h-screen pb-20">
@@ -77,7 +76,7 @@ export default async function ProfilePage() {
 
       {/* Konten Utama: 2 Kolom Bersih Tanpa Sidebar Dashboard */}
       <div className="relative z-10 mx-auto max-w-5xl px-5 sm:px-6 lg:px-8 -mt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Kolom Kiri: Kartu Identitas & Edit Nama (5/12) */}
           <div className="lg:col-span-5 space-y-6">
             {/* Kartu Ringkasan Akun */}
@@ -97,11 +96,11 @@ export default async function ProfilePage() {
                 </span>
               </div>
 
-              {/* Form Ubah Nama */}
+              {/* Form Ubah Profil */}
               <div className="pt-6">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                   <UserCheck size={16} className="text-red-600" />
-                  Ubah Nama Profil
+                  Ubah Profil
                 </h3>
                 {isAccountLocked ? (
                   <div className="flex gap-3 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/25 p-4">
@@ -111,19 +110,15 @@ export default async function ProfilePage() {
                     </p>
                   </div>
                 ) : (
-                  <ProfileSettingsForm initialName={session.user.name || ""} email={session.user.email || ""} />
+                  <ProfileSettingsForm
+                    initialName={session.user.name || ""}
+                    email={session.user.email || ""}
+                    initialNotifyEmail={(notifyRow?.data?.notifyEmail as string | null | undefined) ?? ""}
+                    nameLocked={isNameLocked}
+                    showNotifyEmail={showNotifyEmail}
+                  />
                 )}
               </div>
-
-              {showNotifyEmail && (
-                <div className="pt-6">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Mail size={16} className="text-red-600" />
-                    Email Notifikasi
-                  </h3>
-                  <NotifyEmailForm initialEmail={notifyEmail} />
-                </div>
-              )}
             </div>
 
             {/* Pintasan Uang Kas */}
@@ -146,7 +141,7 @@ export default async function ProfilePage() {
 
           {/* Kolom Kanan: Kartu Ganti Password (7/12) */}
           <div className="lg:col-span-7">
-            <div className="rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#121215] p-6 sm:p-8 shadow-xl h-full">
+            <div className="rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#121215] p-6 sm:p-8 shadow-xl">
               <div className="flex items-center gap-3 pb-6 mb-6 border-b border-slate-100 dark:border-white/10">
                 <div className="w-10 h-10 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/40 flex items-center justify-center text-red-600 dark:text-red-400 shadow-sm">
                   <KeyRound size={20} />

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { isAppPath } from "@/lib/appHost";
+import { decideUpdateNotification } from "@/lib/notify/content";
 import { addDays, dateInJakarta, jakartaDayRange, timeInputInJakarta, todayInJakarta, tomorrowInJakarta } from "@/lib/date";
 import { BIDANG_OPTIONS, isSameBidang, isTargetableBidang } from "@/lib/bidang";
 import { currentPeriod, isKasMember, isTreasurerEmail } from "@/lib/kas";
@@ -16,6 +17,7 @@ import {
   isSecretaryEmail,
   monthGrid,
   parseAgendaInput,
+  pickUpcoming,
   resolveAudience,
   resolveMonthParam,
   shiftMonthParam,
@@ -36,6 +38,7 @@ const baseAgenda: Agenda = {
   locationDetail: "https://meet.example/ruang",
   internalNote: "Bawa laptop",
   status: "PUBLISHED",
+  sendNotification: true,
   audience: "BIDANG",
   audienceBidang: ["Kaderisasi"],
   createdBy: "u-sekretaris",
@@ -318,17 +321,19 @@ describe("agenda — parser input form", () => {
 
   it("menolak enum yang tidak dikenal", () => {
     assert.equal(parseAgendaInput({ ...valid, kind: "RAHASIA" }).ok, false);
-    assert.equal(parseAgendaInput({ ...valid, audience: "SEMUA-ORANG" }).ok, false);
+    // Audiens hanya dihitung kalau notifikasi menyala.
+    assert.equal(parseAgendaInput({ ...valid, sendNotification: true, audience: "SEMUA-ORANG" }).ok, false);
   });
 
   it("audiens BIDANG wajib punya minimal satu bidang yang dikenal", () => {
-    assert.equal(parseAgendaInput({ ...valid, audience: "BIDANG", audienceBidang: [] }).ok, false);
-    assert.equal(parseAgendaInput({ ...valid, audience: "BIDANG", audienceBidang: ["Bidang Palsu"] }).ok, false);
-    assert.equal(parseAgendaInput({ ...valid, audience: "BIDANG", audienceBidang: ["Tidak Ada"] }).ok, false);
+    const on = { ...valid, sendNotification: true };
+    assert.equal(parseAgendaInput({ ...on, audience: "BIDANG", audienceBidang: [] }).ok, false);
+    assert.equal(parseAgendaInput({ ...on, audience: "BIDANG", audienceBidang: ["Bidang Palsu"] }).ok, false);
+    assert.equal(parseAgendaInput({ ...on, audience: "BIDANG", audienceBidang: ["Tidak Ada"] }).ok, false);
   });
 
   it("menormalkan ejaan bidang ke bentuk baku dan membuang duplikat", () => {
-    const r = parseAgendaInput({ ...valid, audience: "BIDANG", audienceBidang: ["kaderisasi", " KADERISASI ", "litbang", "Entah"] });
+    const r = parseAgendaInput({ ...valid, sendNotification: true, audience: "BIDANG", audienceBidang: ["kaderisasi", " KADERISASI ", "litbang", "Entah"] });
     assert.equal(r.ok, true);
     if (!r.ok) return;
     assert.deepEqual(r.value.audienceBidang, ["Kaderisasi", "Litbang"]);
@@ -384,5 +389,123 @@ describe("regresi — refactor lib/date.ts tidak mengubah perilaku kas", () => {
     assert.equal(isKasMember({ email: "kader@gmail.com", role: "USER" }), true);
     // Role KONTRIBUTOR (akun sekretaris) memang tidak ditagih iuran — perilaku lama, bukan baru.
     assert.equal(isKasMember({ email: SECRETARY_EMAIL, role: "KONTRIBUTOR" }), false);
+  });
+});
+
+describe("agenda — daftar Akan Datang menyertakan yang sedang berlangsung", () => {
+  // Sekarang = 14.00 WIB, 10 Okt 2026.
+  const now = new Date("2026-10-10T07:00:00.000Z");
+  const at = (startAt: string, endAt: string | null = null, allDay = false) => ({ startAt, endAt, allDay });
+
+  it("agenda yang sudah mulai hari ini tanpa jam selesai tetap tampil (kasus tangkapan layar)", () => {
+    // Mulai 09.00 WIB, belum ada jam selesai: dianggap berlangsung sampai akhir hari.
+    const ongoing = at("2026-10-10T02:00:00.000Z");
+    assert.deepEqual(pickUpcoming([ongoing], now), [ongoing]);
+  });
+
+  it("agenda sepanjang hari hari ini tampil", () => {
+    const allDay = at("2026-10-09T17:00:00.000Z", null, true); // 00.00 WIB tanggal 10
+    assert.deepEqual(pickUpcoming([allDay], now), [allDay]);
+  });
+
+  it("agenda berjam yang sudah lewat jam selesainya TIDAK tampil", () => {
+    const done = at("2026-10-10T01:00:00.000Z", "2026-10-10T03:00:00.000Z"); // 08.00-10.00 WIB
+    assert.deepEqual(pickUpcoming([done], now), []);
+  });
+
+  it("agenda lintas hari yang mulai kemarin dan belum berakhir tampil", () => {
+    const multiDay = at("2026-10-08T02:00:00.000Z", "2026-10-11T10:00:00.000Z");
+    assert.deepEqual(pickUpcoming([multiDay], now), [multiDay]);
+  });
+
+  it("agenda kemarin tanpa jam selesai TIDAK tampil lagi", () => {
+    assert.deepEqual(pickUpcoming([at("2026-10-09T02:00:00.000Z")], now), []);
+  });
+
+  it("urut terdekat dulu: yang berlangsung di depan yang akan datang", () => {
+    const later = at("2026-10-12T02:00:00.000Z");
+    const ongoing = at("2026-10-10T02:00:00.000Z");
+    const soon = at("2026-10-10T12:00:00.000Z");
+    assert.deepEqual(pickUpcoming([later, soon, ongoing], now), [ongoing, soon, later]);
+  });
+
+  it("dibatasi sesuai limit", () => {
+    const items = [1, 2, 3, 4].map((day) => at(`2026-10-1${day}T02:00:00.000Z`));
+    assert.equal(pickUpcoming(items, now, 2).length, 2);
+  });
+});
+
+describe("agenda — toggle kirim notifikasi", () => {
+  const valid = { title: "Rapat", kind: "RAPAT", startDate: "2026-10-10", startTime: "19:00", endTime: "21:00" };
+
+  it("mati secara default: tanpa isian, agenda tidak memakai notifikasi", () => {
+    const r = parseAgendaInput(valid);
+    assert.equal(r.ok, true);
+    if (!r.ok) return;
+    assert.equal(r.value.sendNotification, false);
+  });
+
+  it("menyala hanya untuk nilai yang jelas (true / 'true' / 'on')", () => {
+    for (const value of [true, "true", "on"]) {
+      const r = parseAgendaInput({ ...valid, sendNotification: value });
+      assert.equal(r.ok && r.value.sendNotification, true, String(value));
+    }
+    for (const value of [false, "false", "off", "", 0, null, undefined, "yes", 1]) {
+      const r = parseAgendaInput({ ...valid, sendNotification: value });
+      assert.equal(r.ok && r.value.sendNotification, false, String(value));
+    }
+  });
+
+  it("notifikasi mati: pilihan audiens sisa di form diabaikan, tidak menggagalkan penyimpanan", () => {
+    // Sekretaris sempat memilih 'Bidang tertentu' tanpa mencentang bidang, lalu mematikan toggle.
+    const r = parseAgendaInput({ ...valid, sendNotification: false, audience: "BIDANG", audienceBidang: [] });
+    assert.equal(r.ok, true);
+    if (!r.ok) return;
+    assert.equal(r.value.audience, "SEMUA");
+    assert.equal(r.value.audienceBidang, null);
+  });
+
+  it("notifikasi mati: audiens sampah pun tidak ditolak", () => {
+    assert.equal(parseAgendaInput({ ...valid, sendNotification: false, audience: "ASAL" }).ok, true);
+  });
+});
+
+describe("agenda — keputusan notifikasi setelah agenda diubah", () => {
+  const base = {
+    status: "PUBLISHED" as const,
+    sendNotification: true,
+    title: "Rapat Pleno",
+    startAt: "2026-10-10T12:00:00.000Z",
+    endAt: "2026-10-10T14:00:00.000Z",
+    allDay: false,
+    location: "Sekretariat",
+    locationDetail: null as string | null,
+  };
+
+  it("draft tidak pernah memicu notifikasi", () => {
+    assert.equal(decideUpdateNotification(base, { ...base, status: "DRAFT", location: "Aula" }), null);
+  });
+
+  it("notifikasi mati tidak memicu apa pun, walau jadwalnya berubah", () => {
+    const off = { ...base, sendNotification: false };
+    assert.equal(decideUpdateNotification(off, { ...off, startAt: "2026-10-11T12:00:00.000Z" }), null);
+  });
+
+  it("notifikasi baru DINYALAKAN pada agenda terbit = pengumuman pertama", () => {
+    assert.equal(decideUpdateNotification({ ...base, sendNotification: false }, base), "CREATED");
+  });
+
+  it("notifikasi sudah menyala + jadwal/tempat/judul berubah = diperbarui", () => {
+    assert.equal(decideUpdateNotification(base, { ...base, startAt: "2026-10-11T12:00:00.000Z" }), "UPDATED");
+    assert.equal(decideUpdateNotification(base, { ...base, location: "Aula" }), "UPDATED");
+    assert.equal(decideUpdateNotification(base, { ...base, title: "Rapat Pleno II" }), "UPDATED");
+  });
+
+  it("notifikasi sudah menyala tapi tidak ada perubahan berarti = tidak ada", () => {
+    assert.equal(decideUpdateNotification(base, { ...base }), null);
+  });
+
+  it("notifikasi DIMATIKAN pada agenda yang sudah diumumkan tidak mengirim apa pun", () => {
+    assert.equal(decideUpdateNotification(base, { ...base, sendNotification: false }), null);
   });
 });

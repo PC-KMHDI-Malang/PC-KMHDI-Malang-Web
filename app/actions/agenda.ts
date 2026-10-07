@@ -6,7 +6,7 @@ import { after } from "next/server";
 import { requireSecretary } from "@/lib/guard";
 import { supabaseAdmin } from "@/lib/supabase";
 import { parseAgendaInput, slugifyAgenda, type Agenda, type AgendaInput } from "@/lib/agenda";
-import { hasMeaningfulChange, type NotifyReason } from "@/lib/notify/content";
+import { decideUpdateNotification, type NotifyReason } from "@/lib/notify/content";
 import { dispatchAgendaNotification } from "@/lib/notify/dispatch";
 
 // Satu-satunya jalur tulis untuk data agenda. Server Action adalah endpoint HTTP publik (lihat
@@ -65,6 +65,13 @@ function isMissingTable(error: { code?: string; message?: string } | null): bool
   return !!error && (error.code === "42P01" || /relation .* does not exist|schema cache/i.test(error.message ?? ""));
 }
 
+// Kolom sendNotification baru ada setelah migrasi 038.
+function isMissingColumn(error: { code?: string } | null): boolean {
+  return error?.code === "42703";
+}
+
+const MISSING_COLUMN = "Kolom notifikasi belum ada. Jalankan migrasi 038_add_send_notification_to_agenda.sql di Supabase terlebih dahulu.";
+
 const MISSING_TABLE = "Tabel agenda belum dibuat. Jalankan migrasi 034_create_agenda_table.sql di Supabase terlebih dahulu.";
 
 export async function createAgendaAction(input: AgendaInput, publish: boolean): Promise<ActionResult & { id?: string }> {
@@ -85,10 +92,11 @@ export async function createAgendaAction(input: AgendaInput, publish: boolean): 
     if (!error && data) {
       const created = data as Agenda;
       revalidateAgenda(created.slug);
-      if (created.status === "PUBLISHED") notifyAfter(created, "CREATED");
+      if (created.status === "PUBLISHED" && created.sendNotification) notifyAfter(created, "CREATED");
       return { ...ok, id: created.id };
     }
     if (isMissingTable(error)) return fail(MISSING_TABLE);
+    if (isMissingColumn(error)) return fail(MISSING_COLUMN);
     if (!isUniqueViolation(error)) return fail("Gagal menyimpan agenda. Silakan coba lagi.");
   }
   return fail("Gagal membuat alamat agenda yang unik. Silakan coba lagi.");
@@ -117,14 +125,17 @@ export async function updateAgendaAction(id: string, input: AgendaInput): Promis
     .maybeSingle();
 
   if (isMissingTable(error)) return fail(MISSING_TABLE);
+  if (isMissingColumn(error)) return fail(MISSING_COLUMN);
   if (error) return fail("Gagal menyimpan perubahan. Silakan coba lagi.");
   if (!data) return fail("Agenda tidak ditemukan.");
 
   const updated = data as Agenda;
   revalidateAgenda(updated.slug);
-  // Hanya agenda yang SUDAH terbit dan berubah jadwal/tempat/judulnya yang diberitahukan; draft
-  // belum dilihat siapa pun, dan koreksi kecil (mis. typo deskripsi) tidak boleh membanjiri anggota.
-  if (updated.status === "PUBLISHED" && hasMeaningfulChange(before as Agenda, updated)) notifyAfter(updated, "UPDATED");
+  // Keputusannya di decideUpdateNotification (teruji): tidak ada kalau agenda masih draft atau
+  // notifikasinya mati; pengumuman pertama kalau notifikasi baru dinyalakan; "diperbarui" kalau
+  // jadwal/tempat/judul berubah. Koreksi kecil (mis. typo deskripsi) tidak membanjiri anggota.
+  const next = decideUpdateNotification(before as Agenda, updated);
+  if (next) notifyAfter(updated, next);
   return ok;
 }
 
@@ -147,10 +158,10 @@ export async function setAgendaPublishedAction(id: string, published: boolean): 
 
   const row = data as Agenda;
   revalidateAgenda(row.slug);
-  // Menerbitkan draft = pengumuman agenda baru. Menarik kembali menjadi draft tidak memberi tahu
+  // Menerbitkan draft = pengumuman agenda baru (kalau notifikasinya dinyalakan). Menarik kembali menjadi draft tidak memberi tahu
   // siapa pun. Menerbitkan ulang agenda yang sudah pernah diumumkan tidak mengirim dobel:
   // kunci "CREATED" di NotificationDelivery sudah terpakai.
-  if (published) notifyAfter(row, "CREATED");
+  if (published && row.sendNotification) notifyAfter(row, "CREATED");
   return ok;
 }
 
