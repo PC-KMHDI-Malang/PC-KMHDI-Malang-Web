@@ -34,6 +34,12 @@ export interface NotificationChannel {
   readonly name: ChannelName;
   /** false = kanal dilewati (mis. email tanpa RESEND_API_KEY) tanpa dianggap error. */
   isEnabled(): boolean;
+  /**
+   * Opsional: apakah kanal ini bisa menjangkau anggota tersebut (mis. email butuh notifyEmail).
+   * Dispatcher hanya mengklaim dan mengirim ke yang terjangkau, jadi anggota yang tidak
+   * terjangkau tidak meninggalkan catatan PENDING yang menggantung. Kosong = semua terjangkau.
+   */
+  canReach?(user: NotifiableUser): boolean;
   send(payload: NotifyPayload, recipients: NotifiableUser[]): Promise<ChannelResult>;
 }
 

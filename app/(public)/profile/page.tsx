@@ -3,8 +3,10 @@ import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { siteUrl } from "@/lib/appHost";
 import { redirect } from "next/navigation";
-import { ArrowLeft, KeyRound, UserCheck, Shield, Lock, Wallet, ChevronRight } from "lucide-react";
+import { ArrowLeft, KeyRound, UserCheck, Shield, Lock, Wallet, ChevronRight, Mail } from "lucide-react";
 import { ProfileSettingsForm } from "@/components/profile/ProfileSettingsForm";
+import { NotifyEmailForm } from "@/components/profile/NotifyEmailForm";
+import { supabaseAdmin } from "@/lib/supabase";
 import { UpdatePasswordForm } from "@/components/admin/UpdatePasswordForm";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
 import { isViewerRole } from "@/lib/roles";
@@ -34,6 +36,14 @@ export default async function ProfilePage() {
   // Pintasan kas hanya untuk yang ditagih iuran (anggota) dan bendahara — lihat Navbar.tsx.
   const showKas = isTreasurer || isKasMember({ email: session.user.email, role: session.user.role });
   const isAccountLocked = isProtectedAccountEmail(session.user.email) || session.user.role === "KONTRIBUTOR" || isViewerRole(session.user.role);
+
+  // Email notifikasi: lebih longgar dari kunci akun di atas — KONTRIBUTOR (mis. sekretaris) tetap
+  // boleh mengisi. Hanya akun bersama dan Akun Umum yang tidak menerima notifikasi. Kolomnya baru
+  // ada setelah migrasi 037; kalau belum, bagian ini disembunyikan, bukan error.
+  const canSetNotifyEmail = !isProtectedAccountEmail(session.user.email) && !isViewerRole(session.user.role);
+  const notifyRow = canSetNotifyEmail ? await supabaseAdmin.from("User").select("notifyEmail").eq("id", session.user.id).maybeSingle() : null;
+  const showNotifyEmail = canSetNotifyEmail && !!notifyRow && !notifyRow.error;
+  const notifyEmail = (notifyRow?.data?.notifyEmail as string | null | undefined) ?? "";
 
   return (
     <div className="-mt-32 bg-slate-50/70 dark:bg-[#0a0a0c] transition-colors min-h-screen pb-20">
@@ -104,6 +114,16 @@ export default async function ProfilePage() {
                   <ProfileSettingsForm initialName={session.user.name || ""} email={session.user.email || ""} />
                 )}
               </div>
+
+              {showNotifyEmail && (
+                <div className="pt-6">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Mail size={16} className="text-red-600" />
+                    Email Notifikasi
+                  </h3>
+                  <NotifyEmailForm initialEmail={notifyEmail} />
+                </div>
+              )}
             </div>
 
             {/* Pintasan Uang Kas */}

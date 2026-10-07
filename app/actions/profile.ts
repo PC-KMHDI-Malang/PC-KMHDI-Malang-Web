@@ -7,6 +7,7 @@ import { isPasswordLongEnough, PASSWORD_RULE_TEXT } from "@/lib/password";
 import { revalidatePath } from "next/cache";
 import { isProtectedAccountEmail } from "@/lib/protectedAccounts";
 import { isViewerRole } from "@/lib/roles";
+import { parseNotifyEmail } from "@/lib/notifyEmail";
 
 export async function updateNameAction(prevState: unknown, formData: FormData) {
   try {
@@ -83,6 +84,39 @@ export async function updatePasswordAction(prevState: unknown, formData: FormDat
     revalidatePath("/profile");
     revalidatePath("/admin/profile");
 
+    return { error: null, success: true };
+  } catch {
+    return { error: "Terjadi kesalahan sistem.", success: false };
+  }
+}
+
+// Email asli untuk menerima notifikasi Kalender Kegiatan (kolom notifyEmail, migrasi 037). Sengaja
+// TERPISAH dari updateNameAction dan lebih longgar: akun KONTRIBUTOR (mis. sekretaris) dikunci dari
+// ganti nama/password, tapi alamat kontaknya tetap harus bisa diisi sendiri — lagipula halaman
+// admin tempat mengisinya khusus ADMIN. Yang tetap ditolak: akun bersama dan Akun Umum (VIEWER),
+// karena keduanya memang tidak menerima notifikasi (lihat isAgendaRecipient di lib/agenda.ts).
+export async function updateNotifyEmailAction(prevState: unknown, formData: FormData) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "Silakan login terlebih dahulu.", success: false };
+    }
+
+    // Role dibaca dari database (bukan sesi) supaya perubahan role oleh Admin langsung berlaku.
+    const { data: me } = await supabaseAdmin.from("User").select("email, role").eq("id", session.user.id).maybeSingle();
+    if (!me) return { error: "User tidak ditemukan.", success: false };
+    if (isProtectedAccountEmail(me.email) || isViewerRole(me.role)) {
+      return { error: "Akun ini tidak menerima notifikasi email.", success: false };
+    }
+
+    const parsed = parseNotifyEmail(formData.get("notifyEmail"));
+    if (!parsed.ok) return { error: parsed.error, success: false };
+
+    const { error } = await supabaseAdmin.from("User").update({ notifyEmail: parsed.value }).eq("id", session.user.id);
+    if (error?.code === "42703") return { error: "Fitur email notifikasi belum siap. Hubungi pengurus.", success: false };
+    if (error) return { error: "Gagal menyimpan email notifikasi.", success: false };
+
+    revalidatePath("/profile");
     return { error: null, success: true };
   } catch {
     return { error: "Terjadi kesalahan sistem.", success: false };

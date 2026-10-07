@@ -255,6 +255,8 @@ export type NotifiableUser = {
   email: string | null;
   role: string | null;
   bidang?: string | null;
+  /** Email ASLI untuk notifikasi (migrasi 037). Beda dari `email`, yang cuma nama login. */
+  notifyEmail?: string | null;
 };
 
 // Yang berhak menerima notifikasi agenda: akun login yang BUKAN Akun Umum (VIEWER) dan bukan

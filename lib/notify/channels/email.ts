@@ -17,6 +17,8 @@ export const emailChannel: NotificationChannel = {
 
   isEnabled: () => !!process.env.RESEND_API_KEY && !!process.env.RESEND_FROM,
 
+  canReach: (user) => !!user.notifyEmail,
+
   async send(payload: NotifyPayload, recipients: NotifiableUser[]): Promise<ChannelResult> {
     const result: ChannelResult = { sent: [], failed: [] };
     const apiKey = process.env.RESEND_API_KEY;
@@ -25,13 +27,16 @@ export const emailChannel: NotificationChannel = {
 
     const resend = new Resend(apiKey);
     const url = absoluteAppLink(payload.path);
-    const withEmail = recipients.filter((user): user is NotifiableUser & { email: string } => !!user.email);
+    // Alamat tujuan = notifyEmail (email asli), BUKAN User.email (nama login yang sering bukan
+    // kotak masuk sungguhan dan akan memantul). Dispatcher sudah menyaring lewat canReach, ini
+    // pengaman kedua kalau kanal dipanggil langsung.
+    const withEmail = recipients.filter((user): user is NotifiableUser & { notifyEmail: string } => !!user.notifyEmail);
 
     for (let i = 0; i < withEmail.length; i += BATCH_SIZE) {
       const chunk = withEmail.slice(i, i + BATCH_SIZE);
       const emails = chunk.map((user) => {
         const content = buildEmail({ title: payload.title, body: payload.body, url, recipientName: user.name });
-        return { from, to: user.email, subject: content.subject, html: content.html, text: content.text };
+        return { from, to: user.notifyEmail, subject: content.subject, html: content.html, text: content.text };
       });
 
       try {

@@ -16,6 +16,7 @@ interface User {
   role: string;
   jabatan?: string | null;
   bidang?: string | null;
+  notifyEmail?: string | null;
 }
 
 interface EditUserModalProps {
@@ -106,6 +107,18 @@ export function EditUserModal({ user, action }: EditUserModalProps) {
                     required
                     className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5">Email Notifikasi (Opsional)</label>
+                  <input
+                    type="email"
+                    name="notifyEmail"
+                    defaultValue={user.notifyEmail ?? ""}
+                    className="w-full bg-slate-50 dark:bg-[#111111] dark:text-white border border-slate-200 dark:border-white/5 focus:border-red-500 dark:focus:border-rose-500 focus:ring-4 focus:ring-red-500/10 dark:focus:ring-rose-500/20 rounded-xl p-3 outline-none transition-all"
+                    placeholder="email asli anggota"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">Email di atas dipakai untuk login. Email notifikasi agenda dikirim ke alamat ini, jadi isi dengan email asli yang aktif.</p>
                 </div>
 
                 <div>

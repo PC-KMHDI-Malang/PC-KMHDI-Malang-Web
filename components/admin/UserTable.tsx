@@ -19,6 +19,7 @@ interface User {
   role: string;
   jabatan?: string | null;
   bidang?: string | null;
+  notifyEmail?: string | null;
   createdAt: string;
 }
 
@@ -203,6 +204,7 @@ export function UserTable({ users, editAction, deleteAction, currentUserEmail }:
                     role: u.role,
                     jabatan: u.jabatan,
                     bidang: u.bidang,
+                    notifyEmail: u.notifyEmail,
                   }}
                   action={editAction}
                 />

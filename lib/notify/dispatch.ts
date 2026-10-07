@@ -13,7 +13,7 @@ import type { BroadcastChannel, ChannelName, NotificationChannel, NotifyPayload 
 // menggagalkan penyimpanan agenda, dan satu kanal yang rusak tidak boleh menghentikan kanal lain
 // (pola yang sama dengan writeLog() di app/actions/kas.ts).
 
-export type ChannelSummary = { enabled: boolean; claimed: number; sent: number; failed: number; error?: string };
+export type ChannelSummary = { enabled: boolean; claimed: number; sent: number; failed: number; /** penerima yang dilewati karena kanal ini tidak bisa menjangkaunya (mis. belum punya email notifikasi) */ unreachable?: number; error?: string };
 
 export type DispatchSummary = {
   agendaId: string;
@@ -52,7 +52,7 @@ async function fetchUsers(): Promise<NotifiableUser[]> {
   const PAGE = 1000;
   const all: NotifiableUser[] = [];
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabaseAdmin.from("User").select("id, name, email, role, bidang").order("id").range(from, from + PAGE - 1);
+    const { data, error } = await supabaseAdmin.from("User").select("id, name, email, notifyEmail, role, bidang").order("id").range(from, from + PAGE - 1);
     if (error) throw new Error(`Gagal membaca daftar anggota: ${error.message}`);
     all.push(...((data ?? []) as NotifiableUser[]));
     if (!data || data.length < PAGE) break;
@@ -186,7 +186,7 @@ export async function dispatchAgendaNotification(
       const testPayload: NotifyPayload = { ...payloadBase, title: `[TES] ${content.title}`, body: `${content.body} (akan dikirim ke ${recipients.length} penerima)` };
 
       if (testRecipient) {
-        const tester: NotifiableUser = { id: "test-recipient", name: "Penguji", email: testRecipient, role: "USER" };
+        const tester: NotifiableUser = { id: "test-recipient", name: "Penguji", email: testRecipient, notifyEmail: testRecipient, role: "USER" };
         const channel = channels.find((c) => c.name === "EMAIL");
         if (channel?.isEnabled()) {
           const result = await channel.send(testPayload, [tester]);
@@ -218,20 +218,24 @@ export async function dispatchAgendaNotification(
       summary.channels[channel.name] = channelSummary;
       if (!enabled) continue;
 
+      // Hanya yang bisa dijangkau kanal ini (mis. email: yang sudah mengisi notifyEmail).
+      const reachable = channel.canReach ? recipients.filter((r) => channel.canReach?.(r)) : recipients;
+      channelSummary.unreachable = recipients.length - reachable.length;
+
       // Dry-run: laporkan siapa yang AKAN dikirimi, tanpa mengklaim, mengirim, atau menulis apa pun.
       if (dryRun) {
-        channelSummary.claimed = recipients.length;
-        console.info(`[notify:dry-run] ${channel.name} ${reason} "${agenda.title}" -> ${recipients.length} penerima`);
+        channelSummary.claimed = reachable.length;
+        console.info(`[notify:dry-run] ${channel.name} ${reason} "${agenda.title}" -> ${reachable.length} penerima (${channelSummary.unreachable} tidak terjangkau)`);
         continue;
       }
 
       try {
-        const claimedIds = await claim(agenda.id, channel.name, key, recipients.map((r) => r.id));
+        const claimedIds = await claim(agenda.id, channel.name, key, reachable.map((r) => r.id));
         channelSummary.claimed = claimedIds.length;
         if (claimedIds.length === 0) continue;
 
         const claimedSet = new Set(claimedIds);
-        const result = await channel.send(payload, recipients.filter((r) => claimedSet.has(r.id)));
+        const result = await channel.send(payload, reachable.filter((r) => claimedSet.has(r.id)));
         channelSummary.sent = result.sent.length;
         channelSummary.failed = result.failed.length;
         if (result.failed[0]) channelSummary.error = result.failed[0].error;

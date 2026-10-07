@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/guard";
+import { parseNotifyEmail } from "@/lib/notifyEmail";
 import { errorMessage } from "@/lib/errors";
 import { supabaseAdmin } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
@@ -23,7 +24,11 @@ export default async function UsersPage() {
     );
   }
 
-  const { data: users, error } = await supabaseAdmin.from("User").select("id, name, email, role, jabatan, bidang, createdAt").order("createdAt", { ascending: false });
+  // Kolom notifyEmail baru ada setelah migrasi 037. Kalau belum dijalankan, daftar user tetap harus
+  // tampil (tanpa kolom itu) — jangan sampai halaman ini kosong gara-gara migrasi belum dijalankan.
+  const withNotify = await supabaseAdmin.from("User").select("id, name, email, notifyEmail, role, jabatan, bidang, createdAt").order("createdAt", { ascending: false });
+  const { data: users, error } =
+    withNotify.error?.code === "42703" ? await supabaseAdmin.from("User").select("id, name, email, role, jabatan, bidang, createdAt").order("createdAt", { ascending: false }) : withNotify;
 
   async function addUser(formData: FormData) {
     "use server";
@@ -35,6 +40,8 @@ export default async function UsersPage() {
       const role = formData.get("role") as string;
       const jabatan = (formData.get("jabatan") as string) || null;
       const bidang = (formData.get("bidang") as string) || null;
+      const notify = parseNotifyEmail(formData.get("notifyEmail"));
+      if (!notify.ok) return { error: notify.error };
 
       if (!name || !email || !password || !role) {
         return { error: "Semua kolom wajib diisi" };
@@ -45,7 +52,10 @@ export default async function UsersPage() {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const { error } = await supabaseAdmin.from("User").insert([{ name, email, password: hashedPassword, role, jabatan, bidang }]);
+      // notifyEmail hanya dikirim kalau diisi, supaya menambah user tanpa email notifikasi tetap
+      // jalan walau migrasi 037 belum dijalankan.
+      const { error } = await supabaseAdmin.from("User").insert([{ name, email, password: hashedPassword, role, jabatan, bidang, ...(notify.value ? { notifyEmail: notify.value } : {}) }]);
+      if (error?.code === "42703") return { error: "Kolom email notifikasi belum ada. Jalankan migrasi 037 di Supabase dulu." };
       if (error) throw error;
 
       revalidatePath("/admin/users");
@@ -66,6 +76,8 @@ export default async function UsersPage() {
       const role = formData.get("role") as string;
       const jabatan = (formData.get("jabatan") as string) || null;
       const bidang = (formData.get("bidang") as string) || null;
+      const notify = parseNotifyEmail(formData.get("notifyEmail"));
+      if (!notify.ok) return { error: notify.error };
 
       if (!id || !name || !email || !role) return { error: "Kolom wajib belum diisi" };
 
@@ -89,7 +101,13 @@ export default async function UsersPage() {
         updateData.password = await bcrypt.hash(password, 10);
       }
 
-      const { error } = await supabaseAdmin.from("User").update(updateData).eq("id", id);
+      let { error } = await supabaseAdmin.from("User").update({ ...updateData, notifyEmail: notify.value }).eq("id", id);
+      if (error?.code === "42703") {
+        // Migrasi 037 belum dijalankan. Mengosongkan/menyimpan field lain tetap harus bisa; hanya
+        // kalau admin benar-benar mengisi email notifikasi kita menolak, supaya tidak hilang diam-diam.
+        if (notify.value) return { error: "Kolom email notifikasi belum ada. Jalankan migrasi 037 di Supabase dulu." };
+        ({ error } = await supabaseAdmin.from("User").update(updateData).eq("id", id));
+      }
       if (error) throw error;
 
       revalidatePath("/admin/users");
