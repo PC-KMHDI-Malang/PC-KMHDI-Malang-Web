@@ -263,7 +263,7 @@ export function AgendaManager({ items }: { items: Agenda[] }) {
                   )}
                   {published && (
                     <Link href={`/agenda/${agenda.slug}`} className={secondaryButton}>
-                      <Eye size={13} /> Lihat
+                      <Eye size={13} /> Detail acara
                     </Link>
                   )}
                   <button type="button" disabled={pending} onClick={() => setEditing(agenda)} className={secondaryButton}>

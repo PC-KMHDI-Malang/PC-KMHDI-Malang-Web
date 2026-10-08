@@ -78,8 +78,13 @@ export function ChatBot() {
   return (
     <div className="fixed bottom-5 md:bottom-6 right-5 md:right-6 z-50 flex flex-col items-end">
       {/* Jendela Chat */}
+      {/* Tinggi jendela dibatasi 100dvh-210px (bukan -140px): navbar (fixed, z-[70], lihat Navbar.tsx)
+          sengaja berada DI ATAS chatbot supaya dropdown-nya tidak tertutup, jadi jendela ini harus
+          berhenti di bawah navbar. Dihitung dari: bawah layar 24px + tombol 60px + jarak 16px +
+          navbar (±94px di desktop) + jarak aman ±16px. Dengan -140px, jendela menembus navbar di
+          layar yang lebih pendek dari ±790px (diukur sampai 54px). */}
       {isOpen && (
-        <div className="mb-4 w-[320px] sm:w-[360px] max-h-[min(600px,calc(100dvh-140px))] flex flex-col overflow-hidden rounded-[24px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-chatbot-pop">
+        <div className="mb-4 w-[320px] sm:w-[360px] max-h-[min(600px,calc(100dvh-210px))] flex flex-col overflow-hidden rounded-[24px] border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-chatbot-pop">
           {/* Header */}
           <div className="shrink-0 flex items-center justify-between bg-slate-50 dark:bg-[#1A1A1A] border-b border-slate-100 dark:border-white/5 px-5 py-4">
             <div className="flex items-center gap-3.5">

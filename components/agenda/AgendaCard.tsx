@@ -1,15 +1,17 @@
 import Link from "next/link";
-import { Clock, MapPin } from "lucide-react";
+import { ArrowRight, Clock, MapPin } from "lucide-react";
 
 import { AGENDA_KIND_LABEL, agendaStatus, formatAgendaRange, type Agenda } from "@/lib/agenda";
 import { KIND_CLASS } from "@/components/agenda/AgendaCalendar";
 
-// Satu kartu agenda untuk daftar "Akan Datang".
+// Satu kartu agenda untuk daftar "Akan Datang". Seluruh kartu adalah satu tautan ke halaman detail;
+// tombol "Detail acara" di bawahnya hanya penanda yang terlihat (bukan tautan kedua, karena tautan
+// tidak boleh bersarang di dalam tautan).
 export function AgendaCard({ agenda }: { agenda: Agenda }) {
   const status = agendaStatus(agenda);
 
   return (
-    <Link href={`/agenda/${agenda.slug}`} className="block rounded-2xl border border-slate-200/80 dark:border-white/10 p-4 active:bg-slate-100 dark:active:bg-white/10 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+    <Link href={`/agenda/${agenda.slug}`} className="group block rounded-2xl border border-slate-200/80 dark:border-white/10 p-4 active:bg-slate-100 dark:active:bg-white/10 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${KIND_CLASS[agenda.kind]}`}>{AGENDA_KIND_LABEL[agenda.kind]}</span>
         {status === "BERLANGSUNG" && (
@@ -27,6 +29,9 @@ export function AgendaCard({ agenda }: { agenda: Agenda }) {
           </span>
         )}
       </div>
+      <span className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-red-600 dark:bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors group-hover:bg-red-700 dark:group-hover:bg-rose-700">
+        Detail acara <ArrowRight size={14} />
+      </span>
     </Link>
   );
 }
